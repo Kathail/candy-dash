@@ -58,80 +58,83 @@
   }
 
   // ---------------------------------------------------------------------------
-  // Alpine shared components
+  // Alpine component registration (NO EVENTS)
   // ---------------------------------------------------------------------------
-  document.addEventListener("alpine:init", () => {
-    Alpine.data("customerTable", ({ mode }) => ({
-      // ---------------------------------------------------------------------
-      // Exposed state
-      // ---------------------------------------------------------------------
-      mode, // 'customers' | 'balances'
+  if (!window.Alpine) {
+    console.error("Alpine not loaded before app.js");
+    return;
+  }
 
-      rows: Array.isArray(window.CUSTOMERS) ? window.CUSTOMERS : [],
+  Alpine.data("customerTable", ({ mode }) => ({
+    // -----------------------------------------------------------------------
+    // State
+    // -----------------------------------------------------------------------
+    mode, // 'customers' | 'balances'
 
-      searchTerm: "",
-      sortKey: mode === "balances" ? "balance" : "name",
-      sortDir: mode === "balances" ? "desc" : "asc",
+    rows: Array.isArray(window.CUSTOMERS) ? window.CUSTOMERS : [],
 
-      // ---------------------------------------------------------------------
-      // Actions
-      // ---------------------------------------------------------------------
-      sortBy(key) {
-        if (this.sortKey === key) {
-          this.sortDir = this.sortDir === "asc" ? "desc" : "asc";
-        } else {
-          this.sortKey = key;
-          this.sortDir = "asc";
-        }
-      },
+    searchTerm: "",
+    sortKey: mode === "balances" ? "balance" : "name",
+    sortDir: mode === "balances" ? "desc" : "asc",
 
-      sortIndicator(key) {
-        if (this.sortKey !== key) return "";
-        return this.sortDir === "asc" ? "▲" : "▼";
-      },
+    // -----------------------------------------------------------------------
+    // Actions
+    // -----------------------------------------------------------------------
+    sortBy(key) {
+      if (this.sortKey === key) {
+        this.sortDir = this.sortDir === "asc" ? "desc" : "asc";
+      } else {
+        this.sortKey = key;
+        this.sortDir = "asc";
+      }
+    },
 
-      // ---------------------------------------------------------------------
-      // Computed
-      // ---------------------------------------------------------------------
-      get filteredRows() {
-        const t = this.searchTerm.toLowerCase();
+    sortIndicator(key) {
+      if (this.sortKey !== key) return "";
+      return this.sortDir === "asc" ? "▲" : "▼";
+    },
 
-        let rows = !t
-          ? this.rows
-          : this.rows.filter((c) =>
-              [c.name, c.phone, c.email, c.address, c.notes]
-                .filter(Boolean)
-                .some((v) => v.toLowerCase().includes(t)),
-            );
+    // -----------------------------------------------------------------------
+    // Computed
+    // -----------------------------------------------------------------------
+    get filteredRows() {
+      const t = this.searchTerm.toLowerCase();
 
-        if (this.mode === "balances") {
-          rows = rows.filter((c) => Number(c.balance) > 0);
-        }
+      let rows = !t
+        ? this.rows
+        : this.rows.filter((c) =>
+            [c.name, c.phone, c.email, c.address, c.notes]
+              .filter(Boolean)
+              .some((v) => v.toLowerCase().includes(t))
+          );
 
-        return [...rows].sort((a, b) => {
-          let A = a[this.sortKey] ?? "";
-          let B = b[this.sortKey] ?? "";
+      if (this.mode === "balances") {
+        rows = rows.filter((c) => Number(c.balance) > 0);
+      }
 
-          if (typeof A === "string") A = A.toLowerCase();
-          if (typeof B === "string") B = B.toLowerCase();
+      return [...rows].sort((a, b) => {
+        let A = a[this.sortKey] ?? "";
+        let B = b[this.sortKey] ?? "";
 
-          if (A < B) return this.sortDir === "asc" ? -1 : 1;
-          if (A > B) return this.sortDir === "asc" ? 1 : -1;
-          return 0;
-        });
-      },
+        if (typeof A === "string") A = A.toLowerCase();
+        if (typeof B === "string") B = B.toLowerCase();
 
-      // ---------------------------------------------------------------------
-      // Helpers
-      // ---------------------------------------------------------------------
-      balanceClass(balance) {
-        const n = Number(balance);
-        if (!Number.isFinite(n) || n <= 0) return "text-gray-400";
-        if (n < 20) return "text-yellow-300";
-        if (n < 100) return "text-orange-400";
-        return "theme-text-danger";
-      },
-    }));
+        if (A < B) return this.sortDir === "asc" ? -1 : 1;
+        if (A > B) return this.sortDir === "asc" ? 1 : -1;
+        return 0;
+      });
+    },
+
+    // -----------------------------------------------------------------------
+    // Helpers
+    // -----------------------------------------------------------------------
+    balanceClass(balance) {
+      const n = Number(balance);
+      if (!Number.isFinite(n) || n <= 0) return "text-gray-400";
+      if (n < 20) return "text-yellow-300";
+      if (n < 100) return "text-orange-400";
+      return "theme-text-danger";
+    },
   });
 
   // ---------------------------------------------------------------------------
