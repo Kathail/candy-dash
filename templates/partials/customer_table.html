@@ -1,12 +1,11 @@
-<div
-    class="theme-card overflow-hidden"
-    x-data="customerTable({ mode: '{{ mode }}' })"
->
+<div class="theme-card overflow-hidden" x-data="customerTable({ mode: mode })">
     <!-- Header -->
-    <div class="p-6 border-b border-gray-800 flex justify-between gap-4">
+    <div
+        class="p-6 border-b border-gray-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+    >
         <h2 class="text-xl font-semibold">
-            {% if mode == "balances" %} Customer Balances {% else %} Customer
-            List {% endif %}
+            <template x-if="mode === 'balances'">Customer Balances</template>
+            <template x-if="mode !== 'balances'">Customers</template>
         </h2>
 
         <input
@@ -22,66 +21,107 @@
         <table class="min-w-full divide-y divide-gray-800 text-sm">
             <thead class="bg-gray-900/70">
                 <tr>
+                    <!-- NAME -->
                     <th
-                        class="theme-table-th cursor-pointer"
+                        class="theme-table-th cursor-pointer select-none"
                         @click="sortBy('name')"
                     >
-                        Name
+                        <span class="inline-flex items-center gap-2">
+                            Name
+                            <span
+                                x-text="sortIndicator('name')"
+                                class="text-xs opacity-70"
+                            ></span>
+                        </span>
                     </th>
 
-                    {% if mode != "balances" %}
-                    <th class="theme-table-th hidden md:table-cell">Contact</th>
-                    {% endif %}
+                    <!-- ADDRESS -->
+                    <th class="theme-table-th">Address</th>
 
+                    <!-- PHONE -->
+                    <th class="theme-table-th">Phone</th>
+
+                    <!-- LAST VISIT -->
                     <th
-                        class="theme-table-th cursor-pointer text-right"
+                        class="theme-table-th cursor-pointer select-none"
+                        @click="sortBy('last_visit_at')"
+                    >
+                        <span class="inline-flex items-center gap-2">
+                            Last Visited
+                            <span
+                                x-text="sortIndicator('last_visit_at')"
+                                class="text-xs opacity-70"
+                            ></span>
+                        </span>
+                    </th>
+
+                    <!-- BALANCE -->
+                    <th
+                        class="theme-table-th cursor-pointer select-none text-right"
                         @click="sortBy('balance')"
                     >
-                        Balance
+                        <span
+                            class="inline-flex items-center gap-2 justify-end w-full"
+                        >
+                            Balance
+                            <span
+                                x-text="sortIndicator('balance')"
+                                class="text-xs opacity-70"
+                            ></span>
+                        </span>
                     </th>
-
-                    <th class="theme-table-th text-right">Actions</th>
                 </tr>
             </thead>
 
             <tbody class="divide-y divide-gray-800">
                 <template x-for="c in filteredRows" :key="c.id">
-                    <tr>
+                    <tr class="hover:bg-gray-800/40">
+                        <!-- NAME -->
                         <td class="theme-table-td font-medium">
-                            <span x-text="c.name"></span>
+                            <a
+                                :href="`/customers/edit/${c.id}`"
+                                class="text-app-accent hover:underline"
+                                x-text="c.name"
+                            ></a>
                         </td>
 
-                        {% if mode != "balances" %}
-                        <td
-                            class="theme-table-td hidden md:table-cell text-gray-400"
-                        >
-                            <span x-text="c.phone || c.email || '-'"></span>
+                        <!-- ADDRESS -->
+                        <td class="theme-table-td">
+                            <template x-if="c.address">
+                                <a
+                                    :href="`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.address)}`"
+                                    target="_blank"
+                                    rel="noopener"
+                                    class="text-app-accent hover:underline"
+                                    x-text="c.address"
+                                ></a>
+                            </template>
+                            <template x-if="!c.address">—</template>
                         </td>
-                        {% endif %}
 
+                        <!-- PHONE -->
+                        <td class="theme-table-td">
+                            <template x-if="c.phone">
+                                <a
+                                    :href="`tel:${c.phone}`"
+                                    class="text-app-accent hover:underline"
+                                    x-text="c.phone"
+                                ></a>
+                            </template>
+                            <template x-if="!c.phone">—</template>
+                        </td>
+
+                        <!-- LAST VISIT -->
+                        <td class="theme-table-td text-gray-400">
+                            <span x-text="c.last_visit_at || 'Never'"></span>
+                        </td>
+
+                        <!-- BALANCE -->
                         <td
                             class="theme-table-td text-right font-semibold"
                             :class="balanceClass(c.balance)"
                             x-text="'$' + c.balance.toFixed(2)"
                         ></td>
-
-                        <td class="theme-table-td text-right">
-                            {% if mode == "balances" %}
-                            <a
-                                :href="`/balances/pay/${c.id}`"
-                                class="theme-btn-primary text-xs px-4 py-2"
-                            >
-                                Record Payment
-                            </a>
-                            {% else %}
-                            <a
-                                :href="`/customers/edit/${c.id}`"
-                                class="theme-btn-secondary text-xs px-4 py-2"
-                            >
-                                Edit
-                            </a>
-                            {% endif %}
-                        </td>
                     </tr>
                 </template>
             </tbody>
