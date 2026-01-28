@@ -10,210 +10,185 @@ content %}
     </section>
 
     <!-- View Toggle -->
-    <div class="flex items-center gap-2">
-        <button
-            class="view-btn bg-blue-600 text-white px-4 py-2 rounded-lg text-sm"
-            data-view="week"
-        >
-            Week
-        </button>
-        <button
-            class="view-btn bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg text-sm"
-            data-view="month"
-        >
-            Month
-        </button>
+    <div class="flex justify-between items-center">
+        <div class="flex gap-2">
+            <button
+                class="view-btn bg-blue-600 text-white px-4 py-2 rounded-lg text-sm"
+                data-view="week"
+            >
+                Week
+            </button>
+            <button
+                class="view-btn bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg text-sm"
+                data-view="month"
+            >
+                Month
+            </button>
+        </div>
     </div>
 
-    <!-- Analytics -->
-    <section class="grid grid-cols-2 md:grid-cols-4 gap-4" id="analytics">
-        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
-            <div class="text-xs text-gray-500">Total Visits</div>
-            <div class="text-2xl font-bold" id="stat-total">—</div>
-        </div>
-        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
-            <div class="text-xs text-gray-500">Completed</div>
-            <div class="text-2xl font-bold text-green-400" id="stat-completed">
-                —
-            </div>
-        </div>
-        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
-            <div class="text-xs text-gray-500">Completion %</div>
-            <div class="text-2xl font-bold" id="stat-rate">—%</div>
-        </div>
-        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
-            <div class="text-xs text-gray-500">Avg / Day</div>
-            <div class="text-2xl font-bold" id="stat-avg">—</div>
-        </div>
-    </section>
-
     <!-- WEEK VIEW -->
-    <section id="week-view" class="space-y-4">
-        <h2 class="text-xl font-semibold">Week View</h2>
+    <section id="week-view" class="space-y-2">
+        <div class="grid grid-cols-7 gap-2 text-xs text-gray-400 uppercase">
+            <div>Mon</div>
+            <div>Tue</div>
+            <div>Wed</div>
+            <div>Thu</div>
+            <div>Fri</div>
+            <div>Sat</div>
+            <div>Sun</div>
+        </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-7 gap-3">
-            {% for date, visits in scheduled_visits.items() %}
+        <div class="grid grid-cols-7 gap-2">
+            {% for date in week_dates %} {% set visits =
+            scheduled_visits.get(date, []) %}
             <div
-                class="day-card bg-gray-900 border border-gray-800 rounded-xl p-3 min-h-[160px]"
+                class="day-cell bg-gray-900 border border-gray-800 rounded-xl p-2 min-h-[150px] cursor-pointer"
                 data-date="{{ date }}"
+                onclick="openDay('{{ date }}')"
             >
-                <div class="flex justify-between items-center mb-2">
-                    <div class="font-semibold text-sm">
-                        {{ date }} {% if date == today %}
-                        <span
-                            class="ml-1 text-xs bg-blue-600 px-2 py-0.5 rounded-full"
+                <div class="flex justify-between items-center mb-1">
+                    <span class="font-semibold text-sm">
+                        {{ date[-2:] }} {% if date == today %}
+                        <span class="ml-1 text-xs bg-blue-600 px-1.5 rounded"
+                            >Today</span
                         >
-                            Today
-                        </span>
                         {% endif %}
-                    </div>
-                    <span class="text-xs text-gray-500">
-                        {{ visits | length }}
                     </span>
+                    <span class="text-xs text-gray-500"
+                        >{{ visits|length }}</span
+                    >
                 </div>
 
-                <ul class="space-y-1 mb-3">
+                <ul class="space-y-1 text-xs">
                     {% for v in visits %}
-                    <li class="text-xs flex justify-between">
-                        <span class="truncate">{{ v.customer_name }}</span>
-                        {% if v.completed %}
-                        <span class="text-green-400">✓</span>
-                        {% endif %}
-                    </li>
+                    <li>{{ v.customer_name }}</li>
                     {% endfor %}
                 </ul>
 
-                <!-- Optimize -->
+                {% if visits %}
                 <button
-                    class="optimize-btn w-full text-xs bg-gray-800 hover:bg-gray-700 rounded-lg py-1.5"
-                    data-date="{{ date }}"
+                    class="optimize-btn mt-2 w-full text-xs bg-gray-800 hover:bg-gray-700 rounded py-1"
+                    onclick="event.stopPropagation(); optimizeDay('{{ date }}')"
                 >
-                    Optimize Route
+                    Optimize
                 </button>
+                {% endif %}
             </div>
             {% endfor %}
         </div>
     </section>
 
     <!-- MONTH VIEW -->
-    <section id="month-view" class="hidden space-y-4">
-        <h2 class="text-xl font-semibold">Month View</h2>
+    <section id="month-view" class="hidden space-y-2">
+        <div class="grid grid-cols-7 gap-2 text-xs text-gray-400 uppercase">
+            <div>Mon</div>
+            <div>Tue</div>
+            <div>Wed</div>
+            <div>Thu</div>
+            <div>Fri</div>
+            <div>Sat</div>
+            <div>Sun</div>
+        </div>
 
-        <div
-            class="grid grid-cols-7 gap-px bg-gray-800 rounded-xl overflow-hidden"
-        >
-            {% for i in range(1, 36) %} {% set date = (month_dates[i-1] if
-            month_dates is defined else None) %}
+        <div class="grid grid-cols-7 gap-2">
+            {% for date in month_dates %} {% set visits =
+            scheduled_visits.get(date, []) %} {% set count = visits | length %}
+            {% if count == 0 %} {% set heat = "bg-gray-900" %} {% elif count <=
+            2 %} {% set heat = "bg-blue-900/40" %} {% elif count <= 5 %} {% set
+            heat = "bg-orange-900/50" %} {% else %} {% set heat =
+            "bg-red-900/60" %} {% endif %}
+
             <div
-                class="day-card bg-gray-900 min-h-[120px] p-2 text-xs"
-                {%
-                if
-                date
-                %}data-date="{{ date }}"
-                {%
-                endif
-                %}
+                class="day-cell {{ heat }} border border-gray-800 rounded-xl p-2 min-h-[110px] cursor-pointer"
+                data-date="{{ date }}"
+                onclick="openDay('{{ date }}')"
             >
-                {% if date %}
-                <div class="font-semibold mb-1">
-                    {{ date }} {% if date == today %}
-                    <span class="ml-1 text-[10px] bg-blue-600 px-1.5 rounded">
-                        Today
-                    </span>
+                <div class="text-xs font-semibold mb-1">
+                    {{ date[-2:] }} {% if date == today %}
+                    <span class="ml-1 text-[10px] bg-blue-600 px-1.5 rounded"
+                        >Today</span
+                    >
                     {% endif %}
                 </div>
 
-                {% for v in scheduled_visits.get(date, []) %}
-                <div class="truncate flex justify-between">
-                    <span>{{ v.customer_name }}</span>
-                    {% if v.completed %}
-                    <span class="text-green-400">✓</span>
-                    {% endif %}
-                </div>
-                {% endfor %} {% if scheduled_visits.get(date) %}
-                <button
-                    class="optimize-btn mt-2 w-full text-[10px] bg-gray-800 hover:bg-gray-700 rounded py-1"
-                    data-date="{{ date }}"
-                >
-                    Optimize
-                </button>
-                {% endif %} {% endif %}
+                {% for v in visits[:3] %}
+                <div class="truncate text-xs">{{ v.customer_name }}</div>
+                {% endfor %} {% if count > 3 %}
+                <div class="text-xs text-gray-400">+{{ count - 3 }} more</div>
+                {% endif %}
             </div>
             {% endfor %}
         </div>
     </section>
 </div>
 
+<!-- SIDE PANEL -->
+<div
+    id="side-panel"
+    class="fixed top-0 right-0 h-full w-80 bg-gray-950 border-l border-gray-800 transform translate-x-full transition-transform z-50"
+>
+    <div class="p-4 border-b border-gray-800 flex justify-between items-center">
+        <h3 class="font-semibold" id="panel-date">Route</h3>
+        <button onclick="closePanel()" class="text-gray-400 hover:text-white">
+            ✕
+        </button>
+    </div>
+    <div class="p-4 space-y-2" id="panel-content"></div>
+</div>
+
 <script>
-    /* ---------------- View Toggle ---------------- */
-    const buttons = document.querySelectorAll(".view-btn");
+    /* -------- View toggle -------- */
     const week = document.getElementById("week-view");
     const month = document.getElementById("month-view");
-
-    buttons.forEach((btn) => {
-        btn.addEventListener("click", () => {
-            buttons.forEach((b) =>
-                b.classList.remove("bg-blue-600", "text-white"),
-            );
+    document.querySelectorAll(".view-btn").forEach(btn => {
+        btn.onclick = () => {
+            document.querySelectorAll(".view-btn").forEach(b => b.classList.remove("bg-blue-600", "text-white"));
             btn.classList.add("bg-blue-600", "text-white");
-
-            if (btn.dataset.view === "week") {
-                week.classList.remove("hidden");
-                month.classList.add("hidden");
-            } else {
-                month.classList.remove("hidden");
-                week.classList.add("hidden");
-            }
-            computeStats();
-        });
+            week.classList.toggle("hidden", btn.dataset.view !== "week");
+            month.classList.toggle("hidden", btn.dataset.view !== "month");
+        };
     });
 
-    /* ---------------- Analytics ---------------- */
-    function computeStats() {
-        let total = 0;
-        let completed = 0;
-        let days = new Set();
+    /* -------- Side panel -------- */
+    function openDay(date) {
+        const panel = document.getElementById("side-panel");
+        const content = document.getElementById("panel-content");
+        const visits = window.visitsByDate[date] || [];
+        const order = getOrder(date, visits);
 
-        document.querySelectorAll(".day-card").forEach((card) => {
-            const date = card.dataset.date;
-            if (!date) return;
+        document.getElementById("panel-date").textContent = date;
+        content.innerHTML = order.map(v =>
+            `<div class="bg-gray-900 border border-gray-800 rounded px-3 py-2 text-sm">${v.customer_name}</div>`
+        ).join("");
 
-            const items = card.querySelectorAll("li");
-            if (items.length === 0) return;
-
-            days.add(date);
-            total += items.length;
-
-            items.forEach((i) => {
-                if (i.querySelector(".text-green-400")) completed++;
-            });
-        });
-
-        const avg = days.size ? (total / days.size).toFixed(1) : 0;
-        const rate = total ? Math.round((completed / total) * 100) : 0;
-
-        document.getElementById("stat-total").textContent = total;
-        document.getElementById("stat-completed").textContent = completed;
-        document.getElementById("stat-rate").textContent = rate + "%";
-        document.getElementById("stat-avg").textContent = avg;
+        panel.classList.remove("translate-x-full");
     }
 
-    /* ---------------- Optimization (UI-only) ---------------- */
-    document.querySelectorAll(".optimize-btn").forEach((btn) => {
-        btn.addEventListener("click", () => {
-            const date = btn.dataset.date;
-            btn.textContent = "Optimizing…";
-            btn.disabled = true;
+    function closePanel() {
+        document.getElementById("side-panel").classList.add("translate-x-full");
+    }
 
-            // Placeholder for backend call
-            setTimeout(() => {
-                btn.textContent = "Optimized ✓";
-                btn.classList.add("bg-green-600");
-            }, 800);
-        });
-    });
+    /* -------- Persisted order -------- */
+    function getOrder(date, visits) {
+        const saved = localStorage.getItem("routeOrder:" + date);
+        if (!saved) return visits;
+        const ids = JSON.parse(saved);
+        return ids.map(id => visits.find(v => v.customer_name === id)).filter(Boolean);
+    }
 
-    computeStats();
+    function optimizeDay(date) {
+        const visits = window.visitsByDate[date];
+        const shuffled = [...visits].sort(() => Math.random() - 0.5);
+        localStorage.setItem(
+            "routeOrder:" + date,
+            JSON.stringify(shuffled.map(v => v.customer_name))
+        );
+        openDay(date);
+    }
+
+    /* -------- Inject visits map -------- */
+    window.visitsByDate = {{ scheduled_visits | tojson }};
 </script>
 
 {% endblock %}
