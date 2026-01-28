@@ -220,18 +220,14 @@ block content %}
                     <path
                         stroke-linecap="round"
                         stroke-linejoin="round"
-                        d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+                        d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
                     />
                 </svg>
                 Planning Tools
             </h2>
             <div class="space-y-3">
                 <button
-                    onclick="
-                        document
-                            .getElementById('plan-ahead-modal')
-                            .classList.remove('hidden')
-                    "
+                    onclick="openPlanAheadModal()"
                     class="w-full text-left p-4 rounded-lg border border-blue-800/40 bg-blue-950/20 hover:bg-blue-950/40 transition-all"
                 >
                     <div class="font-semibold text-blue-300 mb-1">
@@ -262,11 +258,7 @@ block content %}
                     </div>
                 </a>
                 <button
-                    onclick="
-                        document
-                            .getElementById('route-optimizer-modal')
-                            .classList.remove('hidden')
-                    "
+                    onclick="openRouteOptimizerModal()"
                     class="w-full text-left p-4 rounded-lg border border-green-800/40 bg-green-950/20 hover:bg-green-950/40 transition-all"
                 >
                     <div class="font-semibold text-green-300 mb-1">
@@ -348,7 +340,7 @@ block content %}
     </div>
 </div>
 
-<!-- Plan Ahead Modal (example) -->
+<!-- Plan Ahead Modal -->
 <div
     id="plan-ahead-modal"
     class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
@@ -383,16 +375,13 @@ block content %}
                 </svg>
             </button>
         </div>
-        <div class="space-y-3">
-            <!-- Populate from backend if needed, or keep placeholder -->
-            <p class="text-gray-400">
-                This would list customers nearing 30 days since last visit...
-            </p>
+        <div id="plan-ahead-content" class="space-y-3">
+            <!-- Populated by JS -->
         </div>
     </div>
 </div>
 
-<!-- Route Optimizer Modal (placeholder) -->
+<!-- Route Optimizer Modal -->
 <div
     id="route-optimizer-modal"
     class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
@@ -425,14 +414,59 @@ block content %}
                 </svg>
             </button>
         </div>
-        <p class="text-gray-400">
-            Group customers by area for efficient routing (placeholder)...
-        </p>
+        <div id="route-optimizer-content" class="space-y-4">
+            <!-- Populated by JS -->
+        </div>
+    </div>
+</div>
+
+<!-- Plan Day Modal -->
+<div
+    id="plan-day-modal"
+    class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
+>
+    <div
+        class="bg-gray-900 border border-gray-700 rounded-2xl p-6 max-w-xl w-full max-h-[85vh] overflow-y-auto"
+    >
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-bold text-white">
+                Plan Route for <span id="plan-day-date"></span>
+            </h3>
+            <button
+                onclick="
+                    document
+                        .getElementById('plan-day-modal')
+                        .classList.add('hidden')
+                "
+                class="p-2 hover:bg-gray-700 rounded-lg"
+            >
+                <svg
+                    class="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    stroke-width="2"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M6 18L18 6M6 6l12 12"
+                    />
+                </svg>
+            </button>
+        </div>
+        <div id="plan-day-content" class="space-y-4">
+            <!-- Populated by JS -->
+        </div>
     </div>
 </div>
 
 <script>
-    // Calendar data from backend
+    // ============================================================================
+    // Calendar Page – Fully functional (no backend changes)
+    // ============================================================================
+
+    // Data from backend
     const scheduledData = {
         {% for date_str, visits in scheduled_visits.items() %}
             "{{ date_str }}": {{ visits | tojson }},
@@ -453,12 +487,10 @@ block content %}
         const grid = document.getElementById("calendar-grid");
         grid.innerHTML = "";
 
-        // Empty cells
         for (let i = 0; i < firstDay; i++) {
             grid.appendChild(document.createElement("div"));
         }
 
-        // Days
         for (let day = 1; day <= daysInMonth; day++) {
             const dateObj = new Date(year, month, day);
             const dateStr = dateObj.toISOString().split("T")[0];
@@ -473,7 +505,6 @@ block content %}
             `;
             cell.innerHTML = `<div class="text-lg ${isToday ? 'text-blue-300' : 'text-gray-200'}">${day}</div>`;
 
-            // Show count if there are visits
             const visits = scheduledData[dateStr] || [];
             if (visits.length > 0) {
                 const count = document.createElement("div");
@@ -482,12 +513,8 @@ block content %}
                 cell.appendChild(count);
             }
 
-            // Click to plan
             if (!isPast) {
-                cell.addEventListener("click", () => {
-                    alert(`Plan route for ${dateStr}\n\n(You can extend this to open a form or redirect to route creation)`);
-                    // Future: window.location = `/route/create?date=${dateStr}`;
-                });
+                cell.addEventListener("click", () => openPlanDayModal(dateStr));
             }
 
             grid.appendChild(cell);
@@ -504,7 +531,7 @@ block content %}
         renderCalendar();
     });
 
-    // Stats (same reliable method)
+    // Stats
     function computeStats() {
         let total = 0, completed = 0, daysWith = 0;
         Object.values(scheduledData).forEach(visits => {
@@ -521,6 +548,152 @@ block content %}
         document.getElementById("stat-rate").textContent = rate + "%";
         document.getElementById("stat-avg").textContent = avg;
     }
+
+    // Plan Ahead Modal – using /calendar/overdue
+    async function openPlanAheadModal() {
+        const modal = document.getElementById("plan-ahead-modal");
+        modal.classList.remove("hidden");
+
+        const content = document.getElementById("plan-ahead-content");
+        content.innerHTML = '<div class="text-center py-8 text-gray-400">Loading...</div>';
+
+        try {
+            const res = await fetch("/calendar/overdue");
+            if (!res.ok) throw new Error();
+            const customers = await res.json();
+
+            // Show only those approaching 30 days (adjust range as needed)
+            const approaching = customers.filter(c => c.days_since && c.days_since >= 20 && c.days_since <= 35);
+
+            if (!approaching.length) {
+                content.innerHTML = '<div class="text-center py-8 text-gray-400">No customers approaching 30 days.</div>';
+                return;
+            }
+
+            content.innerHTML = approaching.map(c => `
+                <div class="p-3 rounded-lg border border-gray-700 hover:bg-gray-700/50 transition flex justify-between items-center">
+                    <div>
+                        <div class="font-medium text-white">${c.name}</div>
+                        <div class="text-xs text-gray-400">${c.days_since} days since last visit</div>
+                    </div>
+                    <form method="post" action="/route/add/${c.id}">
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+                            Add to Route
+                        </button>
+                    </form>
+                </div>
+            `).join('');
+        } catch {
+            content.innerHTML = '<div class="text-center py-8 text-red-400">Failed to load.</div>';
+        }
+    }
+
+    // Route Optimizer Modal – using /calendar/customers_by_area
+    async function openRouteOptimizerModal() {
+        const modal = document.getElementById("route-optimizer-modal");
+        modal.classList.remove("hidden");
+
+        const content = document.getElementById("route-optimizer-content");
+        content.innerHTML = '<div class="text-center py-8 text-gray-400">Loading...</div>';
+
+        try {
+            const res = await fetch("/calendar/customers_by_area");
+            if (!res.ok) throw new Error();
+            const groups = await res.json();
+
+            if (!Object.keys(groups).length) {
+                content.innerHTML = '<div class="text-center py-8 text-gray-400">No priority customers by area.</div>';
+                return;
+            }
+
+            content.innerHTML = Object.entries(groups).map(([area, customers]) => `
+                <div class="mb-6">
+                    <h4 class="text-lg font-semibold text-white mb-3">${area} (${customers.length})</h4>
+                    <div class="space-y-2">
+                        ${customers.map(c => `
+                            <div class="p-3 rounded-lg border border-gray-700 flex justify-between items-center hover:bg-gray-700/50 transition">
+                                <div>
+                                    <div class="font-medium text-white">${c.name}</div>
+                                    <div class="text-xs text-gray-400">${c.address || "No address"}</div>
+                                </div>
+                                <form method="post" action="/route/add/${c.id}">
+                                    <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+                                        Add
+                                    </button>
+                                </form>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        } catch {
+            content.innerHTML = '<div class="text-center py-8 text-red-400">Failed to load.</div>';
+        }
+    }
+
+    // Plan Day Modal – using /api/customers/json
+    async function openPlanDayModal(dateStr) {
+        const modal = document.getElementById("plan-day-modal");
+        modal.classList.remove("hidden");
+
+        document.getElementById("plan-day-date").textContent = dateStr;
+
+        const content = document.getElementById("plan-day-content");
+        content.innerHTML = '<div class="text-center py-8 text-gray-400">Loading customers...</div>';
+
+        try {
+            const res = await fetch("/api/customers/json");
+            if (!res.ok) throw new Error();
+            const customers = await res.json();
+
+            content.innerHTML = `
+                <form method="post" action="/route/add" class="space-y-4">
+                    <input type="hidden" name="date" value="${dateStr}">
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-2">Add Customer to ${dateStr}</label>
+                        <select name="customer_id" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition">
+                            <option value="">Select customer...</option>
+                            ${customers.map(c => `
+                                <option value="${c.id}">${c.name}${c.balance_cents > 0 ? ' (owes $' + (c.balance_cents/100).toFixed(2) + ')' : ''}</option>
+                            `).join('')}
+                        </select>
+                    </div>
+                    <div class="flex justify-end">
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-medium transition">
+                            Add to Route
+                        </button>
+                    </div>
+                </form>
+            `;
+        } catch {
+            content.innerHTML = '<div class="text-center py-8 text-red-400">Failed to load customers.</div>';
+        }
+    }
+
+    // Stats
+    function computeStats() {
+        let total = 0, completed = 0, daysWith = 0;
+        Object.values(scheduledData).forEach(visits => {
+            const cnt = visits.length;
+            total += cnt;
+            completed += visits.filter(v => v.completed).length;
+            if (cnt > 0) daysWith++;
+        });
+        const avg = daysWith ? (total / daysWith).toFixed(1) : "0.0";
+        const rate = total ? Math.round((completed / total) * 100) : 0;
+
+        document.getElementById("stat-total").textContent = total;
+        document.getElementById("stat-completed").textContent = completed;
+        document.getElementById("stat-rate").textContent = rate + "%";
+        document.getElementById("stat-avg").textContent = avg;
+    }
+
+    // Close modals on Esc
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+            document.querySelectorAll('.hidden.fixed:not(.hidden)').forEach(m => m.classList.add('hidden'));
+        }
+    });
 
     // Init
     renderCalendar();
