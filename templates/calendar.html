@@ -38,19 +38,26 @@ content %}
             action="{{ url_for('route.route_add') }}"
             class="grid grid-cols-1 md:grid-cols-3 gap-4"
         >
-            <select
-                name="customer_id"
-                required
-                class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2"
-            >
-                <option value="">Select customerâ€¦</option>
-                {% for c in all_customers %}
-                <option value="{{ c.id }}">
-                    {{ c.name }} {% if c.balance_cents > 0 %} â€” owes ${{
-                    (c.balance_cents / 100) | round(2) }} {% endif %}
-                </option>
-                {% endfor %}
-            </select>
+            <!-- Searchable customer input -->
+            <div>
+                <input
+                    type="text"
+                    list="customer-list"
+                    name="customer_id"
+                    required
+                    placeholder="Search by name or city…"
+                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2"
+                />
+
+                <datalist id="customer-list">
+                    {% for c in all_customers %}
+                    <option
+                        value="{{ c.id }}"
+                        label="{{ c.name }}{% if c.city %} — {{ c.city }}{% endif %}{% if c.balance_cents > 0 %} (owes ${{ (c.balance_cents / 100) | round(2) }}){% endif %}"
+                    ></option>
+                    {% endfor %}
+                </datalist>
+            </div>
 
             <input
                 type="date"
@@ -76,13 +83,14 @@ content %}
         <div class="space-y-4">
             {% for date, visits in scheduled_visits.items() %}
             <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
-                <div class="font-semibold mb-3">{{ date }}</div>
+                <div class="font-semibold mb-3 text-gray-200">{{ date }}</div>
+
                 <ul class="space-y-2">
                     {% for v in visits %}
-                    <li class="flex justify-between text-sm">
+                    <li class="flex justify-between items-center text-sm">
                         <span>{{ v.customer_name }}</span>
                         {% if v.completed %}
-                        <span class="text-green-400">âœ“</span>
+                        <span class="text-green-400 font-semibold">✓</span>
                         {% endif %}
                     </li>
                     {% endfor %}
