@@ -1,20 +1,18 @@
 <div
     class="theme-card overflow-hidden"
-    x-data="customerTable({ mode: 'customers' })"
+    x-data="customerTable"
+    x-init="mode = '{{ mode }}'"
 >
     <!-- Header -->
-    <div
-        class="p-6 border-b border-gray-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-    >
+    <div class="p-6 border-b border-gray-800 flex justify-between gap-4">
         <h2 class="text-xl font-semibold">
-            <template x-if="mode === 'balances'">Customer Balances</template>
-            <template x-if="mode !== 'balances'">Customers</template>
+            {{ 'Customer Balances' if mode == 'balances' else 'Customers' }}
         </h2>
 
         <input
             type="search"
-            placeholder="Search customers…"
             class="theme-input max-w-sm"
+            placeholder="Search customers…"
             x-model="searchTerm"
         />
     </div>
@@ -24,106 +22,53 @@
         <table class="min-w-full divide-y divide-gray-800 text-sm">
             <thead class="bg-gray-900/70">
                 <tr>
-                    <!-- NAME -->
                     <th
-                        class="theme-table-th cursor-pointer select-none"
+                        class="theme-table-th cursor-pointer"
                         @click="sortBy('name')"
                     >
-                        <span class="inline-flex items-center gap-2">
-                            Name
-                            <span
-                                x-text="sortIndicator('name')"
-                                class="text-xs opacity-70"
-                            ></span>
-                        </span>
+                        Name <span x-text="sortIndicator('name')"></span>
                     </th>
-
-                    <!-- ADDRESS -->
                     <th class="theme-table-th">Address</th>
-
-                    <!-- PHONE -->
                     <th class="theme-table-th">Phone</th>
-
-                    <!-- LAST VISIT -->
                     <th
-                        class="theme-table-th cursor-pointer select-none"
+                        class="theme-table-th cursor-pointer"
                         @click="sortBy('last_visit_at')"
                     >
-                        <span class="inline-flex items-center gap-2">
-                            Last Visited
-                            <span
-                                x-text="sortIndicator('last_visit_at')"
-                                class="text-xs opacity-70"
-                            ></span>
-                        </span>
+                        Last Visited
+                        <span x-text="sortIndicator('last_visit_at')"></span>
                     </th>
-
-                    <!-- BALANCE -->
                     <th
-                        class="theme-table-th cursor-pointer select-none text-right"
+                        class="theme-table-th text-right cursor-pointer"
                         @click="sortBy('balance')"
                     >
-                        <span
-                            class="inline-flex items-center gap-2 justify-end w-full"
-                        >
-                            Balance
-                            <span
-                                x-text="sortIndicator('balance')"
-                                class="text-xs opacity-70"
-                            ></span>
-                        </span>
+                        Balance <span x-text="sortIndicator('balance')"></span>
                     </th>
                 </tr>
             </thead>
 
-            <tbody class="divide-y divide-gray-800">
+            <tbody>
                 <template x-for="c in filteredRows" :key="c.id">
                     <tr class="hover:bg-gray-800/40">
-                        <!-- NAME -->
-                        <td class="theme-table-td font-medium">
+                        <td class="theme-table-td">
                             <a
                                 :href="`/customers/edit/${c.id}`"
-                                class="text-app-accent hover:underline"
+                                class="text-app-accent"
                                 x-text="c.name"
                             ></a>
                         </td>
-
-                        <!-- ADDRESS -->
-                        <td class="theme-table-td">
-                            <template x-if="c.address">
-                                <a
-                                    :href="`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.address)}`"
-                                    target="_blank"
-                                    rel="noopener"
-                                    class="text-app-accent hover:underline"
-                                    x-text="c.address"
-                                ></a>
-                            </template>
-                            <template x-if="!c.address">—</template>
-                        </td>
-
-                        <!-- PHONE -->
-                        <td class="theme-table-td">
-                            <template x-if="c.phone">
-                                <a
-                                    :href="`tel:${c.phone}`"
-                                    class="text-app-accent hover:underline"
-                                    x-text="c.phone"
-                                ></a>
-                            </template>
-                            <template x-if="!c.phone">—</template>
-                        </td>
-
-                        <!-- LAST VISIT -->
-                        <td class="theme-table-td text-gray-400">
-                            <span x-text="c.last_visit_at || 'Never'"></span>
-                        </td>
-
-                        <!-- BALANCE -->
+                        <td
+                            class="theme-table-td"
+                            x-text="c.address || '—'"
+                        ></td>
+                        <td class="theme-table-td" x-text="c.phone || '—'"></td>
+                        <td
+                            class="theme-table-td"
+                            x-text="c.last_visit_at || 'Never'"
+                        ></td>
                         <td
                             class="theme-table-td text-right font-semibold"
                             :class="balanceClass(c.balance)"
-                            x-text="'$' + c.balance.toFixed(2)"
+                            x-text="'$' + Number(c.balance).toFixed(2)"
                         ></td>
                     </tr>
                 </template>
@@ -132,9 +77,9 @@
 
         <p
             x-show="filteredRows.length === 0"
-            class="py-16 text-center text-gray-500"
+            class="py-12 text-center text-gray-500"
         >
-            No customers match your search.
+            No customers found.
         </p>
     </div>
 </div>

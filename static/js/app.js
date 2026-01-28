@@ -1,146 +1,88 @@
 // static/js/app.js
-// Candy Dash – Shared frontend utilities (HTMX + Alpine)
-// Single source of truth for shared UI behavior
-
 (() => {
   "use strict";
 
-  // ---------------------------------------------------------------------------
-  // Namespace
-  // ---------------------------------------------------------------------------
-  const CandyDash = (window.CandyDash = window.CandyDash || {});
+  // -----------------------------
+  // Global namespace
+  // -----------------------------
+  window.CandyDash = window.CandyDash || {};
 
-  // ---------------------------------------------------------------------------
-  // Utilities
-  // ---------------------------------------------------------------------------
-  function escapeHTML(input = "") {
-    return String(input).replace(/[&<>"']/g, (m) => {
-      return (
-        {
-          "&": "&amp;",
-          "<": "&lt;",
-          ">": "&gt;",
-          '"': "&quot;",
-          "'": "&#39;",
-        }[m] || m
-      );
-    });
-  }
+  // -----------------------------
+  // Alpine components
+  // -----------------------------
+  document.addEventListener("alpine:init", () => {
+    Alpine.data("customerTable", () => ({
+      // injected
+      mode: "customers",
+      rows: [],
 
-  function formatCurrency(cents) {
-    const n = Number(cents);
-    const safe = Number.isFinite(n) ? n : 0;
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 2,
-    }).format(safe / 100);
-  }
+      // ui state
+      searchTerm: "",
+      sortKey: "name",
+      sortDir: "asc",
 
-  CandyDash.escapeHTML = escapeHTML;
-  CandyDash.formatCurrency = formatCurrency;
+      // lifecycle
+      init() {
+        this.rows = Array.isArray(window.CUSTOMERS) ? window.CUSTOMERS : [];
 
-  // ---------------------------------------------------------------------------
-  // HTMX global confirmation handling
-  // ---------------------------------------------------------------------------
-  function installHTMXConfirm() {
-    if (!window.htmx) return;
+        if (this.mode === "balances") {
+          this.sortKey = "balance";
+          this.sortDir = "desc";
+        }
+      },
 
-    htmx.on("htmx:beforeRequest", (e) => {
-      const el = e.detail?.elt;
-      if (!el) return;
+      // actions
+      sortBy(key) {
+        if (this.sortKey === key) {
+          this.sortDir = this.sortDir === "asc" ? "desc" : "asc";
+        } else {
+          this.sortKey = key;
+          this.sortDir = "asc";
+        }
+      },
 
-      const msg = el.getAttribute?.("data-confirm");
-      if (msg && !window.confirm(msg)) {
-        e.preventDefault();
-      }
-    });
-  }
+      sortIndicator(key) {
+        if (this.sortKey !== key) return "";
+        return this.sortDir === "asc" ? "▲" : "▼";
+      },
 
-  // ---------------------------------------------------------------------------
-  // Alpine component registration (NO alpine:init event)
-  // ---------------------------------------------------------------------------
-  if (!window.Alpine) {
-    console.error("Alpine not loaded before app.js");
-    return;
-  }
+      // computed
+      get filteredRows() {
+        const t = this.searchTerm.toLowerCase();
 
-  Alpine.data("customerTable", ({ mode }) => ({
-    mode, // 'customers' | 'balances'
+        let rows = !t
+          ? this.rows
+          : this.rows.filter((c) =>
+              [c.name, c.phone, c.email, c.address]
+                .filter(Boolean)
+                .some((v) => v.toLowerCase().includes(t)),
+            );
 
-    // Data source: templates must set window.CUSTOMERS = {{ customers|tojson }}
-    rows: Array.isArray(window.CUSTOMERS) ? window.CUSTOMERS : [],
+        if (this.mode === "balances") {
+          rows = rows.filter((c) => Number(c.balance) > 0);
+        }
 
-    searchTerm: "",
-    sortKey: mode === "balances" ? "balance" : "name",
-    sortDir: mode === "balances" ? "desc" : "asc",
+        return [...rows].sort((a, b) => {
+          let A = a[this.sortKey] ?? "";
+          let B = b[this.sortKey] ?? "";
 
-    // ---------------- Actions ----------------
-    sortBy(key) {
-      if (this.sortKey === key) {
-        this.sortDir = this.sortDir === "asc" ? "desc" : "asc";
-      } else {
-        this.sortKey = key;
-        this.sortDir = "asc";
-      }
-    },
+          if (typeof A === "string") A = A.toLowerCase();
+          if (typeof B === "string") B = B.toLowerCase();
 
-    sortIndicator(key) {
-      if (this.sortKey !== key) return "";
-      return this.sortDir === "asc" ? "▲" : "▼";
-    },
+          if (A < B) return this.sortDir === "asc" ? -1 : 1;
+          if (A > B) return this.sortDir === "asc" ? 1 : -1;
+          return 0;
+        });
+      },
 
-    // ---------------- Computed ----------------
-    get filteredRows() {
-      const t = this.searchTerm.toLowerCase();
-
-      let rows = !t
-        ? this.rows
-        : this.rows.filter((c) => {
-            const haystack = [c.name, c.phone, c.email, c.address, c.notes]
-              .filter(Boolean)
-              .map((v) => String(v).toLowerCase());
-
-            return haystack.some((v) => v.includes(t));
-          });
-
-      if (this.mode === "balances") {
-        rows = rows.filter((c) => Number(c.balance) > 0);
-      }
-
-      return [...rows].sort((a, b) => {
-        let A = a[this.sortKey] ?? "";
-        let B = b[this.sortKey] ?? "";
-
-        if (typeof A === "string") A = A.toLowerCase();
-        if (typeof B === "string") B = B.toLowerCase();
-
-        if (A < B) return this.sortDir === "asc" ? -1 : 1;
-        if (A > B) return this.sortDir === "asc" ? 1 : -1;
-        return 0;
-      });
-    },
-
-    // ---------------- Helpers ----------------
-    balanceClass(balance) {
-      const n = Number(balance);
-      if (!Number.isFinite(n) || n <= 0) return "text-gray-400";
-      if (n < 20) return "text-yellow-300";
-      if (n < 100) return "text-orange-400";
-      return "theme-text-danger";
-    },
-  }));
-
-  // ---------------------------------------------------------------------------
-  // Boot
-  // ---------------------------------------------------------------------------
-  function boot() {
-    installHTMXConfirm();
-  }
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", boot, { once: true });
-  } else {
-    boot();
-  }
+      // helpers
+      balanceClass(balance) {
+        const n = Number(balance);
+        if (!n || n <= 0) return "text-gray-400";
+        if (n < 20) return "text-yellow-300";
+        if (n < 100) return "text-orange-400";
+        return "theme-text-danger";
+      },
+    }));
+  });
 })();
