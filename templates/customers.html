@@ -40,7 +40,7 @@ content %}
 
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-6">
         <div
-            class="bg-gray-800 border border-gray-700 rounded-xl p-5 shadow-sm"
+            class="bg-card border border-border-default rounded-xl p-5 shadow-sm"
         >
             <p
                 class="text-xs font-medium text-gray-400 uppercase tracking-wide"
@@ -52,7 +52,7 @@ content %}
             </p>
         </div>
         <div
-            class="bg-gray-800 border border-gray-700 rounded-xl p-5 shadow-sm"
+            class="bg-card border border-border-default rounded-xl p-5 shadow-sm"
         >
             <p
                 class="text-xs font-medium text-gray-400 uppercase tracking-wide"
@@ -66,7 +66,7 @@ content %}
             </p>
         </div>
         <div
-            class="bg-gray-800 border border-gray-700 rounded-xl p-5 shadow-sm"
+            class="bg-card border border-border-default rounded-xl p-5 shadow-sm"
         >
             <p
                 class="text-xs font-medium text-gray-400 uppercase tracking-wide"
@@ -82,10 +82,11 @@ content %}
     <!-- Bulk Actions -->
     <div
         id="bulk-bar"
-        class="hidden sticky top-4 z-20 bg-gray-950 border border-gray-700 rounded-xl px-5 py-4 shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all"
+        class="hidden sticky top-4 z-20 bg-bg-sidebar border border-border-default rounded-xl px-5 py-3 shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4"
     >
         <span class="text-sm font-medium text-gray-300">
-            <span id="selected-count" class="text-white">0</span> selected
+            <span id="selected-count" class="text-white font-bold">0</span>
+            selected
         </span>
         <div class="flex flex-wrap gap-2">
             <button
@@ -107,10 +108,11 @@ content %}
 
     <!-- Customer Table -->
     <div
-        class="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden shadow-sm"
+        class="bg-card border border-border-default rounded-xl overflow-hidden shadow-sm"
     >
+        <!-- Controls -->
         <div
-            class="p-4 sm:p-5 border-b border-gray-700 flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+            class="p-4 sm:p-5 border-b border-border-default flex flex-col lg:flex-row lg:items-center justify-between gap-4"
         >
             <div class="flex items-baseline gap-3">
                 <h2 class="text-lg sm:text-xl font-semibold text-white">
@@ -127,7 +129,7 @@ content %}
                         id="customer-search"
                         type="search"
                         placeholder="Search name, phone, address, notes…"
-                        class="w-full bg-gray-700 border border-gray-600 rounded-lg pl-10 pr-4 py-2.5 text-sm text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                        class="w-full bg-bg-card-muted border border-border-subtle rounded-lg pl-10 pr-4 py-2.5 text-sm text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
                     />
                     <svg
                         class="w-5 h-5 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2"
@@ -147,14 +149,14 @@ content %}
                     <button
                         id="toggle-density"
                         type="button"
-                        class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
+                        class="bg-bg-card-muted hover:bg-bg-card border border-border-subtle text-white px-4 py-2 rounded-lg text-sm font-medium transition"
                     >
                         Compact
                     </button>
                     <button
                         id="toggle-select"
                         type="button"
-                        class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
+                        class="bg-bg-card-muted hover:bg-bg-card border border-border-subtle text-white px-4 py-2 rounded-lg text-sm font-medium transition"
                     >
                         Select
                     </button>
@@ -162,9 +164,9 @@ content %}
             </div>
         </div>
 
-        <!-- Pagination Controls -->
+        <!-- Pagination -->
         <div
-            class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-4 sm:px-6 py-3 border-b border-gray-700 bg-gray-900/50"
+            class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-4 sm:px-6 py-3 border-b border-border-default bg-bg-card-muted"
         >
             <div class="text-sm text-gray-400">
                 Showing <span id="showing-count">—</span> of {{ customers |
@@ -173,7 +175,7 @@ content %}
             <div class="flex items-center gap-3 flex-wrap">
                 <select
                     id="page-size"
-                    class="bg-gray-700 border border-gray-600 rounded-lg px-3 py-1.5 text-sm text-white focus:border-blue-500"
+                    class="bg-bg-card-muted border border-border-subtle rounded-lg px-3 py-1.5 text-sm text-white focus:border-blue-500"
                 >
                     <option value="10">10 per page</option>
                     <option value="20" selected>20 per page</option>
@@ -183,7 +185,7 @@ content %}
                 <div class="flex items-center gap-2">
                     <button
                         id="prev-page"
-                        class="bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded-lg text-sm disabled:opacity-50 transition"
+                        class="bg-bg-card-muted hover:bg-bg-card border border-border-subtle text-white px-3 py-1.5 rounded-lg text-sm disabled:opacity-50 transition"
                         disabled
                     >
                         Prev
@@ -193,7 +195,7 @@ content %}
                     >
                     <button
                         id="next-page"
-                        class="bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded-lg text-sm disabled:opacity-50 transition"
+                        class="bg-bg-card-muted hover:bg-bg-card border border-border-subtle text-white px-3 py-1.5 rounded-lg text-sm disabled:opacity-50 transition"
                     >
                         Next
                     </button>
@@ -204,10 +206,10 @@ content %}
         {% if customers %}
         <div class="overflow-x-auto">
             <table
-                class="min-w-full divide-y divide-gray-700 text-sm"
+                class="min-w-full divide-y divide-border-default text-sm"
                 id="customer-table"
             >
-                <thead class="bg-gray-950 sticky top-0 z-10">
+                <thead class="bg-bg-sidebar sticky top-0 z-10">
                     <tr
                         class="text-left text-xs font-medium text-gray-400 uppercase tracking-wide"
                     >
@@ -215,7 +217,7 @@ content %}
                             <input
                                 type="checkbox"
                                 id="select-all"
-                                class="hidden h-4 w-4 rounded border-gray-600 text-blue-500 focus:ring-blue-500 bg-gray-700"
+                                class="hidden h-4 w-4 rounded border-border-subtle text-blue-500 focus:ring-blue-500 bg-bg-card-muted"
                             />
                         </th>
                         <th
@@ -272,13 +274,16 @@ content %}
                         <th class="px-4 sm:px-6 py-4 text-right">Actions</th>
                     </tr>
                 </thead>
-                <tbody id="customer-body" class="divide-y divide-gray-700">
+                <tbody
+                    id="customer-body"
+                    class="divide-y divide-border-default"
+                >
                     {% for c in customers %} {% set bal = c.balance_cents /
                     100.0 %} {% set bal_class = 'text-yellow-300' if bal > 0 and
                     bal < 20 else 'text-orange-400' if bal < 100 else
                     'text-red-400' if bal > 0 else 'text-gray-400' %}
                     <tr
-                        class="customer-row hover:bg-gray-700/60 transition-colors {{ 'bg-red-950/20' if c.balance_cents > 0 else '' }}"
+                        class="customer-row hover:bg-bg-card-muted transition-colors {{ 'bg-red-950/20' if c.balance_cents > 0 else '' }}"
                         data-id="{{ c.id }}"
                         data-name="{{ c.name | lower }}"
                         data-phone="{{ (c.phone or '') | lower }}"
@@ -291,10 +296,10 @@ content %}
                         <td class="px-4 sm:px-6 py-4">
                             <input
                                 type="checkbox"
-                                class="row-check hidden h-4 w-4 rounded border-gray-600 text-blue-500 focus:ring-blue-500 bg-gray-700"
+                                class="row-check hidden h-4 w-4 rounded border-border-subtle text-blue-500 focus:ring-blue-500 bg-bg-card-muted"
                             />
                         </td>
-                        <td class="px-4 sm:px-6 py-4 font-medium text-gray-100">
+                        <td class="px-4 sm:px-6 py-4 font-medium text-white">
                             <button
                                 type="button"
                                 class="btn-edit hover:text-blue-300 hover:underline transition focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
@@ -309,7 +314,7 @@ content %}
 
                             <!-- Mobile info -->
                             <div
-                                class="mt-2 text-xs text-gray-500 space-y-1 lg:hidden"
+                                class="mt-2 text-xs text-gray-400 space-y-1 lg:hidden"
                             >
                                 {% if c.phone %}
                                 <div>
@@ -359,13 +364,23 @@ content %}
                             %}Never{% endif %}
                         </td>
                         <td class="px-4 sm:px-6 py-4 text-right">
+                            {% if c.notes %}
                             <button
                                 type="button"
                                 onclick="toggleNotes(this)"
                                 class="text-blue-400 hover:text-blue-300 text-sm font-medium transition"
                             >
-                                Notes
+                                View/Edit
                             </button>
+                            {% else %}
+                            <button
+                                type="button"
+                                onclick="toggleNotes(this)"
+                                class="text-gray-400 hover:text-gray-300 text-sm font-medium transition"
+                            >
+                                Add Notes
+                            </button>
+                            {% endif %}
                             <div class="notes-section hidden mt-3">
                                 <form
                                     method="post"
@@ -375,7 +390,7 @@ content %}
                                     <textarea
                                         name="notes"
                                         rows="3"
-                                        class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-100 placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-y"
+                                        class="w-full bg-bg-card-muted border border-border-subtle rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-y"
                                     >
 {{ c.notes or "" }}</textarea
                                     >
@@ -401,7 +416,7 @@ content %}
                             <div class="flex items-center justify-end gap-2">
                                 <button
                                     type="button"
-                                    class="btn-edit bg-gray-700 hover:bg-gray-600 text-white text-xs px-3.5 py-1.5 rounded-lg transition"
+                                    class="btn-edit bg-bg-card-muted hover:bg-bg-card border border-border-subtle text-white text-xs px-3.5 py-1.5 rounded-lg transition"
                                     data-id="{{ c.id }}"
                                     data-name="{{ c.name }}"
                                     data-phone="{{ c.phone or '' }}"
@@ -460,7 +475,7 @@ content %}
     <!-- Add Customer Form -->
     <div
         id="add-form"
-        class="bg-gray-800 border border-gray-700 rounded-xl p-6 lg:p-8 shadow-sm"
+        class="bg-card border border-border-default rounded-xl p-6 lg:p-8 shadow-sm"
     >
         <h2 class="text-xl font-semibold text-white mb-6">Add New Customer</h2>
         <form
@@ -475,22 +490,30 @@ content %}
                 <input
                     name="name"
                     required
-                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                    class="w-full bg-bg-card-muted border border-border-subtle rounded-lg px-4 py-2.5 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
                 />
             </div>
             <div>
                 <label class="block text-sm text-gray-400 mb-2">Phone</label>
                 <input
                     name="phone"
-                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                    class="w-full bg-bg-card-muted border border-border-subtle rounded-lg px-4 py-2.5 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
                 />
             </div>
             <div class="md:col-span-2">
                 <label class="block text-sm text-gray-400 mb-2">Address</label>
                 <input
                     name="address"
-                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                    class="w-full bg-bg-card-muted border border-border-subtle rounded-lg px-4 py-2.5 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
                 />
+            </div>
+            <div>
+                <label class="block text-sm text-gray-400 mb-2">Notes</label>
+                <textarea
+                    name="notes"
+                    rows="2"
+                    class="w-full bg-bg-card-muted border border-border-subtle rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-y"
+                ></textarea>
             </div>
             <div>
                 <label class="block text-sm text-gray-400 mb-2"
@@ -501,7 +524,7 @@ content %}
                     type="number"
                     step="0.01"
                     value="0.00"
-                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                    class="w-full bg-bg-card-muted border border-border-subtle rounded-lg px-4 py-2.5 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
                 />
             </div>
             <div class="md:col-span-2 flex justify-end">
@@ -522,7 +545,7 @@ content %}
     class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
 >
     <div
-        class="bg-gray-900 border border-gray-700 rounded-2xl p-6 sm:p-8 w-full max-w-lg"
+        class="bg-card border border-border-default rounded-2xl p-6 sm:p-8 w-full max-w-lg"
     >
         <h3 class="text-xl font-semibold text-white mb-6">Edit Customer</h3>
         <form id="edit-form" method="post" class="space-y-5">
@@ -534,22 +557,30 @@ content %}
                 <input
                     name="name"
                     required
-                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                    class="w-full bg-bg-card-muted border border-border-subtle rounded-lg px-4 py-2.5 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
                 />
             </div>
             <div>
                 <label class="block text-sm text-gray-400 mb-2">Phone</label>
                 <input
                     name="phone"
-                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                    class="w-full bg-bg-card-muted border border-border-subtle rounded-lg px-4 py-2.5 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
                 />
             </div>
             <div>
                 <label class="block text-sm text-gray-400 mb-2">Address</label>
                 <input
                     name="address"
-                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                    class="w-full bg-bg-card-muted border border-border-subtle rounded-lg px-4 py-2.5 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
                 />
+            </div>
+            <div>
+                <label class="block text-sm text-gray-400 mb-2">Notes</label>
+                <textarea
+                    name="notes"
+                    rows="3"
+                    class="w-full bg-bg-card-muted border border-border-subtle rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-y"
+                ></textarea>
             </div>
             <div>
                 <label class="block text-sm text-gray-400 mb-2"
@@ -559,14 +590,14 @@ content %}
                     name="balance"
                     type="number"
                     step="0.01"
-                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2.5 text-white font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                    class="w-full bg-bg-card-muted border border-border-subtle rounded-lg px-4 py-2.5 text-white font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
                 />
             </div>
             <div class="flex gap-3 pt-3">
                 <button
                     type="button"
                     data-action="close"
-                    class="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-3 rounded-lg font-medium transition"
+                    class="flex-1 bg-bg-card-muted hover:bg-bg-card border border-border-subtle text-white py-3 rounded-lg font-medium transition"
                 >
                     Cancel
                 </button>
@@ -583,7 +614,7 @@ content %}
 
 <script>
     // ============================================================================
-    // Customers Page – Cleaned up, with inline notes editing
+    // Customers Page – Clean, modern, inline notes editing
     // ============================================================================
     document.addEventListener("DOMContentLoaded", () => {
         const rows = [...document.querySelectorAll(".customer-row")];
@@ -610,7 +641,7 @@ content %}
                     ?.scrollIntoView({ behavior: "smooth", block: "start" });
             });
 
-        // ── Live Search ────────────────────────────────────────────────────────
+        // ── Live Search (debounced) ───────────────────────────────────────────
         function filterRows() {
             const term = (searchInput?.value || "").trim().toLowerCase();
             rows.forEach((row) => {
@@ -619,7 +650,13 @@ content %}
             });
             paginate();
         }
-        searchInput?.addEventListener("input", filterRows);
+        if (searchInput) {
+            let timeout;
+            searchInput.addEventListener("input", () => {
+                clearTimeout(timeout);
+                timeout = setTimeout(filterRows, 250);
+            });
+        }
 
         // ── Sorting ────────────────────────────────────────────────────────────
         function updateSortIndicators() {
@@ -733,7 +770,7 @@ content %}
             if (section) section.classList.toggle("hidden");
         };
 
-        // Close notes when clicking outside
+        // Close notes on outside click
         document.addEventListener("click", (e) => {
             if (
                 !e.target.closest('button[onclick*="toggleNotes"]') &&
@@ -761,6 +798,8 @@ content %}
                     btn.dataset.phone;
                 editForm.querySelector('[name="address"]').value =
                     btn.dataset.address;
+                editForm.querySelector('[name="notes"]').value =
+                    btn.dataset.notes || "";
                 editForm.querySelector('[name="balance"]').value =
                     btn.dataset.balance;
                 modal.classList.remove("hidden");
