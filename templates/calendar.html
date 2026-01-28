@@ -1,814 +1,183 @@
 {% extends "base.html" %} {% block title %}Calendar{% endblock %} {% block
 content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
     <!-- Header -->
-    <header class="mb-8">
-        <div class="flex items-center justify-between mb-2">
-            <div>
-                <h2 class="text-3xl font-bold">Calendar & Planning</h2>
-                <p class="text-gray-400 mt-1">
-                    Plan your routes and track customer visit schedules
-                </p>
-            </div>
-            <button
-                onclick="openQuickAddModal()"
-                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2"
-            >
-                <svg
-                    class="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M12 4v16m8-8H4"
-                    />
-                </svg>
-                Quick Add
-            </button>
+    <header class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold">Calendar & Planning</h1>
+            <p class="text-gray-400 mt-1">
+                Plan routes and track customer visits
+            </p>
         </div>
+
+        <button data-action="quick-add" class="btn-primary">+ Quick Add</button>
     </header>
 
-    <!-- Top Summary Row -->
-    <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <!-- Priority Visits -->
-        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold">Priority Visits</h3>
-                {% set urgent_count = priority_visits |
-                selectattr('balance_cents', 'gt', 10000) | list | length %} {%
-                if urgent_count > 0 %}
-                <span
-                    class="text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded-full font-medium"
-                    >{{ urgent_count }} urgent</span
-                >
-                {% endif %}
-            </div>
-            <ul class="space-y-2 mb-4">
-                {% for customer in priority_visits[:5] %}
-                <li
-                    class="flex items-center justify-between bg-gray-800 px-3 py-2 rounded-lg hover:bg-gray-750 transition cursor-pointer"
-                    onclick="addCustomerToToday({{ customer.id }})"
-                >
-                    <div class="flex items-center gap-2">
-                        {% if customer.balance_cents > 10000 or
-                        customer.days_since_visit > 30 %}
-                        <div
-                            class="w-2 h-2 bg-red-500 rounded-full animate-pulse"
-                        ></div>
-                        {% elif not customer.last_visit_at %}
-                        <div class="w-2 h-2 bg-amber-500 rounded-full"></div>
-                        {% else %}
-                        <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
-                        {% endif %}
-                        <span class="text-sm">{{ customer.name }}</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        {% if customer.balance_cents > 0 %}
-                        <span class="text-xs text-red-400"
-                            >Owes ${{ (customer.balance_cents / 100) | round(2)
-                            }}</span
-                        >
-                        {% endif %} {% if not customer.last_visit_at %}
-                        <span
-                            class="text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full"
-                            >New</span
-                        >
-                        {% elif customer.days_since_visit > 30 %}
-                        <span
-                            class="text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full"
-                            >{{ customer.days_since_visit | int }}+ days</span
-                        >
-                        {% endif %}
-                    </div>
-                </li>
-                {% endfor %}
-            </ul>
-            <a
-                href="{{ url_for('customers.customers') }}"
-                class="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1"
-            >
-                View all customers
-                <svg
-                    class="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M9 5l7 7-7 7"
-                    />
-                </svg>
-            </a>
-        </div>
-
-        <!-- Visit Analytics -->
-        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
-            <h3 class="text-lg font-semibold mb-4">Visit Analytics</h3>
-            <div class="grid grid-cols-3 gap-3 mb-4">
-                <div class="bg-gray-800 rounded-lg p-3 text-center">
-                    <span class="block text-xs text-gray-400 mb-1"
-                        >This Week</span
-                    >
-                    <span class="block text-2xl font-bold"
-                        >{{ visits_this_week }}</span
-                    >
-                </div>
-                <div class="bg-gray-800 rounded-lg p-3 text-center">
-                    <span class="block text-xs text-gray-400 mb-1"
-                        >This Month</span
-                    >
-                    <span class="block text-2xl font-bold"
-                        >{{ visits_this_month }}</span
-                    >
-                </div>
-                <div class="bg-gray-800 rounded-lg p-3 text-center">
-                    <span class="block text-xs text-gray-400 mb-1"
-                        >Avg/Week</span
-                    >
-                    <span class="block text-2xl font-bold"
-                        >{{ avg_per_week }}</span
-                    >
-                </div>
-            </div>
-            <div class="space-y-2">
-                <div class="flex items-center justify-between text-sm">
-                    <span class="text-gray-400">Completion Rate</span>
-                    <span class="font-medium text-green-400"
-                        >{{ completion_rate }}%</span
-                    >
-                </div>
-                <div class="w-full bg-gray-800 rounded-full h-2">
-                    <div
-                        class="bg-green-500 h-2 rounded-full"
-                        style="width: {{ completion_rate }}%"
-                    ></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Quick Actions -->
-        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
-            <h3 class="text-lg font-semibold mb-4">Quick Actions</h3>
-            <ul class="space-y-2">
-                <li>
-                    <a
-                        href="{{ url_for('route.route') }}"
-                        class="w-full bg-gray-800 hover:bg-gray-750 rounded-lg p-3 text-left transition group block"
-                    >
-                        <div class="flex items-center gap-3">
-                            <div
-                                class="bg-blue-500/20 p-2 rounded-lg group-hover:bg-blue-500/30 transition"
-                            >
-                                <svg
-                                    class="w-5 h-5 text-blue-400"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                                    />
-                                </svg>
-                            </div>
-                            <div>
-                                <div class="font-medium text-sm">
-                                    Today's Route
-                                </div>
-                                <div class="text-xs text-gray-400">
-                                    View and manage
-                                </div>
-                            </div>
-                        </div>
-                    </a>
-                </li>
-                <li>
-                    <button
-                        onclick="showNewCustomers()"
-                        class="w-full bg-gray-800 hover:bg-gray-750 rounded-lg p-3 text-left transition group"
-                    >
-                        <div class="flex items-center gap-3">
-                            <div
-                                class="bg-green-500/20 p-2 rounded-lg group-hover:bg-green-500/30 transition"
-                            >
-                                <svg
-                                    class="w-5 h-5 text-green-400"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
-                                    />
-                                </svg>
-                            </div>
-                            <div>
-                                <div class="font-medium text-sm">
-                                    New Customers
-                                </div>
-                                <div class="text-xs text-gray-400">
-                                    Need first visit
-                                </div>
-                            </div>
-                        </div>
-                    </button>
-                </li>
-                <li>
-                    <button
-                        onclick="showOverdue()"
-                        class="w-full bg-gray-800 hover:bg-gray-750 rounded-lg p-3 text-left transition group"
-                    >
-                        <div class="flex items-center gap-3">
-                            <div
-                                class="bg-red-500/20 p-2 rounded-lg group-hover:bg-red-500/30 transition"
-                            >
-                                <svg
-                                    class="w-5 h-5 text-red-400"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                                    />
-                                </svg>
-                            </div>
-                            <div>
-                                <div class="font-medium text-sm">
-                                    Overdue Visits
-                                </div>
-                                <div class="text-xs text-gray-400">
-                                    14+ days since last
-                                </div>
-                            </div>
-                        </div>
-                    </button>
-                </li>
-                <!-- Area Quick Add button -->
-                <li>
-                    <button
-                        onclick="openAreaOptimizer()"
-                        class="w-full bg-gray-800 hover:bg-gray-750 rounded-lg p-3 text-left transition group"
-                    >
-                        <div class="flex items-center gap-3">
-                            <div
-                                class="bg-purple-500/20 p-2 rounded-lg group-hover:bg-purple-500/30 transition"
-                            >
-                                <svg
-                                    class="w-5 h-5 text-purple-400"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                                    />
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                                    />
-                                </svg>
-                            </div>
-                            <div>
-                                <div class="font-medium text-sm">
-                                    Area Quick Add
-                                </div>
-                                <div class="text-xs text-gray-400">
-                                    Group & add by city/zip
-                                </div>
-                            </div>
-                        </div>
-                    </button>
-                </li>
-            </ul>
-        </div>
+    <!-- Summary Row -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {% include "calendar/_priority_visits.html" %} {% include
+        "calendar/_visit_analytics.html" %} {% include
+        "calendar/_quick_actions.html" %}
     </section>
 
-    <!-- Calendar Grid -->
+    <!-- Calendar -->
     <section class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
         <header class="flex items-center justify-between mb-6">
             <div class="flex items-center gap-4">
-                <button
-                    onclick="previousMonth()"
-                    class="text-gray-400 hover:text-white transition p-2 hover:bg-gray-800 rounded-lg"
-                >
-                    <svg
-                        class="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M15 19l-7-7 7-7"
-                        />
-                    </svg>
-                </button>
-                <h3 class="text-xl font-semibold" id="currentMonth">
-                    January 2026
-                </h3>
-                <button
-                    onclick="nextMonth()"
-                    class="text-gray-400 hover:text-white transition p-2 hover:bg-gray-800 rounded-lg"
-                >
-                    <svg
-                        class="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M9 5l7 7-7 7"
-                        />
-                    </svg>
-                </button>
+                <button data-action="prev-month" class="icon-btn">‹</button>
+                <h2 id="calendar-month" class="text-xl font-semibold"></h2>
+                <button data-action="next-month" class="icon-btn">›</button>
             </div>
-            <button
-                onclick="goToToday()"
-                class="text-sm bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition"
-            >
-                Today
-            </button>
+
+            <button data-action="today" class="btn-secondary">Today</button>
         </header>
 
-        <div class="grid grid-cols-7 gap-2">
-            <div class="text-xs text-gray-400 text-center font-semibold py-2">
-                Sun
-            </div>
-            <div class="text-xs text-gray-400 text-center font-semibold py-2">
-                Mon
-            </div>
-            <div class="text-xs text-gray-400 text-center font-semibold py-2">
-                Tue
-            </div>
-            <div class="text-xs text-gray-400 text-center font-semibold py-2">
-                Wed
-            </div>
-            <div class="text-xs text-gray-400 text-center font-semibold py-2">
-                Thu
-            </div>
-            <div class="text-xs text-gray-400 text-center font-semibold py-2">
-                Fri
-            </div>
-            <div class="text-xs text-gray-400 text-center font-semibold py-2">
-                Sat
-            </div>
-            <div
-                id="calendarDays"
-                class="col-span-7 grid grid-cols-7 gap-2"
-            ></div>
+        <div
+            class="grid grid-cols-7 gap-2 text-xs text-gray-400 font-semibold mb-2"
+        >
+            <div class="text-center">Sun</div>
+            <div class="text-center">Mon</div>
+            <div class="text-center">Tue</div>
+            <div class="text-center">Wed</div>
+            <div class="text-center">Thu</div>
+            <div class="text-center">Fri</div>
+            <div class="text-center">Sat</div>
         </div>
+
+        <div id="calendar-grid" class="grid grid-cols-7 gap-2"></div>
     </section>
 </div>
 
-<!-- Quick Add Modal -->
-<div
-    id="quickAddModal"
-    class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 hidden"
->
-    <div
-        class="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-md p-6"
-    >
-        <div class="flex items-center justify-between mb-6">
-            <h3 class="text-xl font-semibold">Quick Add Visit</h3>
-            <button
-                onclick="closeQuickAddModal()"
-                class="text-gray-400 hover:text-white transition"
-            >
-                <svg
-                    class="w-6 h-6"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M6 18L18 6M6 6l12 12"
-                    />
-                </svg>
-            </button>
-        </div>
-        <form
-            method="post"
-            action="{{ url_for('calendar.add_visit') }}"
-            class="space-y-4"
-        >
-            <div>
-                <label class="block text-sm font-medium text-gray-300 mb-2"
-                    >Customer</label
-                >
-                <select
-                    name="customer_id"
-                    required
-                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                    <option value="">Select customer...</option>
-                    {% for c in all_customers %}
-                    <option value="{{ c.id }}">
-                        {{ c.name }}{% if c.balance_cents > 0 %} (Owes ${{
-                        (c.balance_cents / 100) | round(2) }}){% endif %}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-300 mb-2"
-                    >Date</label
-                >
-                <input
-                    type="date"
-                    name="date"
-                    required
-                    value="{{ today.isoformat() }}"
-                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-300 mb-2"
-                    >Notes (optional)</label
-                >
-                <textarea
-                    name="notes"
-                    rows="3"
-                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                    placeholder="Add any notes..."
-                ></textarea>
-            </div>
-            <button
-                type="submit"
-                class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium transition"
-            >
-                Add to Calendar
-            </button>
-        </form>
-    </div>
-</div>
-
-<!-- Day Detail Modal -->
-<div
-    id="dayDetailModal"
-    class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 hidden"
->
-    <div
-        class="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col"
-    >
-        <div
-            class="p-6 border-b border-gray-800 flex items-center justify-between"
-        >
-            <h3 class="text-xl font-semibold" id="dayDetailTitle">
-                Monday, January 27, 2026
-            </h3>
-            <button
-                onclick="closeDayDetailModal()"
-                class="text-gray-400 hover:text-white transition"
-            >
-                <svg
-                    class="w-6 h-6"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M6 18L18 6M6 6l12 12"
-                    />
-                </svg>
-            </button>
-        </div>
-        <div class="flex-1 overflow-y-auto p-6" id="dayDetailContent">
-            <div class="text-center text-gray-500 py-8">Loading...</div>
-        </div>
-        <div class="p-6 border-t border-gray-800">
-            <button
-                onclick="addVisitToDay()"
-                class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium transition"
-            >
-                + Add Visit to This Day
-            </button>
-        </div>
-    </div>
-</div>
-
-<!-- Area Quick Add Modal -->
-<div
-    id="area-optimizer-modal"
-    class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50"
->
-    <div
-        class="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-5xl max-h-[90vh] flex flex-col"
-    >
-        <div
-            class="p-6 border-b border-gray-800 flex items-center justify-between"
-        >
-            <h3 class="text-xl font-semibold">Quick Add by Area</h3>
-            <button
-                onclick="
-                    document
-                        .getElementById('area-optimizer-modal')
-                        .classList.add('hidden')
-                "
-                class="text-gray-400 hover:text-white transition"
-            >
-                <svg
-                    class="w-6 h-6"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M6 18L18 6M6 6l12 12"
-                    />
-                </svg>
-            </button>
-        </div>
-        <div class="flex-1 overflow-y-auto p-6" id="area-content">
-            <!-- Dynamic content injected by JavaScript -->
-        </div>
-    </div>
-</div>
-
+{% include "calendar/_quick_add_modal.html" %} {% include
+"calendar/_day_detail_modal.html" %} {% include "calendar/_area_modal.html" %}
+{% endblock %} {% block scripts %}
 <script>
-    const scheduledVisits = {{ scheduled_visits | tojson }};
-    let currentDate = new Date();
-    let selectedDate = null;
+    (() => {
+        const state = {
+            date: new Date(),
+            selectedDate: null,
+            visits: {{ scheduled_visits | tojson }},
+        };
 
-    function renderCalendar() {
-        const year = currentDate.getFullYear();
-        const month = currentDate.getMonth();
-        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-        document.getElementById('currentMonth').textContent = `${monthNames[month]} ${year}`;
+        const grid = document.getElementById('calendar-grid');
+        const label = document.getElementById('calendar-month');
 
-        const firstDay = new Date(year, month, 1).getDay();
-        const daysInMonth = new Date(year, month + 1, 0).getDate();
-        const today = new Date();
-        const calendarDays = document.getElementById('calendarDays');
-        calendarDays.innerHTML = '';
+        const fmt = d => d.toISOString().split('T')[0];
 
-        // Previous month days
-        const prevMonthDays = new Date(year, month, 0).getDate();
-        for (let i = firstDay - 1; i >= 0; i--) {
-            calendarDays.innerHTML += `<div class="min-h-[100px] bg-gray-800/30 rounded-lg p-2 opacity-40"><div class="text-xs text-gray-600">${prevMonthDays - i}</div></div>`;
-        }
+        function render() {
+            const y = state.date.getFullYear();
+            const m = state.date.getMonth();
 
-        // Current month days
-        for (let day = 1; day <= daysInMonth; day++) {
-            const date = new Date(year, month, day);
-            const dateStr = date.toISOString().split('T')[0];
-            const isToday = date.toDateString() === today.toDateString();
-            const dayOfWeek = date.getDay();
-            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-            const visits = scheduledVisits[dateStr] || [];
-            const visitCount = visits.length;
-
-            calendarDays.innerHTML += `
-                <div onclick="openDayDetail('${dateStr}')"
-                     class="min-h-[100px] bg-gray-800 ${isWeekend ? 'bg-gray-800/50' : ''} rounded-lg p-2 hover:bg-gray-750 transition cursor-pointer group ${isToday ? 'ring-2 ring-blue-500' : ''}">
-                    <div class="text-xs ${isToday ? 'text-blue-400 font-bold' : 'text-gray-400'} mb-1">
-                        ${day}
-                        ${isToday ? '<span class="ml-1 text-[10px] bg-blue-500 text-white px-1.5 py-0.5 rounded-full">Today</span>' : ''}
-                    </div>
-                    ${visitCount > 0 ? `
-                        <div class="space-y-1">
-                            ${visits.slice(0, 3).map(v => `
-                                <div class="text-[10px] ${v.completed ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'} px-2 py-0.5 rounded truncate">
-                                    ${v.customer_name}
-                                </div>
-                            `).join('')}
-                            ${visitCount > 3 ? `<div class="text-[10px] text-gray-500">+${visitCount - 3} more</div>` : ''}
-                        </div>
-                    ` : ''}
-                    <div class="opacity-0 group-hover:opacity-100 transition mt-2">
-                        <button class="text-[10px] text-blue-400">+ Add</button>
-                    </div>
-                </div>
-            `;
-        }
-
-        // Next month days
-        const remainingCells = 42 - (firstDay + daysInMonth);
-        for (let day = 1; day <= remainingCells; day++) {
-            calendarDays.innerHTML += `<div class="min-h-[100px] bg-gray-800/30 rounded-lg p-2 opacity-40"><div class="text-xs text-gray-600">${day}</div></div>`;
-        }
-    }
-
-    function previousMonth() {
-        currentDate.setMonth(currentDate.getMonth() - 1);
-        renderCalendar();
-    }
-
-    function nextMonth() {
-        currentDate.setMonth(currentDate.getMonth() + 1);
-        renderCalendar();
-    }
-
-    function goToToday() {
-        currentDate = new Date();
-        renderCalendar();
-    }
-
-    function openQuickAddModal() {
-        document.getElementById('quickAddModal').classList.remove('hidden');
-    }
-
-    function closeQuickAddModal() {
-        document.getElementById('quickAddModal').classList.add('hidden');
-    }
-
-    async function openDayDetail(dateStr) {
-        selectedDate = dateStr;
-        const date = new Date(dateStr + 'T00:00:00');
-        document.getElementById('dayDetailTitle').textContent = date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-        document.getElementById('dayDetailModal').classList.remove('hidden');
-        const content = document.getElementById('dayDetailContent');
-        content.innerHTML = '<div class="text-center text-gray-500 py-8">Loading...</div>';
-        try {
-            const response = await fetch(`/api/calendar/visits/${dateStr}`);
-            const visits = await response.json();
-            if (visits.length === 0) {
-                content.innerHTML = `
-                    <div class="text-center text-gray-500 py-8">
-                        <svg class="w-16 h-16 mx-auto mb-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                        </svg>
-                        <p>No visits scheduled for this day</p>
-                    </div>
-                `;
-            } else {
-                content.innerHTML = `
-                    <div class="space-y-3">
-                        ${visits.map(v => `
-                            <div class="bg-gray-800 rounded-lg p-4 border border-gray-700 ${v.completed ? 'opacity-60' : ''}">
-                                <div class="flex items-center justify-between mb-2">
-                                    <h4 class="font-medium ${v.completed ? 'line-through' : ''}">${v.name}</h4>
-                                    ${v.balance_cents > 0 ? `<span class="text-xs bg-amber-500/20 text-amber-400 px-2 py-1 rounded-full">Owes $${(v.balance_cents / 100).toFixed(2)}</span>` : ''}
-                                    ${v.completed ? `<span class="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded-full">Completed</span>` : ''}
-                                </div>
-                                ${v.address ? `<p class="text-sm text-gray-400">${v.address}</p>` : ''}
-                                ${v.notes ? `<p class="text-xs text-gray-500 mt-2">${v.notes}</p>` : ''}
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-            }
-        } catch (error) {
-            content.innerHTML = '<div class="text-center text-red-500 py-8">Error loading visits</div>';
-        }
-    }
-
-    function closeDayDetailModal() {
-        document.getElementById('dayDetailModal').classList.add('hidden');
-    }
-
-    function addVisitToDay() {
-        closeDayDetailModal();
-        openQuickAddModal();
-        if (selectedDate) {
-            document.querySelector('input[name="date"]').value = selectedDate;
-        }
-    }
-
-    function addCustomerToToday(customerId) {
-        const form = document.querySelector('#quickAddModal form');
-        form.querySelector('select[name="customer_id"]').value = customerId;
-        openQuickAddModal();
-    }
-
-    async function showNewCustomers() {
-        const response = await fetch('/calendar/new_customers');
-        const customers = await response.json();
-        alert(`New customers needing first visit:\n\n${customers.map(c => `• ${c.name}`).join('\n')}`);
-    }
-
-    async function showOverdue() {
-        const response = await fetch('/calendar/overdue');
-        const customers = await response.json();
-        alert(`Overdue visits (14+ days):\n\n${customers.map(c => `• ${c.name} (${c.days_since || 'Never visited'} days)`).join('\n')}`);
-    }
-
-    // Area Quick Add
-    async function openAreaOptimizer() {
-        const modal = document.getElementById('area-optimizer-modal');
-        if (!modal) return;
-
-        modal.classList.remove('hidden');
-
-        const container = document.getElementById('area-content');
-        container.innerHTML = '<div class="text-center py-16 text-gray-400">Loading areas...</div>';
-
-        try {
-            const response = await fetch('/calendar/customers_by_area');
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-            const groups = await response.json();
-
-            if (Object.keys(groups).length === 0) {
-                container.innerHTML = '<div class="text-center py-16 text-gray-400">No priority customers found right now.</div>';
-                return;
-            }
-
-            let html = '';
-            Object.entries(groups).forEach(([area, customers]) => {
-                html += `
-                    <div class="mb-10">
-                        <div class="flex items-center justify-between mb-4">
-                            <h4 class="text-xl font-semibold">${area} <span class="text-sm text-gray-500">(${customers.length})</span></h4>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            ${customers.map(c => `
-                                <div class="bg-gray-800 rounded-xl p-5 border border-gray-700 hover:bg-gray-750 transition">
-                                    <div class="font-medium text-lg mb-1">${c.name}</div>
-                                    <div class="text-sm text-gray-400 mb-3">${c.address}</div>
-                                    <div class="flex flex-wrap gap-2 mb-4">
-                                        ${c.balance_cents > 0 ? `<span class="text-xs bg-red-500/30 text-red-400 px-2.5 py-1 rounded-full">Owes $${(c.balance_cents / 100).toFixed(2)}</span>` : ''}
-                                        ${c.days_since > 14 ? `<span class="text-xs bg-amber-500/30 text-amber-400 px-2.5 py-1 rounded-full">${c.days_since}+ days</span>` : ''}
-                                    </div>
-                                    <button onclick="quickAddFromArea(${c.id})"
-                                            class="w-full bg-green-600 hover:bg-green-700 py-2.5 rounded-lg font-medium transition">
-                                        + Add to ${selectedDate ? 'selected day' : 'Today'}
-                                    </button>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                `;
+            label.textContent = state.date.toLocaleDateString('en-US', {
+                month: 'long',
+                year: 'numeric'
             });
-            container.innerHTML = html;
-        } catch (err) {
-            console.error(err);
-            container.innerHTML = '<div class="text-center py-16 text-red-400">Failed to load customers by area.<br>Please try again later.</div>';
+
+            grid.innerHTML = '';
+
+            const first = new Date(y, m, 1).getDay();
+            const days = new Date(y, m + 1, 0).getDate();
+            const prevDays = new Date(y, m, 0).getDate();
+            const today = fmt(new Date());
+
+            for (let i = first - 1; i >= 0; i--) {
+                grid.appendChild(dayCell(prevDays - i, true));
+            }
+
+            for (let d = 1; d <= days; d++) {
+                const date = new Date(y, m, d);
+                const key = fmt(date);
+                const list = state.visits[key] || [];
+                grid.appendChild(dayCell(d, false, key, list, key === today));
+            }
+
+            while (grid.children.length < 42) {
+                grid.appendChild(dayCell(grid.children.length, true));
+            }
         }
-    }
 
-    function quickAddFromArea(customerId) {
-        const modal = document.getElementById('quickAddModal');
-        if (!modal) return;
+        function dayCell(day, muted, key = null, visits = [], today = false) {
+            const el = document.createElement('div');
+            el.className = `
+                min-h-[100px] rounded-lg p-2 cursor-pointer transition
+                ${muted ? 'bg-gray-800/30 opacity-40' : 'bg-gray-800 hover:bg-gray-750'}
+                ${today ? 'ring-2 ring-blue-500' : ''}
+            `;
 
-        const form = modal.querySelector('form');
-        if (!form) return;
+            el.innerHTML = `
+                <div class="text-xs ${today ? 'text-blue-400 font-bold' : 'text-gray-400'}">
+                    ${day}
+                    ${today ? '<span class="ml-1 text-[10px] bg-blue-500 text-white px-1.5 py-0.5 rounded">Today</span>' : ''}
+                </div>
+                ${visits.slice(0, 3).map(v => `
+                    <div class="mt-1 text-[10px] px-2 py-0.5 rounded
+                        ${v.completed ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'} truncate">
+                        ${v.customer_name}
+                    </div>
+                `).join('')}
+                ${visits.length > 3 ? `<div class="text-[10px] text-gray-500 mt-1">+${visits.length - 3} more</div>` : ''}
+            `;
 
-        form.querySelector('select[name="customer_id"]').value = customerId;
-        form.querySelector('input[name="date"]').value = selectedDate || new Date().toISOString().split('T')[0];
+            if (!muted && key) {
+                el.addEventListener('click', () => openDay(key));
+            }
 
-        const notes = form.querySelector('textarea[name="notes"]');
-        if (notes) notes.value = (notes.value ? notes.value + '\n' : '') + 'Added from Area Quick Add';
-
-        modal.classList.remove('hidden');
-    }
-
-    // Close modals on escape or outside click
-    document.addEventListener('keydown', e => {
-        if (e.key === 'Escape') {
-            document.getElementById('quickAddModal')?.classList.add('hidden');
-            document.getElementById('dayDetailModal')?.classList.add('hidden');
-            document.getElementById('area-optimizer-modal')?.classList.add('hidden');
+            return el;
         }
-    });
 
-    document.getElementById('quickAddModal')?.addEventListener('click', e => {
-        if (e.target.id === 'quickAddModal') e.target.classList.add('hidden');
-    });
+        async function openDay(dateStr) {
+            state.selectedDate = dateStr;
+            const modal = document.getElementById('dayDetailModal');
+            const title = document.getElementById('dayDetailTitle');
+            const body = document.getElementById('dayDetailContent');
 
-    document.getElementById('dayDetailModal')?.addEventListener('click', e => {
-        if (e.target.id === 'dayDetailModal') e.target.classList.add('hidden');
-    });
+            title.textContent = new Date(dateStr).toLocaleDateString('en-US', {
+                weekday: 'long',
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric'
+            });
 
-    document.getElementById('area-optimizer-modal')?.addEventListener('click', e => {
-        if (e.target.id === 'area-optimizer-modal') e.target.classList.add('hidden');
-    });
+            modal.classList.remove('hidden');
+            body.innerHTML = '<div class="text-center py-8 text-gray-500">Loading…</div>';
 
-    // Initial render
-    renderCalendar();
+            try {
+                const res = await fetch(`/api/calendar/visits/${dateStr}`);
+                const data = await res.json();
+
+                body.innerHTML = data.length
+                    ? data.map(v => `
+                        <div class="bg-gray-800 rounded-lg p-4 border border-gray-700 mb-2 ${v.completed ? 'opacity-60' : ''}">
+                            <div class="font-medium">${v.name}</div>
+                            ${v.address ? `<div class="text-sm text-gray-400">${v.address}</div>` : ''}
+                        </div>
+                    `).join('')
+                    : '<div class="text-center py-12 text-gray-500">No visits</div>';
+            } catch {
+                body.innerHTML = '<div class="text-center py-8 text-red-400">Failed to load</div>';
+            }
+        }
+
+        document.addEventListener('click', e => {
+            const a = e.target.closest('[data-action]');
+            if (!a) return;
+
+            if (a.dataset.action === 'prev-month') state.date.setMonth(state.date.getMonth() - 1);
+            if (a.dataset.action === 'next-month') state.date.setMonth(state.date.getMonth() + 1);
+            if (a.dataset.action === 'today') state.date = new Date();
+            if (a.dataset.action === 'quick-add') document.getElementById('quickAddModal').classList.remove('hidden');
+
+            render();
+        });
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal').forEach(m => m.classList.add('hidden'));
+            }
+        });
+
+        render();
+    })();
 </script>
 {% endblock %}

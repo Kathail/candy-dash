@@ -1,14 +1,10 @@
-# routes/customers.py
 from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
 
-from .db import get_conn
 from .store import (
     create_customer,
     delete_customer,
     get_customer,
     get_customers,
-    update_customer_balance,
-    update_customer_notes,
 )
 
 customers_bp = Blueprint("customers", __name__)
@@ -54,7 +50,7 @@ def customer_add():
 
     try:
         balance_cents = int(float(balance) * 100)
-    except ValueError:
+    except (ValueError, TypeError):
         balance_cents = 0
 
     create_customer(name, phone, address, balance_cents, notes)
@@ -63,14 +59,14 @@ def customer_add():
 
 
 @customers_bp.post("/customers/delete/<int:customer_id>")
-def customer_delete(customer_id):
+def customer_delete(customer_id: int):
     delete_customer(customer_id)
     flash("Customer deleted", "success")
     return redirect(url_for("customers.customers"))
 
 
 @customers_bp.post("/customers/edit/<int:customer_id>")
-def customer_edit(customer_id):
+def customer_edit(customer_id: int):
     customer = get_customer(customer_id)
     if not customer:
         flash("Customer not found", "error")
@@ -84,31 +80,36 @@ def customer_edit(customer_id):
 
     try:
         balance_cents = int(float(balance) * 100)
-    except ValueError:
+    except (ValueError, TypeError):
         balance_cents = customer["balance_cents"]
 
-    # Build updates only for changed fields
     updates = []
     params = []
 
     if name != customer["name"]:
         updates.append("name = %s")
         params.append(name)
+
     if phone != (customer["phone"] or ""):
         updates.append("phone = %s")
         params.append(phone or None)
+
     if address != (customer["address"] or ""):
         updates.append("address = %s")
         params.append(address or None)
+
     if notes != (customer["notes"] or ""):
         updates.append("notes = %s")
         params.append(notes or None)
+
     if balance_cents != customer["balance_cents"]:
         updates.append("balance_cents = %s")
         params.append(balance_cents)
 
     if updates:
         params.append(customer_id)
+        from .db import get_conn
+
         with get_conn() as conn:
             with conn.cursor() as cur:
                 cur.execute(

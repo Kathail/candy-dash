@@ -1,383 +1,270 @@
 {% extends "base.html" %} {% block title %}Balances{% endblock %} {% block
 content %}
 
-<div class="max-w-6xl mx-auto">
+<div class="max-w-6xl mx-auto space-y-8">
     <!-- Header -->
-    <header class="mb-8">
-        <div class="flex items-center justify-between mb-2">
-            <div>
-                <h2 class="text-3xl font-bold">Balances</h2>
-                <p class="text-gray-400 mt-1">
-                    Track outstanding balances and payment history
-                </p>
-            </div>
-            <div class="flex gap-3">
-                <button
-                    onclick="exportBalances()"
-                    class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2"
-                >
-                    <svg
-                        class="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                        />
-                    </svg>
-                    Export
-                </button>
-                <button
-                    onclick="openRecordPaymentModal()"
-                    class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2"
-                >
-                    <svg
-                        class="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M12 4v16m8-8H4"
-                        />
-                    </svg>
-                    Record Payment
-                </button>
-            </div>
+    <header class="flex items-start justify-between">
+        <div>
+            <h1 class="text-3xl font-bold">Balances</h1>
+            <p class="text-gray-400 mt-1">
+                Track outstanding balances and payment history
+            </p>
+        </div>
+
+        <div class="flex gap-3">
+            <button type="button" data-action="export" class="btn-secondary">
+                Export
+            </button>
+
+            <button
+                type="button"
+                data-action="record-payment"
+                class="btn-primary"
+            >
+                Record Payment
+            </button>
         </div>
     </header>
 
     <!-- Summary Cards -->
-    <section class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div
-            class="bg-gradient-to-br from-red-600 to-red-700 rounded-2xl p-6 shadow-lg"
-        >
-            <div class="flex items-center justify-between mb-2">
-                <h3 class="text-white/80 text-sm font-medium">
-                    Total Outstanding
-                </h3>
-                <svg
-                    class="w-5 h-5 text-white/60"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                </svg>
-            </div>
-            <p class="text-4xl font-bold text-white">
-                ${{ (customers | selectattr('balance_cents', 'gt', 0) |
-                sum(attribute='balance_cents') / 100) | round(2) }}
+    {% set owing_customers = customers | selectattr('balance_cents', 'gt', 0) |
+    list %} {% set total_outstanding = owing_customers |
+    sum(attribute='balance_cents') %}
+
+    <section class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <!-- Total Outstanding -->
+        <div class="card-highlight-red">
+            <p class="card-label">Total Outstanding</p>
+            <p class="card-value">
+                ${{ (total_outstanding / 100) | round(2) }}
             </p>
-            <p class="text-white/70 text-sm mt-1">
-                Across {{ customers | selectattr('balance_cents', 'gt', 0) |
-                list | length }} customers
+            <p class="card-subtext">{{ owing_customers | length }} customers</p>
+        </div>
+
+        <!-- Overdue -->
+        <div class="card-muted">
+            <p class="card-label">Overdue (30+ days)</p>
+            <p class="card-value text-amber-400">$0.00</p>
+            <p class="card-subtext">0 customers</p>
+        </div>
+
+        <!-- Collected -->
+        <div class="card-muted">
+            <p class="card-label">Collected This Week</p>
+            <p class="card-value text-green-400">$0.00</p>
+            <p class="card-subtext">0 payments</p>
+        </div>
+
+        <!-- Average -->
+        <div class="card-muted">
+            <p class="card-label">Average Balance</p>
+            <p class="card-value text-blue-400">
+                {% if owing_customers %} ${{ ((total_outstanding /
+                owing_customers|length) / 100) | round(2) }} {% else %} $0.00 {%
+                endif %}
             </p>
+            <p class="card-subtext">per customer</p>
         </div>
+    </section>
 
-        <div
-            class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-lg"
-        >
-            <div class="flex items-center justify-between mb-2">
-                <h3 class="text-gray-400 text-sm font-medium">
-                    Overdue (30+ days)
-                </h3>
-                <svg
-                    class="w-5 h-5 text-amber-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                    />
-                </svg>
-            </div>
-            <p class="text-3xl font-bold text-amber-400">$0.00</p>
-            <p class="text-gray-500 text-sm mt-1">0 customers</p>
+    <!-- Controls -->
+    <section class="flex flex-wrap gap-4 items-center">
+        <input
+            id="balance-search"
+            type="search"
+            placeholder="Search customers…"
+            class="input w-full md:w-72"
+        />
+
+        <div class="flex gap-2">
+            <button class="filter-tab active" data-filter="all">All</button>
+            <button class="filter-tab" data-filter="high">High</button>
+            <button class="filter-tab" data-filter="overdue">Overdue</button>
+            <button class="filter-tab" data-filter="recent">Recent</button>
         </div>
+    </section>
 
-        <div
-            class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-lg"
-        >
-            <div class="flex items-center justify-between mb-2">
-                <h3 class="text-gray-400 text-sm font-medium">
-                    Collected This Week
-                </h3>
-                <svg
-                    class="w-5 h-5 text-green-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+    <!-- Table -->
+    <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-800 text-gray-300">
+                <tr>
+                    <th class="sortable" data-sort="name">Customer</th>
+                    <th class="sortable text-right" data-sort="balance">
+                        Balance
+                    </th>
+                    <th class="sortable" data-sort="lastVisit">Last Visit</th>
+                    <th class="text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="balances-body">
+                {% for c in customers %}
+                <tr
+                    class="balance-row"
+                    data-name="{{ c.name|lower }}"
+                    data-balance="{{ c.balance_cents }}"
+                    data-last-visit="{{ c.last_visit or '1900-01-01' }}"
                 >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    <td>{{ c.name }}</td>
+                    <td class="text-right">
+                        ${{ (c.balance_cents / 100) | round(2) }}
+                    </td>
+                    <td class="text-gray-400">{{ c.last_visit or '—' }}</td>
+                    <td class="text-right">
+                        {% if c.balance_cents > 0 %}
+                        <button
+                            class="text-green-400 hover:underline"
+                            data-action="pay"
+                            data-id="{{ c.id }}"
+                            data-name="{{ c.name }}"
+                            data-balance="{{ c.balance_cents }}"
+                        >
+                            Record Payment
+                        </button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Payment Modal -->
+<div id="payment-modal" class="modal hidden">
+    <div class="modal-card">
+        <h3 class="text-xl font-bold mb-4">Record Payment</h3>
+
+        <form id="payment-form">
+            <input type="hidden" name="customer_id" />
+
+            <div class="space-y-4">
+                <div>
+                    <p class="text-sm text-gray-400">Customer</p>
+                    <p id="payment-name" class="font-medium"></p>
+                </div>
+
+                <div>
+                    <label class="label">Amount</label>
+                    <input
+                        type="number"
+                        step="0.01"
+                        name="amount"
+                        class="input"
+                        required
                     />
-                </svg>
-            </div>
-            <p class="text-3xl font-bold text-green-400">$0.00</p>
-            <p class="text-gray-500 text-sm mt-1">0 payments</p>
-        </div>
+                </div>
 
-        <div
-            class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-lg"
-        >
-            <div class="flex items-center justify-between mb-2">
-                <h3 class="text-gray-400 text-sm font-medium">
-                    Average Balance
-                </h3>
-                <svg
-                    class="w-5 h-5 text-blue-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                    />
-                </svg>
-            </div>
-            {% set owing_customers = customers | selectattr('balance_cents',
-            'gt', 0) | list %}
-            <p class="text-3xl font-bold text-blue-400">
-                {% if owing_customers %} ${{ ((owin...(truncated 18728 characters)...        >
-                    <option value="cash">Cash</option>
-                    <option value="check">Check</option>
-                    <option value="card">Card</option>
-                    <option value="other">Other</option>
-                </select>
-            </div>
+                <div>
+                    <label class="label">Method</label>
+                    <select name="method" class="input">
+                        <option>Cash</option>
+                        <option>Check</option>
+                        <option>Card</option>
+                        <option>Other</option>
+                    </select>
+                </div>
 
-            <div>
-                <label class="block text-sm font-medium text-gray-300 mb-2"
-                    >Notes (optional)</label
-                >
-                <textarea
-                    name="notes"
-                    rows="2"
-                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
-                    placeholder="Add any notes about this payment..."
-                ></textarea>
-            </div>
+                <div>
+                    <label class="label">Notes</label>
+                    <textarea name="notes" rows="2" class="input"></textarea>
+                </div>
 
-            <div class="flex gap-3 pt-2">
-                <button
-                    type="button"
-                    onclick="closePaymentModal()"
-                    class="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-3 rounded-lg font-medium transition"
-                >
-                    Cancel
-                </button>
-                <button
-                    type="submit"
-                    class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-medium transition"
-                >
-                    Record Payment
-                </button>
+                <div class="flex gap-3 pt-2">
+                    <button
+                        type="button"
+                        class="btn-secondary"
+                        data-action="close"
+                    >
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn-primary">Record</button>
+                </div>
             </div>
         </form>
     </div>
 </div>
 
-<style>
-    .filter-tab {
-        background: transparent;
-        color: #9ca3af;
-        border: 1px solid transparent;
-    }
-
-    .filter-tab:hover {
-        color: #e5e7eb;
-        background: #374151;
-    }
-
-    .filter-tab.active {
-        background: #3b82f6;
-        color: white;
-        border-color: #3b82f6;
-    }
-
-    .sort-icon {
-        opacity: 0.3;
-        font-size: 0.8em;
-        margin-left: 0.25rem;
-    }
-
-    .sortable.asc .sort-icon::before {
-        content: "↑";
-        opacity: 1;
-    }
-
-    .sortable.desc .sort-icon::before {
-        content: "↓";
-        opacity: 1;
-    }
-</style>
-
+{% endblock %} {% block scripts %}
 <script>
-    let currentFilter = "all";
-    let currentSort = { column: null, direction: "asc" };
+    (() => {
+        const rows = [...document.querySelectorAll(".balance-row")];
+        const search = document.getElementById("balance-search");
+        const modal = document.getElementById("payment-modal");
+        const form = document.getElementById("payment-form");
 
-    function openPaymentModal(customerId, customerName, balanceCents) {
-        document.getElementById("paymentCustomerId").value = customerId;
-        document.getElementById("paymentCustomerName").textContent =
-            customerName;
-        document.getElementById("paymentCurrentBalance").textContent =
-            "$" + (balanceCents / 100).toFixed(2);
-        document.getElementById("paymentAmount").value = (
-            balanceCents / 100
-        ).toFixed(2);
-        document.getElementById("paymentModal").classList.remove("hidden");
-        document.getElementById("paymentAmount").focus();
-    }
+        let currentFilter = "all";
+        let sort = { key: null, dir: 1 };
 
-    function closePaymentModal() {
-        document.getElementById("paymentModal").classList.add("hidden");
-    }
+        const daysSince = (d) =>
+            Math.floor((Date.now() - new Date(d)) / 86400000);
 
-    function openRecordPaymentModal() {
-        alert("Select a customer from the list to record a payment");
-    }
+        function applyFilters() {
+            const q = search.value.toLowerCase();
 
-    function exportBalances() {
-        alert("Export functionality coming soon! Will export to CSV.");
-    }
+            rows.forEach((r) => {
+                const bal = +r.dataset.balance;
+                const days = daysSince(r.dataset.lastVisit);
+                let show = r.dataset.name.includes(q);
 
-    function filterBalances(filter) {
-        currentFilter = filter;
+                if (currentFilter === "high") show &&= bal >= 10000;
+                if (currentFilter === "overdue") show &&= days >= 30;
+                if (currentFilter === "recent") show &&= days <= 7;
 
-        // Update active tab
+                r.style.display = show ? "" : "none";
+            });
+        }
+
+        document.querySelectorAll(".filter-tab").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                document
+                    .querySelector(".filter-tab.active")
+                    ?.classList.remove("active");
+                btn.classList.add("active");
+                currentFilter = btn.dataset.filter;
+                applyFilters();
+            });
+        });
+
+        search.addEventListener("input", applyFilters);
+
+        document.querySelectorAll("[data-sort]").forEach((th) => {
+            th.addEventListener("click", () => {
+                const key = th.dataset.sort;
+                sort.dir = sort.key === key ? -sort.dir : 1;
+                sort.key = key;
+
+                rows.sort((a, b) => {
+                    const A = a.dataset[key];
+                    const B = b.dataset[key];
+                    return A > B ? sort.dir : -sort.dir;
+                });
+
+                rows.forEach((r) => r.parentNode.appendChild(r));
+            });
+        });
+
+        document.querySelectorAll('[data-action="pay"]').forEach((btn) => {
+            btn.addEventListener("click", () => {
+                form.customer_id.value = btn.dataset.id;
+                document.getElementById("payment-name").textContent =
+                    btn.dataset.name;
+                form.amount.value = (btn.dataset.balance / 100).toFixed(2);
+                modal.classList.remove("hidden");
+            });
+        });
+
         document
-            .querySelectorAll(".filter-tab")
-            .forEach((tab) => tab.classList.remove("active"));
-        event.target.classList.add("active");
+            .querySelectorAll('[data-action="close"]')
+            .forEach((btn) =>
+                btn.addEventListener("click", () =>
+                    modal.classList.add("hidden"),
+                ),
+            );
 
-        const rows = document.querySelectorAll(".balance-row");
-        rows.forEach((row) => {
-            const balance = parseInt(row.dataset.balance);
-            const lastVisit = row.dataset.lastVisit;
-            const daysSince =
-                lastVisit !== "1900-01-01"
-                    ? Math.floor(
-                          (new Date() - new Date(lastVisit)) /
-                              (1000 * 60 * 60 * 24),
-                      )
-                    : 9999;
-
-            let show = true;
-
-            switch (filter) {
-                case "high":
-                    show = balance >= 10000;
-                    break;
-                case "overdue":
-                    show = daysSince >= 30;
-                    break;
-                case "recent":
-                    show = daysSince <= 7;
-                    break;
-            }
-
-            row.style.display = show ? "" : "none";
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") modal.classList.add("hidden");
         });
-    }
-
-    function searchBalances() {
-        const query = document
-            .getElementById("balanceSearch")
-            .value.toLowerCase();
-        const rows = document.querySelectorAll(".balance-row");
-
-        rows.forEach((row) => {
-            const text = row.textContent.toLowerCase();
-            row.style.display = text.includes(query) ? "" : "none";
-        });
-    }
-
-    function sortTable(column) {
-        const tbody = document.getElementById("balancesTableBody");
-        const rows = Array.from(tbody.querySelectorAll(".balance-row"));
-
-        // Toggle direction
-        if (currentSort.column === column) {
-            currentSort.direction =
-                currentSort.direction === "asc" ? "desc" : "asc";
-        } else {
-            currentSort.column = column;
-            currentSort.direction = "asc";
-        }
-
-        // Update sort icons
-        document.querySelectorAll(".sortable").forEach((th) => {
-            th.classList.remove("asc", "desc");
-        });
-        event.target.closest(".sortable").classList.add(currentSort.direction);
-
-        // Sort rows
-        rows.sort((a, b) => {
-            let valA, valB;
-
-            switch (column) {
-                case "name":
-                    valA = a.dataset.name.toLowerCase();
-                    valB = b.dataset.name.toLowerCase();
-                    break;
-                case "balance":
-                    valA = parseInt(a.dataset.balance);
-                    valB = parseInt(b.dataset.balance);
-                    break;
-                case "lastVisit":
-                    valA = a.dataset.lastVisit;
-                    valB = b.dataset.lastVisit;
-                    break;
-            }
-
-            if (typeof valA === "number") {
-                return currentSort.direction === "asc"
-                    ? valA - valB
-                    : valB - valA;
-            }
-
-            return currentSort.direction === "asc"
-                ? valA.localeCompare(valB)
-                : valB.localeCompare(valA);
-        });
-
-        rows.forEach((row) => tbody.appendChild(row));
-    }
-
-    // Close modal on escape
-    document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") {
-            closePaymentModal();
-        }
-    });
-
-    // Close modal on outside click
-    document.getElementById("paymentModal")?.addEventListener("click", (e) => {
-        if (e.target.id === "paymentModal") closePaymentModal();
-    });
+    })();
 </script>
-
 {% endblock %}

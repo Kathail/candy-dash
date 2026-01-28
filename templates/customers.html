@@ -1,250 +1,143 @@
 {% extends "base.html" %} {% block title %}Customers{% endblock %} {% block
 content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
     <!-- Header -->
-    <header class="mb-8">
-        <div class="flex items-center justify-between mb-2">
-            <div>
-                <h2 class="text-3xl font-bold">Customers</h2>
-                <p class="text-gray-400 mt-1">
-                    Manage your customer list and balances
-                </p>
-            </div>
-            <button
-                onclick="
-                    document
-                        .getElementById('addForm')
-                        .scrollIntoView({ behavior: 'smooth' })
-                "
-                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2"
-            >
-                <svg
-                    class="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M12 4v16m8-8H4"
-                    />
-                </svg>
-                Add Customer
-            </button>
+    <header class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold">Customers</h1>
+            <p class="text-gray-400 mt-1">Manage customers and balances</p>
         </div>
+
+        <button type="button" data-action="scroll-add" class="btn-primary">
+            + Add Customer
+        </button>
     </header>
 
     <!-- Stats -->
-    <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
-            <div class="flex items-center justify-between mb-2">
-                <p
-                    class="text-sm text-gray-400 uppercase tracking-wide font-medium"
-                >
-                    Total Customers
-                </p>
-                <svg
-                    class="w-5 h-5 text-blue-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                    />
-                </svg>
-            </div>
-            <p class="text-4xl font-bold">{{ customers|length }}</p>
+    {% set owing = customers | selectattr('balance_cents', 'gt', 0) | list %} {%
+    set total_owed = owing | sum(attribute='balance_cents') %}
+
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="card-muted">
+            <p class="card-label">Total Customers</p>
+            <p class="card-value">{{ customers | length }}</p>
         </div>
 
-        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
-            <div class="flex items-center justify-between mb-2">
-                <p
-                    class="text-sm text-gray-400 uppercase tracking-wide font-medium"
-                >
-                    Total Owed
-                </p>
-                <svg
-                    class="w-5 h-5 text-red-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                </svg>
-            </div>
-            <p class="text-4xl font-bold text-red-400">
-                ${{ (customers | sum(attribute='balance_cents') / 100) |
-                round(2) }}
+        <div class="card-muted">
+            <p class="card-label">Total Owed</p>
+            <p class="card-value text-red-400">
+                ${{ (total_owed / 100) | round(2) }}
             </p>
         </div>
 
-        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
-            <div class="flex items-center justify-between mb-2">
-                <p
-                    class="text-sm text-gray-400 uppercase tracking-wide font-medium"
-                >
-                    Customers Owing
-                </p>
-                <svg
-                    class="w-5 h-5 text-amber-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                    />
-                </svg>
-            </div>
-            <p class="text-4xl font-bold text-amber-400">
-                {{ customers | selectattr('balance_cents', 'gt', 0) | list |
-                length }}
-            </p>
+        <div class="card-muted">
+            <p class="card-label">Customers Owing</p>
+            <p class="card-value text-amber-400">{{ owing | length }}</p>
         </div>
     </section>
 
-    <!-- Customer List -->
-    <div
-        class="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden shadow-lg mb-8"
+    <!-- Customer Table -->
+    <section
+        class="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden"
     >
-        <div
-            class="p-6 border-b border-gray-800 flex items-center justify-between flex-wrap gap-4"
+        <header
+            class="p-6 border-b border-gray-800 flex items-center justify-between gap-4 flex-wrap"
         >
-            <h3 class="text-xl font-semibold">
-                Customer List ({{ customers|length }})
-            </h3>
+            <h2 class="text-xl font-semibold">
+                Customer List ({{ customers | length }})
+            </h2>
+
             <input
-                type="text"
-                id="searchInput"
-                placeholder="Search customers..."
-                class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-64"
+                id="customer-search"
+                type="search"
+                placeholder="Search customers…"
+                class="input w-full sm:w-64"
             />
-        </div>
+        </header>
 
         {% if customers %}
         <div class="overflow-x-auto">
-            <table class="w-full card-table" id="customerTable">
-                <thead class="bg-gray-950">
+            <table class="w-full text-sm" id="customer-table">
+                <thead class="bg-gray-950 text-gray-400 uppercase text-xs">
                     <tr>
-                        <th
-                            class="px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-blue-400 sortable"
-                            data-sort="name"
-                        >
-                            Name <span class="sort-indicator">⇅</span>
+                        <th class="sortable px-6 py-4" data-key="name">Name</th>
+                        <th class="sortable px-6 py-4" data-key="phone">
+                            Phone
                         </th>
+                        <th class="px-6 py-4">Address</th>
                         <th
-                            class="px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-blue-400 sortable"
-                            data-sort="phone"
+                            class="sortable px-6 py-4 text-right"
+                            data-key="balance"
                         >
-                            Phone <span class="sort-indicator">⇅</span>
+                            Balance
                         </th>
-                        <th
-                            class="px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider"
-                        >
-                            Address
+                        <th class="sortable px-6 py-4" data-key="lastVisit">
+                            Last Visit
                         </th>
-                        <th
-                            class="px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-blue-400 sortable"
-                            data-sort="balance"
-                        >
-                            Balance <span class="sort-indicator">⇅</span>
-                        </th>
-                        <th
-                            class="px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-blue-400 sortable"
-                            data-sort="last_visit"
-                        >
-                            Last Visit <span class="sort-indicator">⇅</span>
-                        </th>
-                        <th
-                            class="px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider text-right"
-                        >
-                            Actions
-                        </th>
+                        <th class="px-6 py-4 text-right">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-800">
-                    {% for customer in customers %}
+
+                <tbody id="customer-body" class="divide-y divide-gray-800">
+                    {% for c in customers %}
                     <tr
-                        data-name="{{ customer.name }}"
-                        data-phone="{{ customer.phone or '' }}"
-                        data-balance="{{ (customer.balance_cents / 100) | round(2) }}"
-                        data-last-visit="{{ customer.last_visit_at or '1900-01-01' }}"
+                        class="customer-row"
+                        data-name="{{ c.name | lower }}"
+                        data-phone="{{ c.phone or '' }}"
+                        data-balance="{{ c.balance_cents }}"
+                        data-lastvisit="{{ c.last_visit_at.isoformat() if c.last_visit_at else '1900-01-01' }}"
                     >
-                        <td
-                            class="px-6 py-4 whitespace-nowrap font-medium"
-                            data-label="Name"
-                        >
+                        <td class="px-6 py-4 font-medium">
                             <a
-                                href="{{ url_for('customers.customer_detail', customer_id=customer.id) }}"
+                                href="{{ url_for('customers.customer_detail', customer_id=c.id) }}"
                                 class="hover:text-blue-400"
-                                >{{ customer.name }}</a
                             >
+                                {{ c.name }}
+                            </a>
                         </td>
-                        <td
-                            class="px-6 py-4 whitespace-nowrap text-gray-400"
-                            data-label="Phone"
-                        >
-                            {{ customer.phone or '-' }}
+
+                        <td class="px-6 py-4 text-gray-400">
+                            {{ c.phone or '—' }}
                         </td>
-                        <td
-                            class="px-6 py-4 text-gray-400"
-                            data-label="Address"
-                        >
-                            {{ customer.address or '-' }}
+
+                        <td class="px-6 py-4 text-gray-400">
+                            {{ c.address or '—' }}
                         </td>
-                        <td class="px-6 py-4" data-label="Balance">
+
+                        <td class="px-6 py-4 text-right">
                             <span
-                                class="{% if customer.balance_cents > 0 %}text-red-400 font-medium{% else %}text-gray-400{% endif %}"
-                                >${{ (customer.balance_cents / 100) | round(2)
-                                }}</span
+                                class="{% if c.balance_cents > 0 %}text-red-400 font-medium{% else %}text-gray-400{% endif %}"
                             >
+                                ${{ (c.balance_cents / 100) | round(2) }}
+                            </span>
                         </td>
-                        <td
-                            class="px-6 py-4 text-gray-400"
-                            data-label="Last Visit"
-                        >
-                            {% if customer.last_visit_at %} {{
-                            customer.last_visit_at.strftime('%b %d, %Y') }} {%
-                            else %} Never visited {% endif %}
+
+                        <td class="px-6 py-4 text-gray-400">
+                            {% if c.last_visit_at %} {{
+                            c.last_visit_at.strftime('%b %d, %Y') }} {% else %}
+                            Never {% endif %}
                         </td>
-                        <td
-                            class="px-6 py-4 text-right space-x-2"
-                            data-label="Actions"
-                        >
+
+                        <td class="px-6 py-4 text-right space-x-2">
                             <button
-                                class="edit-button bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm transition"
-                                data-id="{{ customer.id }}"
-                                data-name="{{ customer.name }}"
-                                data-phone="{{ customer.phone or '' }}"
-                                data-address="{{ customer.address or '' }}"
-                                data-balance="{{ (customer.balance_cents / 100) | round(2) }}"
+                                class="btn-secondary btn-edit"
+                                data-id="{{ c.id }}"
+                                data-name="{{ c.name }}"
+                                data-phone="{{ c.phone or '' }}"
+                                data-address="{{ c.address or '' }}"
+                                data-balance="{{ (c.balance_cents / 100) | round(2) }}"
                             >
                                 Edit
                             </button>
+
                             <form
                                 method="post"
-                                action="{{ url_for('customers.customer_delete', customer_id=customer.id) }}"
+                                action="{{ url_for('customers.customer_delete', customer_id=c.id) }}"
                                 class="inline"
-                                onsubmit="return confirm('Delete {{ customer.name }}?');"
+                                onsubmit="return confirm('Delete {{ c.name }}?');"
                             >
-                                <button
-                                    type="submit"
-                                    class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm transition"
-                                >
+                                <button type="submit" class="btn-danger">
                                     Delete
                                 </button>
                             </form>
@@ -255,283 +148,181 @@ content %}
             </table>
         </div>
         {% else %}
-        <div class="p-12 text-center text-gray-500">
-            <svg
-                class="w-16 h-16 mx-auto mb-4 text-gray-700"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-            >
-                <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                />
-            </svg>
-            <p>No customers yet. Add your first customer below!</p>
-        </div>
+        <div class="p-12 text-center text-gray-500">No customers yet.</div>
         {% endif %}
-    </div>
+    </section>
 
-    <!-- Add Form -->
-    <div
-        id="addForm"
-        class="bg-gray-900 border border-gray-800 rounded-2xl p-8 shadow-lg"
+    <!-- Add Customer -->
+    <section
+        id="add-form"
+        class="bg-gray-900 border border-gray-800 rounded-2xl p-8"
     >
-        <h3 class="text-xl font-semibold mb-6">Add New Customer</h3>
+        <h2 class="text-xl font-semibold mb-6">Add New Customer</h2>
+
         <form
             method="post"
             action="{{ url_for('customers.customer_add') }}"
             class="grid grid-cols-1 md:grid-cols-2 gap-6"
         >
             <div>
-                <label class="block text-sm font-medium text-gray-300 mb-2"
-                    >Name *</label
-                >
-                <input
-                    type="text"
-                    name="name"
-                    required
-                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="John Doe"
-                />
+                <label class="label">Name *</label>
+                <input name="name" required class="input" />
             </div>
+
             <div>
-                <label class="block text-sm font-medium text-gray-300 mb-2"
-                    >Phone</label
-                >
-                <input
-                    type="tel"
-                    name="phone"
-                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="(555) 123-4567"
-                />
+                <label class="label">Phone</label>
+                <input name="phone" class="input" />
             </div>
+
             <div class="md:col-span-2">
-                <label class="block text-sm font-medium text-gray-300 mb-2"
-                    >Address</label
-                >
-                <input
-                    type="text"
-                    name="address"
-                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="123 Main St, Chicago, IL 60601"
-                />
+                <label class="label">Address</label>
+                <input name="address" class="input" />
             </div>
+
             <div>
-                <label class="block text-sm font-medium text-gray-300 mb-2"
-                    >Starting Balance ($)</label
-                >
+                <label class="label">Starting Balance ($)</label>
                 <input
-                    type="number"
                     name="balance"
+                    type="number"
                     step="0.01"
-                    min="0"
                     value="0.00"
-                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    class="input"
                 />
-                <p class="text-xs text-gray-500 mt-1">
-                    Enter as dollars (e.g. 45.50)
-                </p>
             </div>
-            <div class="md:col-span-2 flex justify-end">
-                <button
-                    type="submit"
-                    class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium transition"
-                >
-                    Add Customer
-                </button>
+
+            <div class="md:col-span-2 text-right">
+                <button class="btn-primary px-8 py-3">Add Customer</button>
             </div>
         </form>
-    </div>
+    </section>
 </div>
 
 <!-- Edit Modal -->
-<div
-    id="editModal"
-    class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 hidden"
->
-    <div
-        class="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-md p-6 relative"
-    >
-        <button
-            class="close-modal absolute top-4 right-4 text-gray-400 hover:text-white text-2xl transition"
-        >
-            &times;
-        </button>
+<div id="edit-modal" class="modal hidden">
+    <div class="modal-card max-w-md">
         <h3 class="text-xl font-semibold mb-6">Edit Customer</h3>
-        <form id="editForm" method="post">
-            <input type="hidden" id="editId" name="customer_id" />
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-1"
-                        >Name</label
-                    >
-                    <input
-                        type="text"
-                        id="editName"
-                        name="name"
-                        required
-                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-1"
-                        >Phone</label
-                    >
-                    <input
-                        type="tel"
-                        id="editPhone"
-                        name="phone"
-                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-1"
-                        >Address</label
-                    >
-                    <input
-                        type="text"
-                        id="editAddress"
-                        name="address"
-                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-1"
-                        >Balance ($)</label
-                    >
-                    <input
-                        type="number"
-                        id="editBalance"
-                        name="balance"
-                        step="0.01"
-                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold text-lg"
-                    />
-                </div>
+
+        <form id="edit-form" method="post" class="space-y-4">
+            <input type="hidden" name="customer_id" />
+
+            <div>
+                <label class="label">Name</label>
+                <input name="name" class="input" required />
+            </div>
+
+            <div>
+                <label class="label">Phone</label>
+                <input name="phone" class="input" />
+            </div>
+
+            <div>
+                <label class="label">Address</label>
+                <input name="address" class="input" />
+            </div>
+
+            <div>
+                <label class="label">Balance ($)</label>
+                <input
+                    name="balance"
+                    type="number"
+                    step="0.01"
+                    class="input font-semibold"
+                />
+            </div>
+
+            <div class="flex gap-3 pt-4">
                 <button
-                    type="submit"
-                    class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium transition"
+                    type="button"
+                    data-action="close"
+                    class="btn-secondary flex-1"
                 >
-                    Save Changes
+                    Cancel
                 </button>
+                <button class="btn-primary flex-1">Save</button>
             </div>
         </form>
     </div>
 </div>
 
-<style>
-    .sort-indicator {
-        opacity: 0.3;
-        font-size: 0.8em;
-        margin-left: 0.25rem;
-    }
-    .sortable.asc .sort-indicator::before {
-        content: "↑";
-        opacity: 1;
-    }
-    .sortable.desc .sort-indicator::before {
-        content: "↓";
-        opacity: 1;
-    }
-    .sortable.asc .sort-indicator,
-    .sortable.desc .sort-indicator {
-        opacity: 1;
-    }
-</style>
-
+{% endblock %} {% block scripts %}
 <script>
-    document.addEventListener("DOMContentLoaded", () => {
-        const modal = document.getElementById("editModal");
-        const editForm = document.getElementById("editForm");
-        const searchInput = document.getElementById("searchInput");
-        const table = document.getElementById("customerTable");
+    (() => {
+        const rows = [...document.querySelectorAll(".customer-row")];
+        const search = document.getElementById("customer-search");
+        const table = document.getElementById("customer-body");
+        const modal = document.getElementById("edit-modal");
+        const form = document.getElementById("edit-form");
 
-        // Edit buttons
-        document.querySelectorAll(".edit-button").forEach((btn) => {
-            btn.addEventListener("click", () => {
-                editForm.action =
-                    "{{ url_for('customers.customer_edit', customer_id=0) }}".replace(
-                        "0",
-                        btn.dataset.id,
-                    );
-                document.getElementById("editId").value = btn.dataset.id;
-                document.getElementById("editName").value = btn.dataset.name;
-                document.getElementById("editPhone").value = btn.dataset.phone;
-                document.getElementById("editAddress").value =
-                    btn.dataset.address;
-                document.getElementById("editBalance").value =
-                    btn.dataset.balance || "0.00";
-                modal.classList.remove("hidden");
-            });
-        });
+        let sort = { key: null, dir: 1 };
 
-        // Close modal
+        // Scroll to add
         document
-            .querySelector(".close-modal")
-            ?.addEventListener("click", () => modal.classList.add("hidden"));
-        window.addEventListener("click", (e) => {
-            if (e.target === modal) modal.classList.add("hidden");
-        });
-        document.addEventListener("keydown", (e) => {
-            if (e.key === "Escape") modal.classList.add("hidden");
-        });
+            .querySelector('[data-action="scroll-add"]')
+            ?.addEventListener("click", () =>
+                document
+                    .getElementById("add-form")
+                    .scrollIntoView({ behavior: "smooth" }),
+            );
 
         // Search
-        searchInput?.addEventListener("input", () => {
-            const filter = searchInput.value.toLowerCase();
-            table?.querySelectorAll("tbody tr").forEach((row) => {
-                row.style.display = row.textContent
-                    .toLowerCase()
-                    .includes(filter)
+        search?.addEventListener("input", () => {
+            const q = search.value.toLowerCase();
+            rows.forEach((r) => {
+                r.style.display = r.textContent.toLowerCase().includes(q)
                     ? ""
                     : "none";
             });
         });
 
         // Sorting
-        document.querySelectorAll(".sortable").forEach((header) => {
-            header.addEventListener("click", () => {
-                const sortKey = header.dataset.sort;
-                const isAsc = header.classList.contains("asc");
-                const dir = isAsc ? "desc" : "asc";
-                document
-                    .querySelectorAll(".sortable")
-                    .forEach((h) => h.classList.remove("asc", "desc"));
-                header.classList.add(dir);
+        document.querySelectorAll("[data-key]").forEach((th) => {
+            th.addEventListener("click", () => {
+                const key = th.dataset.key;
+                sort.dir = sort.key === key ? -sort.dir : 1;
+                sort.key = key;
 
-                const tbody = table.querySelector("tbody");
-                const rows = Array.from(tbody.rows);
                 rows.sort((a, b) => {
-                    let valA, valB;
-                    switch (sortKey) {
-                        case "name":
-                            valA = a.dataset.name.toLowerCase();
-                            valB = b.dataset.name.toLowerCase();
-                            break;
-                        case "phone":
-                            valA = a.dataset.phone.toLowerCase();
-                            valB = b.dataset.phone.toLowerCase();
-                            break;
-                        case "balance":
-                            valA = parseFloat(a.dataset.balance) || 0;
-                            valB = parseFloat(b.dataset.balance) || 0;
-                            break;
-                        case "last_visit":
-                            valA = a.dataset.lastVisit || "9999";
-                            valB = b.dataset.lastVisit || "9999";
-                            break;
-                    }
-                    if (typeof valA === "number")
-                        return dir === "asc" ? valA - valB : valB - valA;
-                    return dir === "asc"
-                        ? valA.localeCompare(valB)
-                        : valB.localeCompare(valA);
+                    let A = a.dataset[key];
+                    let B = b.dataset[key];
+
+                    if (!isNaN(A)) return sort.dir * (A - B);
+                    return sort.dir * A.localeCompare(B);
                 });
-                rows.forEach((row) => tbody.appendChild(row));
+
+                rows.forEach((r) => table.appendChild(r));
             });
         });
-    });
+
+        // Edit modal
+        document.querySelectorAll(".btn-edit").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                form.action =
+                    "{{ url_for('customers.customer_edit', customer_id=0) }}".replace(
+                        "0",
+                        btn.dataset.id,
+                    );
+
+                form.customer_id.value = btn.dataset.id;
+                form.name.value = btn.dataset.name;
+                form.phone.value = btn.dataset.phone;
+                form.address.value = btn.dataset.address;
+                form.balance.value = btn.dataset.balance;
+
+                modal.classList.remove("hidden");
+            });
+        });
+
+        document
+            .querySelectorAll('[data-action="close"]')
+            .forEach((btn) =>
+                btn.addEventListener("click", () =>
+                    modal.classList.add("hidden"),
+                ),
+            );
+
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") modal.classList.add("hidden");
+        });
+    })();
 </script>
 {% endblock %}

@@ -1,4 +1,3 @@
-# routes/dashboard.py
 from datetime import datetime, timedelta, timezone
 
 from flask import Blueprint, render_template
@@ -14,75 +13,78 @@ def dashboard():
     """Main dashboard with comprehensive stats"""
     today = datetime.now().date()
     week_ago = today - timedelta(days=7)
-    now = datetime.now(timezone.utc)  # Make timezone-aware
+    now = datetime.now(timezone.utc)
 
     with get_conn() as conn:
         with conn.cursor() as cur:
             # Total customers
-            cur.execute("SELECT COUNT(*) as total FROM customers")
+            cur.execute("SELECT COUNT(*) AS total FROM customers")
             total_customers = cur.fetchone()["total"]
 
-            # Total owed and number of customers owing
-            cur.execute("""
+            # Total owed + customers owing
+            cur.execute(
+                """
                 SELECT
-                    COALESCE(SUM(balance_cents), 0) as total_owed,
-                    COUNT(*) FILTER (WHERE balance_cents > 0) as customers_owing
+                    COALESCE(SUM(balance_cents), 0) AS total_owed,
+                    COUNT(*) FILTER (WHERE balance_cents > 0) AS customers_owing
                 FROM customers
-            """)
-            owed_stats = cur.fetchone()
-            total_owed_cents = owed_stats["total_owed"]
-            customers_owing = owed_stats["customers_owing"]
+                """
+            )
+            owed = cur.fetchone()
+            total_owed_cents = owed["total_owed"]
+            customers_owing = owed["customers_owing"]
 
             # Today's route progress
             cur.execute(
                 """
                 SELECT
-                    COUNT(*) as total_stops,
-                    COUNT(*) FILTER (WHERE completed = true) as completed_today
+                    COUNT(*) AS total_stops,
+                    COUNT(*) FILTER (WHERE rs.completed = true) AS completed_today
                 FROM route_stops rs
                 JOIN routes r ON rs.route_id = r.id
                 WHERE r.route_date = %s
-            """,
+                """,
                 (today,),
             )
             route_stats = cur.fetchone()
             total_stops_today = route_stats["total_stops"]
             completed_today = route_stats["completed_today"]
 
-            # Collected today
+            # Payments today
             cur.execute(
                 """
                 SELECT
-                    COALESCE(SUM(amount_cents), 0) as collected,
-                    COUNT(*) as payment_count
+                    COALESCE(SUM(amount_cents), 0) AS collected,
+                    COUNT(*) AS payment_count
                 FROM payments
                 WHERE DATE(received_at) = %s
-            """,
+                """,
                 (today,),
             )
             payment_stats = cur.fetchone()
             collected_today_cents = payment_stats["collected"]
             payments_today = payment_stats["payment_count"]
 
-            # Weekly stats
+            # Weekly completed stops
             cur.execute(
                 """
-                SELECT COUNT(*) as weekly_stops
+                SELECT COUNT(*) AS weekly_stops
                 FROM route_stops rs
                 JOIN routes r ON rs.route_id = r.id
                 WHERE r.route_date >= %s
                 AND rs.completed = true
-            """,
+                """,
                 (week_ago,),
             )
             weekly_stops = cur.fetchone()["weekly_stops"]
 
+            # Weekly collected
             cur.execute(
                 """
-                SELECT COALESCE(SUM(amount_cents), 0) as weekly_collected
+                SELECT COALESCE(SUM(amount_cents), 0) AS weekly_collected
                 FROM payments
                 WHERE received_at >= %s
-            """,
+                """,
                 (week_ago,),
             )
             weekly_collected_cents = cur.fetchone()["weekly_collected"]
@@ -90,21 +92,22 @@ def dashboard():
             # New customers this week
             cur.execute(
                 """
-                SELECT COUNT(*) as new_customers
+                SELECT COUNT(*) AS new_customers
                 FROM customers
                 WHERE created_at >= %s
-            """,
+                """,
                 (week_ago,),
             )
             new_customers_week = cur.fetchone()["new_customers"]
 
-            # Recent activity (last 24 hours)
+            # Recent activity (last 24h)
             recent_activity = []
 
             # Completed visits
-            cur.execute("""
+            cur.execute(
+                """
                 SELECT
-                    c.name as customer_name,
+                    c.name AS customer_name,
                     rs.completed_at
                 FROM route_stops rs
                 JOIN customers c ON rs.customer_id = c.id
@@ -112,15 +115,16 @@ def dashboard():
                 AND rs.completed_at >= NOW() - INTERVAL '24 hours'
                 ORDER BY rs.completed_at DESC
                 LIMIT 10
-            """)
+                """
+            )
             for row in cur.fetchall():
-                # Make sure completed_at is timezone-aware
                 completed_at = row["completed_at"]
                 if completed_at.tzinfo is None:
                     completed_at = completed_at.replace(tzinfo=timezone.utc)
 
-                time_diff = now - completed_at
-                hours_ago = int(time_diff.total_seconds() / 3600)
+                delta = now - completed_at
+                hours_ago = int(delta.total_seconds() / 3600)
+
                 recent_activity.append(
                     {
                         "type": "completed",
@@ -133,9 +137,10 @@ def dashboard():
                 )
 
             # Recent payments
-            cur.execute("""
+            cur.execute(
+                """
                 SELECT
-                    c.name as customer_name,
+                    c.name AS customer_name,
                     p.received_at,
                     p.amount_cents
                 FROM payments p
@@ -143,15 +148,16 @@ def dashboard():
                 WHERE p.received_at >= NOW() - INTERVAL '24 hours'
                 ORDER BY p.received_at DESC
                 LIMIT 10
-            """)
+                """
+            )
             for row in cur.fetchall():
-                # Make sure received_at is timezone-aware
                 received_at = row["received_at"]
                 if received_at.tzinfo is None:
                     received_at = received_at.replace(tzinfo=timezone.utc)
 
-                time_diff = now - received_at
-                hours_ago = int(time_diff.total_seconds() / 3600)
+                delta = now - received_at
+                hours_ago = int(delta.total_seconds() / 3600)
+
                 recent_activity.append(
                     {
                         "type": "payment",
@@ -164,7 +170,6 @@ def dashboard():
                     }
                 )
 
-            # Sort all activity by timestamp
             recent_activity = sorted(
                 recent_activity, key=lambda x: x["timestamp"], reverse=True
             )[:10]

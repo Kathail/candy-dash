@@ -11,9 +11,11 @@ balances_bp = Blueprint("balances", __name__)
 @balances_bp.route("/balances")
 def balances():
     """Display all customers with outstanding balances"""
+
     with get_conn() as conn:
         with conn.cursor() as cur:
-            cur.execute("""
+            cur.execute(
+                """
                 SELECT
                     id,
                     name,
@@ -24,16 +26,30 @@ def balances():
                 FROM customers
                 WHERE balance_cents > 0
                 ORDER BY balance_cents DESC
-            """)
+                """
+            )
             customers = cur.fetchall()
 
-    now = datetime.now()  # Keep as datetime, not datetime.date()
-    return render_template("balances.html", customers=customers, now=now)
+    # ---- Derived stats for the UI ----
+    total_customers = len(customers)
+    total_owed_cents = sum(c["balance_cents"] for c in customers)
+    largest_balance_cents = customers[0]["balance_cents"] if customers else 0
+
+    context = {
+        "customers": customers,
+        "now": datetime.now(),
+        "total_customers": total_customers,
+        "total_owed_cents": total_owed_cents,
+        "largest_balance_cents": largest_balance_cents,
+    }
+
+    return render_template("balances.html", **context)
 
 
 @balances_bp.post("/balances/record_payment")
 def record_payment():
     """Record a payment for a customer"""
+
     customer_id = request.form.get("customer_id")
     amount_str = request.form.get("amount", "0")
     payment_method = request.form.get("payment_method", "cash")
@@ -46,17 +62,16 @@ def record_payment():
     try:
         amount = float(amount_str)
         if amount <= 0:
-            flash("Payment amount must be greater than zero", "error")
-            return redirect(url_for("balances.balances"))
+            raise ValueError
     except (ValueError, TypeError):
-        flash("Invalid payment amount", "error")
+        flash("Payment amount must be greater than zero", "error")
         return redirect(url_for("balances.balances"))
 
     amount_cents = int(amount * 100)
 
-    # Get customer info for the flash message
     with get_conn() as conn:
         with conn.cursor() as cur:
+            # Fetch customer
             cur.execute(
                 "SELECT name, balance_cents FROM customers WHERE id = %s",
                 (customer_id,),
@@ -67,33 +82,45 @@ def record_payment():
                 flash("Customer not found", "error")
                 return redirect(url_for("balances.balances"))
 
-            # Check if payment exceeds balance
+            # Warn but allow overpayment
             if amount_cents > customer["balance_cents"]:
                 flash(
-                    f"Payment amount (${amount:.2f}) exceeds current balance (${customer['balance_cents'] / 100:.2f})",
+                    (
+                        f"Payment amount (${amount:.2f}) exceeds "
+                        f"current balance (${customer['balance_cents'] / 100:.2f}). "
+                        "Balance will go negative."
+                    ),
                     "warning",
                 )
 
             # Record payment
             cur.execute(
                 """
-                INSERT INTO payments (customer_id, amount_cents, note, received_at)
+                INSERT INTO payments (
+                    customer_id,
+                    amount_cents,
+                    note,
+                    received_at
+                )
                 VALUES (%s, %s, %s, NOW())
-            """,
+                """,
                 (customer_id, amount_cents, notes or None),
             )
 
-            # Update customer balance
+            # Update balance
             cur.execute(
                 """
                 UPDATE customers
                 SET balance_cents = balance_cents - %s
                 WHERE id = %s
-            """,
+                """,
                 (amount_cents, customer_id),
             )
 
             conn.commit()
 
-    flash(f"Payment of ${amount:.2f} recorded for {customer['name']}", "success")
+    flash(
+        f"Payment of ${amount:.2f} recorded for {customer['name']}",
+        "success",
+    )
     return redirect(url_for("balances.balances"))
