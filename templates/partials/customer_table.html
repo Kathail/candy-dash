@@ -1,0 +1,97 @@
+<div
+    class="theme-card overflow-hidden"
+    x-data="customerTable({ mode: '{{ mode }}' })"
+>
+    <!-- Header -->
+    <div class="p-6 border-b border-gray-800 flex justify-between gap-4">
+        <h2 class="text-xl font-semibold">
+            {% if mode == "balances" %} Customer Balances {% else %} Customer
+            List {% endif %}
+        </h2>
+
+        <input
+            type="search"
+            placeholder="Search customers…"
+            class="theme-input max-w-sm"
+            x-model="searchTerm"
+        />
+    </div>
+
+    <!-- Table -->
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-800 text-sm">
+            <thead class="bg-gray-900/70">
+                <tr>
+                    <th
+                        class="theme-table-th cursor-pointer"
+                        @click="sortBy('name')"
+                    >
+                        Name
+                    </th>
+
+                    {% if mode != "balances" %}
+                    <th class="theme-table-th hidden md:table-cell">Contact</th>
+                    {% endif %}
+
+                    <th
+                        class="theme-table-th cursor-pointer text-right"
+                        @click="sortBy('balance')"
+                    >
+                        Balance
+                    </th>
+
+                    <th class="theme-table-th text-right">Actions</th>
+                </tr>
+            </thead>
+
+            <tbody class="divide-y divide-gray-800">
+                <template x-for="c in filteredRows" :key="c.id">
+                    <tr>
+                        <td class="theme-table-td font-medium">
+                            <span x-text="c.name"></span>
+                        </td>
+
+                        {% if mode != "balances" %}
+                        <td
+                            class="theme-table-td hidden md:table-cell text-gray-400"
+                        >
+                            <span x-text="c.phone || c.email || '-'"></span>
+                        </td>
+                        {% endif %}
+
+                        <td
+                            class="theme-table-td text-right font-semibold"
+                            :class="balanceClass(c.balance)"
+                            x-text="'$' + c.balance.toFixed(2)"
+                        ></td>
+
+                        <td class="theme-table-td text-right">
+                            {% if mode == "balances" %}
+                            <a
+                                :href="`/balances/pay/${c.id}`"
+                                class="theme-btn-primary text-xs px-4 py-2"
+                            >
+                                Record Payment
+                            </a>
+                            {% else %}
+                            <a
+                                :href="`/customers/edit/${c.id}`"
+                                class="theme-btn-secondary text-xs px-4 py-2"
+                            >
+                                Edit
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </template>
+            </tbody>
+        </table>
+
+        <p
+            x-show="filteredRows.length === 0"
+            class="py-16 text-center text-gray-500"
+        >
+            No customers match your search.
+        </p>
+    </div>
+</div>
