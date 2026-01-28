@@ -1,7 +1,7 @@
 {% extends "base.html" %} {% block title %}Customers - Candy Dash{% endblock %}
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-10 space-y-10">
-    <!-- Header (matches Dashboard welcome header) -->
+    <!-- Header -->
     <header
         class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6"
     >
@@ -33,7 +33,7 @@
         </button>
     </header>
 
-    <!-- Stats Cards (exact Dashboard KPI style) -->
+    <!-- Stats Cards -->
     {% set owing = customers | selectattr('balance_cents', 'gt', 0) | list %} {%
     set total_owed = (owing | sum(attribute='balance_cents') / 100) | round(2)
     %}
@@ -79,7 +79,7 @@
         </div>
     </div>
 
-    <!-- Bulk Actions (matches Dashboard quick actions card feel) -->
+    <!-- Bulk Actions -->
     <div
         id="bulk-bar"
         class="hidden sticky top-4 z-20 bg-gray-900 border border-gray-800 rounded-xl px-6 py-4 shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4"
@@ -106,7 +106,7 @@
         </div>
     </div>
 
-    <!-- Customer List Card (now identical to Balances table style) -->
+    <!-- Customer List Card -->
     <div
         class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden shadow-sm"
     >
@@ -128,7 +128,7 @@
                     <input
                         id="customer-search"
                         type="search"
-                        placeholder="Search name, phone, address, notes…"
+                        placeholder="Search name, phone, email, address, notes…"
                         class="w-full bg-gray-800 border border-gray-700 rounded-lg pl-11 pr-4 py-3 text-sm text-gray-200 placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
                     />
                     <svg
@@ -164,7 +164,7 @@
             </div>
         </div>
 
-        <!-- Pagination (subtle opacity header like Dashboard sections) -->
+        <!-- Pagination -->
         <div
             class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 px-6 py-4 border-b border-gray-800 bg-gray-800/50"
         >
@@ -242,6 +242,17 @@
                                 >—</span
                             >
                         </th>
+                        <th
+                            class="sortable px-6 py-5 cursor-pointer hover:text-blue-300 transition hidden lg:table-cell"
+                            data-key="email"
+                        >
+                            Email
+                            <span
+                                class="sort-indicator ml-1 opacity-70"
+                                data-for="email"
+                                >—</span
+                            >
+                        </th>
                         <th class="px-6 py-5 hidden xl:table-cell">Address</th>
                         <th
                             class="sortable px-6 py-5 text-right cursor-pointer hover:text-blue-300 transition"
@@ -282,11 +293,12 @@
                         data-id="{{ c.id }}"
                         data-name="{{ c.name | lower }}"
                         data-phone="{{ (c.phone or '') | lower }}"
+                        data-email="{{ (c.email or '') | lower }}"
                         data-address="{{ (c.address or '') | lower }}"
                         data-balance="{{ c.balance_cents }}"
                         data-lastvisit="{{ c.last_visit_at.isoformat() if c.last_visit_at else '1900-01-01' }}"
                         data-notes="{{ (c.notes or '') | e }}"
-                        data-search="{{ (c.name ~ ' ' ~ (c.phone or '') ~ ' ' ~ (c.address or '') ~ ' ' ~ (c.notes or '') ) | lower }}"
+                        data-search="{{ (c.name ~ ' ' ~ (c.phone or '') ~ ' ' ~ (c.email or '') ~ ' ' ~ (c.address or '') ~ ' ' ~ (c.notes or '') ) | lower }}"
                     >
                         <td class="px-6 py-5">
                             <input
@@ -301,6 +313,7 @@
                                 data-id="{{ c.id }}"
                                 data-name="{{ c.name }}"
                                 data-phone="{{ c.phone or '' }}"
+                                data-email="{{ c.email or '' }}"
                                 data-address="{{ c.address or '' }}"
                                 data-balance="{{ bal | round(2) }}"
                             >
@@ -313,7 +326,22 @@
                                 <div>
                                     Phone:
                                     <span class="text-gray-300"
-                                        >{{ c.phone }}</span
+                                        ><a
+                                            href="tel:{{ c.phone }}"
+                                            class="text-blue-400 hover:underline"
+                                            >{{ c.phone }}</a
+                                        ></span
+                                    >
+                                </div>
+                                {% endif %} {% if c.email %}
+                                <div>
+                                    Email:
+                                    <span class="text-gray-300"
+                                        ><a
+                                            href="mailto:{{ c.email }}"
+                                            class="text-blue-400 hover:underline"
+                                            >{{ c.email }}</a
+                                        ></span
                                     >
                                 </div>
                                 {% endif %} {% if c.address %}
@@ -337,7 +365,20 @@
                         <td
                             class="px-6 py-5 text-gray-400 hidden lg:table-cell"
                         >
-                            {{ c.phone or '—' }}
+                            {% if c.phone %}<a
+                                href="tel:{{ c.phone }}"
+                                class="text-blue-400 hover:underline"
+                                >{{ c.phone }}</a
+                            >{% else %}—{% endif %}
+                        </td>
+                        <td
+                            class="px-6 py-5 text-gray-400 hidden lg:table-cell"
+                        >
+                            {% if c.email %}<a
+                                href="mailto:{{ c.email }}"
+                                class="text-blue-400 hover:underline"
+                                >{{ c.email }}</a
+                            >{% else %}—{% endif %}
                         </td>
                         <td
                             class="px-6 py-5 text-gray-400 hidden xl:table-cell truncate"
@@ -413,6 +454,7 @@
                                     data-id="{{ c.id }}"
                                     data-name="{{ c.name }}"
                                     data-phone="{{ c.phone or '' }}"
+                                    data-email="{{ c.email or '' }}"
                                     data-address="{{ c.address or '' }}"
                                     data-balance="{{ bal | round(2) }}"
                                 >
@@ -497,6 +539,14 @@
                     class="w-full bg-gray-800 border border-gray-700 rounded-lg px-5 py-3 text-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
                 />
             </div>
+            <div>
+                <label class="block text-sm text-gray-400 mb-2">Email</label>
+                <input
+                    name="email"
+                    type="email"
+                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-5 py-3 text-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                />
+            </div>
             <div class="md:col-span-2">
                 <label class="block text-sm text-gray-400 mb-2">Address</label>
                 <input
@@ -504,7 +554,7 @@
                     class="w-full bg-gray-800 border border-gray-700 rounded-lg px-5 py-3 text-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
                 />
             </div>
-            <div>
+            <div class="md:col-span-2">
                 <label class="block text-sm text-gray-400 mb-2">Notes</label>
                 <textarea
                     name="notes"
@@ -565,6 +615,14 @@
                 />
             </div>
             <div>
+                <label class="block text-sm text-gray-400 mb-2">Email</label>
+                <input
+                    name="email"
+                    type="email"
+                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-5 py-3 text-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                />
+            </div>
+            <div>
                 <label class="block text-sm text-gray-400 mb-2">Address</label>
                 <input
                     name="address"
@@ -609,7 +667,7 @@
     </div>
 </div>
 
-<!-- Full JavaScript -->
+<!-- JavaScript -->
 <script>
     document.addEventListener("DOMContentLoaded", () => {
         const modal = document.getElementById("edit-modal");
@@ -626,7 +684,7 @@
         let selectMode = false;
         let compactMode = false;
 
-        // ── Search ─────────────────────────────────────────────────────────────
+        // Search
         function filterRows() {
             const term = searchInput.value.toLowerCase();
             rows.forEach((row) => {
@@ -643,7 +701,7 @@
             });
         }
 
-        // ── Sorting ────────────────────────────────────────────────────────────
+        // Sorting
         function updateSortIndicators() {
             document
                 .querySelectorAll("[data-for]")
@@ -693,7 +751,7 @@
             });
         });
 
-        // ── Pagination ─────────────────────────────────────────────────────────
+        // Pagination
         function paginate() {
             const visibleRows = rows.filter(
                 (r) => r.dataset.filtered !== "false",
@@ -748,14 +806,13 @@
             }
         });
 
-        // ── Inline Notes Toggle ────────────────────────────────────────────────
+        // Notes toggle
         window.toggleNotes = function (btn) {
             const row = btn.closest("tr");
             const section = row.querySelector(".notes-section");
             if (section) section.classList.toggle("hidden");
         };
 
-        // Close notes on outside click
         document.addEventListener("click", (e) => {
             if (
                 !e.target.closest('button[onclick*="toggleNotes"]') &&
@@ -767,7 +824,7 @@
             }
         });
 
-        // ── Edit Modal ─────────────────────────────────────────────────────────
+        // Edit Modal
         document.querySelectorAll(".btn-edit").forEach((btn) => {
             btn.addEventListener("click", () => {
                 editForm.action =
@@ -781,6 +838,8 @@
                     btn.dataset.name;
                 editForm.querySelector('[name="phone"]').value =
                     btn.dataset.phone;
+                editForm.querySelector('[name="email"]').value =
+                    btn.dataset.email;
                 editForm.querySelector('[name="address"]').value =
                     btn.dataset.address;
                 editForm.querySelector('[name="notes"]').value =
@@ -804,7 +863,7 @@
             if (e.key === "Escape") closeModal();
         });
 
-        // ── Select / Bulk ──────────────────────────────────────────────────────
+        // Select / Bulk
         function getRowCheckboxes() {
             return [...document.querySelectorAll(".row-check")];
         }
@@ -877,7 +936,7 @@
                 window.location.href = `/calendar?${params}`;
             });
 
-        // ── Compact Mode ───────────────────────────────────────────────────────
+        // Compact Mode
         document
             .getElementById("toggle-density")
             ?.addEventListener("click", () => {
@@ -893,7 +952,7 @@
                 });
             });
 
-        // ── Initial Setup ──────────────────────────────────────────────────────
+        // Initial Setup
         toggleSelectMode(false);
         filterRows();
         sortRows();
