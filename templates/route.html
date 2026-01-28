@@ -1,65 +1,63 @@
 {% extends "base.html" %} {% block title %}Today's Route{% endblock %} {% block
 content %}
-<div class="max-w-4xl mx-auto space-y-8">
+<div class="max-w-5xl mx-auto space-y-6">
     <!-- Header -->
-    <header>
-        <div class="flex items-center justify-between mb-2">
-            <h1 class="text-3xl font-bold">Today's Route</h1>
-
-            <div class="flex gap-3">
-                <button
-                    onclick="openAddCustomerModal()"
-                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2"
-                >
-                    <svg
-                        class="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M12 4v16m8-8H4"
-                        />
-                    </svg>
-                    Add Stop
-                </button>
-
-                {% if stops %}
-                <button
-                    onclick="toggleSelectMode()"
-                    class="text-sm text-gray-400 hover:text-blue-400 transition px-4 py-2"
-                >
-                    <span id="selectModeText">Select Multiple</span>
-                </button>
-                {% endif %}
-            </div>
+    <header class="flex items-start justify-between">
+        <div>
+            <h1 class="text-2xl font-semibold">Today's Route</h1>
+            <p class="text-sm text-gray-400">
+                {{ today.strftime("%A, %B %d") }}
+            </p>
         </div>
 
-        <p class="text-gray-400">{{ today.strftime("%A, %B %d") }}</p>
+        <div class="flex gap-2">
+            <button
+                onclick="openAddCustomerModal()"
+                class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2"
+            >
+                <svg
+                    class="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M12 4v16m8-8H4"
+                    />
+                </svg>
+                Add Stop
+            </button>
+
+            {% if stops %}
+            <button
+                onclick="toggleSelectMode()"
+                class="text-sm text-gray-400 hover:text-blue-400 transition px-3 py-2"
+            >
+                <span id="selectModeText">Select</span>
+            </button>
+            {% endif %}
+        </div>
     </header>
 
     {% if not stops %}
     <!-- Empty State -->
     <section
-        class="bg-gray-900 border border-gray-800 rounded-2xl text-center p-12"
+        class="bg-gray-900 border border-gray-800 rounded-xl text-center p-10"
     >
-        <div class="text-5xl mb-4">📍</div>
-        <h2 class="text-2xl font-semibold mb-3">No route yet</h2>
-        <p class="text-gray-400 mb-6">
-            Your route for today is empty. Start by adding customers.
+        <div class="text-4xl mb-3">📍</div>
+        <h2 class="text-lg font-semibold mb-2">No stops yet</h2>
+        <p class="text-gray-400 mb-5 text-sm">
+            Add customers to build today’s route.
         </p>
         <button
             onclick="openAddCustomerModal()"
-            class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition"
         >
-            + Add Customers
+            Add Customers
         </button>
-        <p class="text-sm text-gray-500 mt-6">
-            Search and select customers to build today's plan.
-        </p>
     </section>
 
     {% else %} {% set completed = stops | selectattr("completed") | list %} {%
@@ -67,26 +65,23 @@ content %}
     stops | length %} {% set done = completed | length %} {% set progress_pct =
     (done / total * 100) if total > 0 else 0 %}
 
-    <!-- Progress -->
-    <section
-        class="bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl p-6 shadow-lg"
-    >
-        <div class="flex items-center justify-between">
+    <!-- Progress (dashboard style) -->
+    <section class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+        <div class="flex items-center justify-between mb-2">
             <div>
-                <p class="text-white/80 text-sm font-medium mb-1">Progress</p>
-                <p class="text-4xl font-bold text-white">
-                    {{ done }} / {{ total }}
+                <p class="text-xs text-gray-400">Progress</p>
+                <p class="text-lg font-semibold">
+                    {{ done }} / {{ total }} completed
                 </p>
-                <p class="text-white/70 text-sm">stops completed</p>
             </div>
-            <div class="text-5xl font-bold text-white/20">
+            <div class="text-sm text-gray-400">
                 {{ progress_pct | round | int }}%
             </div>
         </div>
 
-        <div class="mt-4 bg-white/20 rounded-full h-2 overflow-hidden">
+        <div class="bg-gray-800 rounded-full h-2 overflow-hidden">
             <div
-                class="bg-white h-full rounded-full transition-all duration-500"
+                class="bg-blue-600 h-full transition-all"
                 style="width: {{ progress_pct | round }}%"
             ></div>
         </div>
@@ -95,7 +90,7 @@ content %}
     <!-- Bulk Actions -->
     <div
         id="bulkActions"
-        class="hidden bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-center justify-between"
+        class="hidden bg-gray-900 border border-gray-800 rounded-xl p-3 flex items-center justify-between"
     >
         <span class="text-sm text-gray-400">
             <span id="selectedCount">0</span> selected
@@ -103,19 +98,19 @@ content %}
         <div class="flex gap-2">
             <button
                 onclick="bulkComplete()"
-                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
+                class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-sm"
             >
-                Complete Selected
+                Complete
             </button>
             <button
                 onclick="bulkRemove()"
-                class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
+                class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-sm"
             >
-                Remove Selected
+                Remove
             </button>
             <button
                 onclick="cancelSelect()"
-                class="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
+                class="bg-gray-800 hover:bg-gray-700 text-white px-3 py-1.5 rounded-lg text-sm"
             >
                 Cancel
             </button>
@@ -124,42 +119,27 @@ content %}
 
     <!-- Remaining Stops -->
     <section>
-        <div class="flex items-center justify-between mb-4">
-            <h2 class="text-xl font-semibold">Remaining Stops</h2>
+        <div class="flex items-center justify-between mb-3">
+            <h2 class="text-lg font-semibold">Remaining</h2>
             <span class="text-sm text-gray-400">
-                {{ remaining | length }} stop{{ 's' if remaining | length != 1
-                else '' }}
+                {{ remaining | length }}
             </span>
         </div>
 
         {% if remaining %}
-        <ul class="space-y-3" id="stopsList">
+        <ul class="space-y-2" id="stopsList">
             {% for stop in remaining %}
             <li
-                class="bg-gray-900 border border-gray-800 rounded-xl p-5 group relative hover:border-gray-700 transition"
+                class="bg-gray-900 border border-gray-800 rounded-lg p-4 hover:border-gray-700 transition"
                 data-stop-id="{{ stop.stop_id }}"
             >
-                {% if stop.customer_balance and stop.customer_balance > 0 %}
-                <div
-                    class="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full font-medium shadow-lg"
-                >
-                    ${{ (stop.customer_balance / 100) | round(2) }}
-                </div>
-                {% endif %}
-
-                <div class="flex gap-4">
-                    <button
-                        class="drag-handle opacity-0 group-hover:opacity-100 text-gray-500 hover:text-gray-300 transition cursor-move"
-                    >
-                        ☰
-                    </button>
-
+                <div class="flex gap-3 items-start">
                     <input type="checkbox" class="stop-checkbox hidden mt-1" />
 
-                    <div class="flex-1">
-                        <div class="flex justify-between gap-4 flex-wrap">
-                            <div class="flex-1 min-w-0">
-                                <h3 class="text-lg font-medium mb-1">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex justify-between gap-3">
+                            <div>
+                                <h3 class="text-sm font-medium truncate">
                                     {{ stop.name }}
                                 </h3>
 
@@ -167,49 +147,9 @@ content %}
                                 <a
                                     href="https://www.google.com/maps/search/?api=1&query={{ stop.customer_address | urlencode }}"
                                     target="_blank"
-                                    rel="noopener noreferrer"
-                                    class="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1 mb-1"
+                                    class="text-xs text-blue-400 hover:text-blue-300"
                                 >
-                                    <svg
-                                        class="w-4 h-4"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            stroke-width="2"
-                                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                                        />
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            stroke-width="2"
-                                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                                        />
-                                    </svg>
                                     {{ stop.customer_address }}
-                                </a>
-                                {% endif %} {% if stop.customer_phone %}
-                                <a
-                                    href="tel:{{ stop.customer_phone }}"
-                                    class="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1"
-                                >
-                                    <svg
-                                        class="w-4 h-4"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            stroke-width="2"
-                                            d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
-                                        />
-                                    </svg>
-                                    {{ stop.customer_phone }}
                                 </a>
                                 {% endif %}
                             </div>
@@ -220,8 +160,7 @@ content %}
                                     action="{{ url_for('route.route_complete', stop_id=stop.stop_id) }}"
                                 >
                                     <button
-                                        type="submit"
-                                        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
+                                        class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-xs"
                                     >
                                         Complete
                                     </button>
@@ -229,7 +168,7 @@ content %}
 
                                 <button
                                     onclick="toggleNotes(this)"
-                                    class="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
+                                    class="bg-gray-800 hover:bg-gray-700 text-white px-3 py-1.5 rounded-lg text-xs"
                                 >
                                     Notes
                                 </button>
@@ -239,12 +178,10 @@ content %}
                                     action="{{ url_for('route.route_remove', stop_id=stop.stop_id) }}"
                                 >
                                     <button
-                                        type="submit"
-                                        class="text-red-400 hover:text-red-300 px-2 transition"
+                                        class="text-red-400 hover:text-red-300 px-2 text-sm"
                                         onclick="
                                             return confirm('Remove this stop?');
                                         "
-                                        aria-label="Remove stop"
                                     >
                                         ✕
                                     </button>
@@ -253,7 +190,7 @@ content %}
                         </div>
 
                         <div
-                            class="notes-section hidden mt-4 border-t border-gray-800 pt-4"
+                            class="notes-section hidden mt-3 border-t border-gray-800 pt-3"
                         >
                             <form
                                 method="post"
@@ -261,15 +198,13 @@ content %}
                             >
                                 <textarea
                                     name="notes"
-                                    rows="3"
-                                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                    placeholder="Add notes for this stop…"
+                                    rows="2"
+                                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
                                 >
 {{ stop.notes or "" }}</textarea
                                 >
                                 <button
-                                    type="submit"
-                                    class="mt-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
+                                    class="mt-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs"
                                 >
                                     Save Notes
                                 </button>
@@ -282,13 +217,9 @@ content %}
         </ul>
         {% else %}
         <div
-            class="bg-gray-900 border border-gray-800 rounded-xl text-center p-12"
+            class="bg-gray-900 border border-gray-800 rounded-xl text-center p-8"
         >
-            <div class="text-5xl mb-4">🎉</div>
-            <h3 class="text-xl font-semibold mb-2">All Done!</h3>
-            <p class="text-gray-400">
-                No remaining stops — you're done for today!
-            </p>
+            <p class="text-gray-400 text-sm">All stops completed 🎉</p>
         </div>
         {% endif %}
     </section>
@@ -296,133 +227,42 @@ content %}
     <!-- Completed -->
     {% if completed %}
     <section>
-        <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
-            <svg
-                class="w-5 h-5 text-green-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-            >
-                <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M5 13l4 4L19 7"
-                />
-            </svg>
+        <h2 class="text-sm font-semibold text-gray-400 mb-2">
             Completed ({{ completed | length }})
         </h2>
-        <ul class="space-y-2">
+        <ul class="space-y-1">
             {% for stop in completed %}
-            <li
-                class="bg-gray-900/50 border border-gray-800 rounded-lg px-5 py-3 flex items-center gap-3 opacity-60"
-            >
-                <svg
-                    class="w-5 h-5 text-green-400 shrink-0"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M5 13l4 4L19 7"
-                    />
-                </svg>
-                <span class="line-through flex-1">{{ stop.name }}</span>
-                {% if stop.completed_at %}
-                <span class="text-xs text-gray-500">
-                    {{ stop.completed_at.strftime("%I:%M %p") }}
-                </span>
-                {% endif %}
+            <li class="text-sm text-gray-500 line-through px-1">
+                {{ stop.name }}
             </li>
             {% endfor %}
         </ul>
     </section>
     {% endif %} {% endif %}
 </div>
-
-<!-- Add Customer Modal - Note: This references a missing partial template -->
-<!-- You'll need to create route/_add_customer_modal.html or implement the modal here -->
-<div
-    id="addCustomerModal"
-    class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
->
-    <div
-        class="bg-gray-900 border border-gray-800 rounded-2xl p-8 max-w-md w-full"
-    >
-        <h3 class="text-xl font-semibold mb-6">Add Customer to Route</h3>
-        <form method="post" action="{{ url_for('route.route_add') }}">
-            <div class="mb-4">
-                <label class="block text-sm text-gray-400 mb-2">Customer</label>
-                <select
-                    name="customer_id"
-                    required
-                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                >
-                    <option value="">Select customer…</option>
-                    <!-- You'll need to pass customers to this template -->
-                </select>
-            </div>
-            <div class="flex gap-3">
-                <button
-                    type="button"
-                    onclick="closeAddCustomerModal()"
-                    class="flex-1 bg-gray-800 hover:bg-gray-700 text-white px-4 py-2.5 rounded-lg font-medium transition"
-                >
-                    Cancel
-                </button>
-                <button
-                    class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-medium transition"
-                >
-                    Add to Route
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-
 {% endblock %} {% block scripts %}
 <script>
-    // Toggle notes section
     function toggleNotes(button) {
-        const li = button.closest("li");
-        const notesSection = li.querySelector(".notes-section");
-        notesSection.classList.toggle("hidden");
+        button
+            .closest("li")
+            .querySelector(".notes-section")
+            .classList.toggle("hidden");
     }
 
-    // Modal functions
-    function openAddCustomerModal() {
-        document.getElementById("addCustomerModal").classList.remove("hidden");
-    }
-
-    function closeAddCustomerModal() {
-        document.getElementById("addCustomerModal").classList.add("hidden");
-    }
-
-    // Select mode for bulk actions
     let selectMode = false;
 
     function toggleSelectMode() {
         selectMode = !selectMode;
-        const checkboxes = document.querySelectorAll(".stop-checkbox");
-        const actions = document.querySelectorAll(".stop-actions");
-        const bulkActions = document.getElementById("bulkActions");
-        const modeText = document.getElementById("selectModeText");
-
-        checkboxes.forEach((cb) => cb.classList.toggle("hidden"));
-        actions.forEach((a) => a.classList.toggle("hidden"));
-
-        if (selectMode) {
-            bulkActions.classList.remove("hidden");
-            modeText.textContent = "Cancel Select";
-        } else {
-            bulkActions.classList.add("hidden");
-            modeText.textContent = "Select Multiple";
-            checkboxes.forEach((cb) => (cb.checked = false));
-            updateSelectedCount();
-        }
+        document
+            .querySelectorAll(".stop-checkbox")
+            .forEach((cb) => cb.classList.toggle("hidden"));
+        document
+            .querySelectorAll(".stop-actions")
+            .forEach((a) => a.classList.toggle("hidden"));
+        document.getElementById("bulkActions").classList.toggle("hidden");
+        document.getElementById("selectModeText").textContent = selectMode
+            ? "Cancel"
+            : "Select";
     }
 
     function cancelSelect() {
@@ -430,56 +270,20 @@ content %}
     }
 
     function updateSelectedCount() {
-        const checked = document.querySelectorAll(
-            ".stop-checkbox:checked",
-        ).length;
-        document.getElementById("selectedCount").textContent = checked;
+        document.getElementById("selectedCount").textContent =
+            document.querySelectorAll(".stop-checkbox:checked").length;
     }
 
-    // Listen for checkbox changes
     document.addEventListener("change", (e) => {
-        if (e.target.classList.contains("stop-checkbox")) {
-            updateSelectedCount();
-        }
+        if (e.target.classList.contains("stop-checkbox")) updateSelectedCount();
     });
 
     function bulkComplete() {
-        const selected = [
-            ...document.querySelectorAll(".stop-checkbox:checked"),
-        ].map((cb) => cb.closest("li").dataset.stopId);
-
-        if (selected.length === 0) {
-            alert("No stops selected");
-            return;
-        }
-
-        if (confirm(`Complete ${selected.length} stop(s)?`)) {
-            // Implement bulk complete - you'll need to add a backend endpoint
-            console.log("Complete stops:", selected);
-        }
+        alert("Bulk complete requires backend endpoint.");
     }
 
     function bulkRemove() {
-        const selected = [
-            ...document.querySelectorAll(".stop-checkbox:checked"),
-        ].map((cb) => cb.closest("li").dataset.stopId);
-
-        if (selected.length === 0) {
-            alert("No stops selected");
-            return;
-        }
-
-        if (confirm(`Remove ${selected.length} stop(s)?`)) {
-            // Implement bulk remove - you'll need to add a backend endpoint
-            console.log("Remove stops:", selected);
-        }
+        alert("Bulk remove requires backend endpoint.");
     }
-
-    // Close modal on escape
-    document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") {
-            closeAddCustomerModal();
-        }
-    });
 </script>
 {% endblock %}

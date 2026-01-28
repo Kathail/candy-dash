@@ -1,6 +1,9 @@
-{% extends "base.html" %} {% block title %}Calendar{% endblock %} {% block
-content %}
+{% extends "base.html" %}
+{% block title %}Calendar{% endblock %}
+
+{% block content %}
 <div class="max-w-6xl mx-auto space-y-8">
+
     <!-- Header -->
     <section>
         <h1 class="text-3xl font-bold">Calendar</h1>
@@ -9,71 +12,71 @@ content %}
         </p>
     </section>
 
-    <!-- View Toggle -->
-    <div class="flex justify-between items-center">
+    <!-- Controls -->
+    <div class="flex flex-wrap items-center justify-between gap-3">
         <div class="flex gap-2">
-            <button
-                class="view-btn bg-blue-600 text-white px-4 py-2 rounded-lg text-sm"
-                data-view="week"
-            >
-                Week
-            </button>
-            <button
-                class="view-btn bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg text-sm"
-                data-view="month"
-            >
-                Month
+            <button class="view-btn bg-blue-600 text-white px-4 py-2 rounded-lg text-sm" data-view="week">Week</button>
+            <button class="view-btn bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg text-sm" data-view="month">Month</button>
+        </div>
+
+        <div class="flex gap-2">
+            <button id="today-btn" class="bg-gray-800 hover:bg-gray-700 px-3 py-2 rounded-lg text-sm">
+                Today
             </button>
         </div>
     </div>
 
+    <!-- Analytics (reflects current stored completion overrides + queued items) -->
+    <section class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+            <div class="text-xs text-gray-500">Total Stops</div>
+            <div class="text-2xl font-bold" id="stat-total">—</div>
+        </div>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+            <div class="text-xs text-gray-500">Completed</div>
+            <div class="text-2xl font-bold text-green-400" id="stat-completed">—</div>
+        </div>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+            <div class="text-xs text-gray-500">Completion %</div>
+            <div class="text-2xl font-bold" id="stat-rate">—%</div>
+        </div>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+            <div class="text-xs text-gray-500">Avg / Day</div>
+            <div class="text-2xl font-bold" id="stat-avg">—</div>
+        </div>
+    </section>
+
     <!-- WEEK VIEW -->
     <section id="week-view" class="space-y-2">
         <div class="grid grid-cols-7 gap-2 text-xs text-gray-400 uppercase">
-            <div>Mon</div>
-            <div>Tue</div>
-            <div>Wed</div>
-            <div>Thu</div>
-            <div>Fri</div>
-            <div>Sat</div>
-            <div>Sun</div>
+            <div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div>
         </div>
 
-        <div class="grid grid-cols-7 gap-2">
-            {% for date in week_dates %} {% set visits =
-            scheduled_visits.get(date, []) %}
-            <div
-                class="day-cell bg-gray-900 border border-gray-800 rounded-xl p-2 min-h-[150px] cursor-pointer"
-                data-date="{{ date }}"
-                onclick="openDay('{{ date }}')"
-            >
+        <div class="grid grid-cols-7 gap-2" id="week-grid">
+            {% for date in week_dates %}
+            {% set visits = scheduled_visits.get(date, []) %}
+            <div class="day-cell bg-gray-900 border border-gray-800 rounded-xl p-2 min-h-[160px] cursor-pointer"
+                 data-date="{{ date }}">
                 <div class="flex justify-between items-center mb-1">
                     <span class="font-semibold text-sm">
-                        {{ date[-2:] }} {% if date == today %}
-                        <span class="ml-1 text-xs bg-blue-600 px-1.5 rounded"
-                            >Today</span
-                        >
+                        {{ date[-2:] }}
+                        {% if date == today %}
+                        <span class="ml-1 text-xs bg-blue-600 px-1.5 rounded">Today</span>
                         {% endif %}
                     </span>
-                    <span class="text-xs text-gray-500"
-                        >{{ visits|length }}</span
-                    >
+                    <span class="text-xs text-gray-500 day-count">0</span>
                 </div>
 
-                <ul class="space-y-1 text-xs">
-                    {% for v in visits %}
-                    <li>{{ v.customer_name }}</li>
-                    {% endfor %}
-                </ul>
+                <ul class="space-y-1 text-xs day-list"></ul>
 
-                {% if visits %}
-                <button
-                    class="optimize-btn mt-2 w-full text-xs bg-gray-800 hover:bg-gray-700 rounded py-1"
-                    onclick="event.stopPropagation(); optimizeDay('{{ date }}')"
-                >
-                    Optimize
-                </button>
-                {% endif %}
+                <div class="mt-2 flex gap-2">
+                    <button class="optimize-btn flex-1 text-xs bg-gray-800 hover:bg-gray-700 rounded py-1" data-date="{{ date }}">
+                        Optimize
+                    </button>
+                    <button class="export-btn flex-1 text-xs bg-gray-800 hover:bg-gray-700 rounded py-1" data-date="{{ date }}">
+                        Export
+                    </button>
+                </div>
             </div>
             {% endfor %}
         </div>
@@ -82,113 +85,637 @@ content %}
     <!-- MONTH VIEW -->
     <section id="month-view" class="hidden space-y-2">
         <div class="grid grid-cols-7 gap-2 text-xs text-gray-400 uppercase">
-            <div>Mon</div>
-            <div>Tue</div>
-            <div>Wed</div>
-            <div>Thu</div>
-            <div>Fri</div>
-            <div>Sat</div>
-            <div>Sun</div>
+            <div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div>
         </div>
 
-        <div class="grid grid-cols-7 gap-2">
-            {% for date in month_dates %} {% set visits =
-            scheduled_visits.get(date, []) %} {% set count = visits | length %}
-            {% if count == 0 %} {% set heat = "bg-gray-900" %} {% elif count <=
-            2 %} {% set heat = "bg-blue-900/40" %} {% elif count <= 5 %} {% set
-            heat = "bg-orange-900/50" %} {% else %} {% set heat =
-            "bg-red-900/60" %} {% endif %}
-
-            <div
-                class="day-cell {{ heat }} border border-gray-800 rounded-xl p-2 min-h-[110px] cursor-pointer"
-                data-date="{{ date }}"
-                onclick="openDay('{{ date }}')"
-            >
+        <div class="grid grid-cols-7 gap-2" id="month-grid">
+            {% for date in month_dates %}
+            <div class="day-cell border border-gray-800 rounded-xl p-2 min-h-[120px] cursor-pointer bg-gray-900"
+                 data-date="{{ date }}">
                 <div class="text-xs font-semibold mb-1">
-                    {{ date[-2:] }} {% if date == today %}
-                    <span class="ml-1 text-[10px] bg-blue-600 px-1.5 rounded"
-                        >Today</span
-                    >
+                    {{ date[-2:] }}
+                    {% if date == today %}
+                    <span class="ml-1 text-[10px] bg-blue-600 px-1.5 rounded">Today</span>
                     {% endif %}
                 </div>
 
-                {% for v in visits[:3] %}
-                <div class="truncate text-xs">{{ v.customer_name }}</div>
-                {% endfor %} {% if count > 3 %}
-                <div class="text-xs text-gray-400">+{{ count - 3 }} more</div>
-                {% endif %}
+                <div class="text-xs space-y-1 month-preview"></div>
+                <div class="mt-2 hidden month-actions">
+                    <button class="optimize-btn w-full text-[10px] bg-gray-800 hover:bg-gray-700 rounded py-1" data-date="{{ date }}">
+                        Optimize
+                    </button>
+                    <button class="export-btn w-full mt-1 text-[10px] bg-gray-800 hover:bg-gray-700 rounded py-1" data-date="{{ date }}">
+                        Export
+                    </button>
+                </div>
             </div>
             {% endfor %}
+        </div>
+
+        <!-- Heatmap legend -->
+        <div class="flex flex-wrap items-center gap-3 text-xs text-gray-400 mt-2">
+            <span class="font-semibold text-gray-300">Heatmap:</span>
+            <span class="inline-flex items-center gap-2"><span class="w-4 h-4 rounded bg-gray-900 border border-gray-800"></span>0</span>
+            <span class="inline-flex items-center gap-2"><span class="w-4 h-4 rounded bg-blue-900/40 border border-gray-800"></span>1–2</span>
+            <span class="inline-flex items-center gap-2"><span class="w-4 h-4 rounded bg-orange-900/50 border border-gray-800"></span>3–5</span>
+            <span class="inline-flex items-center gap-2"><span class="w-4 h-4 rounded bg-red-900/60 border border-gray-800"></span>6+</span>
         </div>
     </section>
 </div>
 
-<!-- SIDE PANEL -->
+<!-- Side Panel -->
+<div id="overlay" class="hidden fixed inset-0 bg-black/40 z-40"></div>
+
 <div
     id="side-panel"
-    class="fixed top-0 right-0 h-full w-80 bg-gray-950 border-l border-gray-800 transform translate-x-full transition-transform z-50"
+    class="fixed top-0 right-0 h-full w-full sm:w-[420px] bg-gray-950 border-l border-gray-800 transform translate-x-full transition-transform z-50 flex flex-col"
 >
     <div class="p-4 border-b border-gray-800 flex justify-between items-center">
-        <h3 class="font-semibold" id="panel-date">Route</h3>
-        <button onclick="closePanel()" class="text-gray-400 hover:text-white">
-            ✕
+        <div>
+            <div class="text-xs text-gray-500">Route Detail</div>
+            <h3 class="font-semibold text-lg" id="panel-date">—</h3>
+        </div>
+        <button id="panel-close" class="text-gray-400 hover:text-white text-xl leading-none">✕</button>
+    </div>
+
+    <!-- Estimates + actions -->
+    <div class="p-4 border-b border-gray-800 space-y-3">
+        <div class="grid grid-cols-2 gap-2">
+            <div class="bg-gray-900 border border-gray-800 rounded-lg p-3">
+                <div class="text-xs text-gray-500">Rough distance</div>
+                <div class="text-xl font-bold" id="est-distance">—</div>
+            </div>
+            <div class="bg-gray-900 border border-gray-800 rounded-lg p-3">
+                <div class="text-xs text-gray-500">Rough time</div>
+                <div class="text-xl font-bold" id="est-time">—</div>
+            </div>
+        </div>
+
+        <details class="bg-gray-900 border border-gray-800 rounded-lg p-3">
+            <summary class="cursor-pointer text-sm font-semibold text-gray-200">Estimate settings</summary>
+            <div class="mt-3 grid grid-cols-2 gap-2 text-sm">
+                <label class="space-y-1">
+                    <div class="text-xs text-gray-500">Minutes / stop</div>
+                    <input id="cfg-min-per-stop" type="number" min="1" step="1"
+                           class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2"
+                           value="10" />
+                </label>
+                <label class="space-y-1">
+                    <div class="text-xs text-gray-500">Miles between stops</div>
+                    <input id="cfg-mi-between" type="number" min="0" step="0.5"
+                           class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2"
+                           value="3" />
+                </label>
+                <label class="space-y-1 col-span-2">
+                    <div class="text-xs text-gray-500">Average MPH</div>
+                    <input id="cfg-mph" type="number" min="5" step="1"
+                           class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2"
+                           value="25" />
+                </label>
+                <div class="col-span-2 text-xs text-gray-500">
+                    These are rough estimates (no GPS/geocoding yet). They help you plan workload, not give exact routing.
+                </div>
+            </div>
+        </details>
+
+        <div class="flex gap-2">
+            <button id="panel-optimize" class="flex-1 bg-gray-800 hover:bg-gray-700 rounded-lg py-2 text-sm">
+                Optimize order
+            </button>
+            <button id="panel-export" class="flex-1 bg-gray-800 hover:bg-gray-700 rounded-lg py-2 text-sm">
+                Export (Print/PDF)
+            </button>
+        </div>
+    </div>
+
+    <!-- Stops list -->
+    <div class="p-4 overflow-auto flex-1 space-y-2" id="panel-content"></div>
+
+    <!-- Bottom actions -->
+    <div class="p-4 border-t border-gray-800">
+        <button id="panel-clear-queue" class="w-full bg-gray-800 hover:bg-gray-700 rounded-lg py-2 text-sm text-gray-200">
+            Clear queued stops for this day
         </button>
     </div>
-    <div class="p-4 space-y-2" id="panel-content"></div>
 </div>
 
 <script>
-    /* -------- View toggle -------- */
-    const week = document.getElementById("week-view");
-    const month = document.getElementById("month-view");
-    document.querySelectorAll(".view-btn").forEach(btn => {
-        btn.onclick = () => {
-            document.querySelectorAll(".view-btn").forEach(b => b.classList.remove("bg-blue-600", "text-white"));
-            btn.classList.add("bg-blue-600", "text-white");
-            week.classList.toggle("hidden", btn.dataset.view !== "week");
-            month.classList.toggle("hidden", btn.dataset.view !== "month");
+/* ===================== Data bootstrap ===================== */
+const TODAY = "{{ today }}";
+const scheduledVisits = {{ scheduled_visits | tojson }};
+
+/**
+ * Customer lookup (for balances auto-queue).
+ * Requires all_customers to be passed to calendar route (you already do elsewhere).
+ * If it's missing, we still function, but queued IDs will show as "#123".
+ */
+const customerIndex = (() => {
+    try {
+        const list = {{ (all_customers or []) | tojson }};
+        const m = {};
+        (list || []).forEach(c => {
+            // handle objects / dicts
+            const id = (c.id ?? c["id"]);
+            const name = (c.name ?? c["name"]);
+            const city = (c.city ?? c["city"] ?? "");
+            if (id != null) m[String(id)] = { id: String(id), name: name || ("#" + id), city };
+        });
+        return m;
+    } catch {
+        return {};
+    }
+})();
+
+/* ===================== Local storage keys ===================== */
+const K = {
+    order: (date) => `routeOrder:${date}`,              // array of stop keys (stable ids)
+    done:  (date) => `routeDone:${date}`,               // map of stopKey -> boolean
+    queue: (date) => `routeQueue:${date}`,              // array of customer_ids queued from balances
+    est:   () => `routeEstimateCfg`,                    // user settings
+};
+
+/* ===================== Helpers ===================== */
+function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
+
+function getStopKey(v) {
+    // Prefer an explicit id, else fall back to name string.
+    // This is for front-end persistence only.
+    return String(v.customer_id ?? v.customerId ?? v.id ?? v.customer_name ?? v.customerName ?? "");
+}
+
+function normalizeVisit(v) {
+    const name = v.customer_name ?? v.customerName ?? (v.name ?? "");
+    const cid  = v.customer_id ?? v.customerId ?? v.id ?? null;
+    const completed = !!(v.completed);
+    return { customer_name: name, customer_id: cid, completed };
+}
+
+function getCfg() {
+    const raw = localStorage.getItem(K.est());
+    if (!raw) return { minPerStop: 10, miBetween: 3, mph: 25 };
+    try {
+        const j = JSON.parse(raw);
+        return {
+            minPerStop: Number(j.minPerStop ?? 10),
+            miBetween: Number(j.miBetween ?? 3),
+            mph: Number(j.mph ?? 25),
         };
+    } catch {
+        return { minPerStop: 10, miBetween: 3, mph: 25 };
+    }
+}
+
+function setCfg(cfg) {
+    localStorage.setItem(K.est(), JSON.stringify(cfg));
+}
+
+function getQueue(date) {
+    const raw = localStorage.getItem(K.queue(date));
+    if (!raw) return [];
+    try { return JSON.parse(raw) || []; } catch { return []; }
+}
+
+function setQueue(date, arr) {
+    localStorage.setItem(K.queue(date), JSON.stringify(arr));
+}
+
+function getDoneMap(date) {
+    const raw = localStorage.getItem(K.done(date));
+    if (!raw) return {};
+    try { return JSON.parse(raw) || {}; } catch { return {}; }
+}
+
+function setDoneMap(date, map) {
+    localStorage.setItem(K.done(date), JSON.stringify(map));
+}
+
+function getOrder(date) {
+    const raw = localStorage.getItem(K.order(date));
+    if (!raw) return null;
+    try { return JSON.parse(raw) || null; } catch { return null; }
+}
+
+function setOrder(date, orderKeys) {
+    localStorage.setItem(K.order(date), JSON.stringify(orderKeys));
+}
+
+/**
+ * Combine scheduled stops + queued stops into a single list for a date.
+ * Queued are customer_ids (strings) that we turn into pseudo visits.
+ */
+function getDayStops(date) {
+    const base = (scheduledVisits[date] || []).map(normalizeVisit);
+
+    const queuedIds = getQueue(date);
+    const queued = queuedIds.map(id => {
+        const c = customerIndex[String(id)];
+        return normalizeVisit({
+            customer_id: String(id),
+            customer_name: c ? c.name + (c.city ? ` — ${c.city}` : "") : ("#" + id),
+            completed: false,
+        });
     });
 
-    /* -------- Side panel -------- */
-    function openDay(date) {
-        const panel = document.getElementById("side-panel");
-        const content = document.getElementById("panel-content");
-        const visits = window.visitsByDate[date] || [];
-        const order = getOrder(date, visits);
+    // merge: scheduled first, queued after (but order persistence can reorder)
+    const combined = [...base, ...queued];
 
-        document.getElementById("panel-date").textContent = date;
-        content.innerHTML = order.map(v =>
-            `<div class="bg-gray-900 border border-gray-800 rounded px-3 py-2 text-sm">${v.customer_name}</div>`
-        ).join("");
+    // apply done overrides
+    const done = getDoneMap(date);
+    combined.forEach(v => {
+        const k = getStopKey(v);
+        if (k && done[k] != null) v.completed = !!done[k];
+    });
 
-        panel.classList.remove("translate-x-full");
+    // apply persisted order (if present)
+    const ord = getOrder(date);
+    if (ord && ord.length) {
+        const map = new Map(combined.map(v => [getStopKey(v), v]));
+        const ordered = [];
+        ord.forEach(k => { if (map.has(k)) ordered.push(map.get(k)); });
+        // append anything new not in ord
+        combined.forEach(v => {
+            const k = getStopKey(v);
+            if (!ord.includes(k)) ordered.push(v);
+        });
+        return ordered;
     }
 
-    function closePanel() {
-        document.getElementById("side-panel").classList.add("translate-x-full");
+    return combined;
+}
+
+/* ===================== Render calendars ===================== */
+function intensityClass(count) {
+    if (count === 0) return "bg-gray-900";
+    if (count <= 2) return "bg-blue-900/40";
+    if (count <= 5) return "bg-orange-900/50";
+    return "bg-red-900/60";
+}
+
+function renderDayCell(cell) {
+    const date = cell.dataset.date;
+    if (!date) return;
+
+    const stops = getDayStops(date);
+    const count = stops.length;
+
+    // Week view: fill list + count + completion marks
+    const list = cell.querySelector(".day-list");
+    const countEl = cell.querySelector(".day-count");
+    if (list && countEl) {
+        countEl.textContent = String(count);
+
+        // show up to 5 for compactness
+        const preview = stops.slice(0, 5).map(v => {
+            const ok = v.completed ? `<span class="text-green-400">✓</span>` : ``;
+            return `<li class="flex justify-between truncate"><span>${escapeHtml(v.customer_name)}</span>${ok}</li>`;
+        }).join("");
+
+        list.innerHTML = preview || `<li class="text-gray-500">No stops</li>`;
     }
 
-    /* -------- Persisted order -------- */
-    function getOrder(date, visits) {
-        const saved = localStorage.getItem("routeOrder:" + date);
-        if (!saved) return visits;
-        const ids = JSON.parse(saved);
-        return ids.map(id => visits.find(v => v.customer_name === id)).filter(Boolean);
-    }
+    // Month view: heatmap + preview + actions
+    if (cell.closest("#month-grid")) {
+        cell.classList.remove("bg-gray-900","bg-blue-900/40","bg-orange-900/50","bg-red-900/60");
+        cell.classList.add(...intensityClass(count).split(" "));
 
-    function optimizeDay(date) {
-        const visits = window.visitsByDate[date];
-        const shuffled = [...visits].sort(() => Math.random() - 0.5);
-        localStorage.setItem(
-            "routeOrder:" + date,
-            JSON.stringify(shuffled.map(v => v.customer_name))
-        );
-        openDay(date);
-    }
+        const previewWrap = cell.querySelector(".month-preview");
+        const actions = cell.querySelector(".month-actions");
+        if (previewWrap) {
+            const lines = stops.slice(0, 3).map(v => {
+                const ok = v.completed ? `<span class="text-green-400">✓</span>` : ``;
+                return `<div class="truncate flex justify-between"><span>${escapeHtml(v.customer_name)}</span>${ok}</div>`;
+            }).join("");
 
-    /* -------- Inject visits map -------- */
-    window.visitsByDate = {{ scheduled_visits | tojson }};
+            previewWrap.innerHTML = lines || `<div class="text-gray-500">No stops</div>`;
+            if (count > 3) {
+                previewWrap.innerHTML += `<div class="text-gray-400">+${count - 3} more</div>`;
+            }
+        }
+        if (actions) actions.classList.toggle("hidden", count === 0);
+    }
+}
+
+function renderAll() {
+    document.querySelectorAll(".day-cell").forEach(renderDayCell);
+    computeStats();
+}
+
+/* ===================== Analytics ===================== */
+function computeStats() {
+    // Only count unique dates that have at least one stop (scheduled or queued)
+    const dates = new Set();
+    let total = 0;
+    let completed = 0;
+
+    document.querySelectorAll(".day-cell").forEach(cell => {
+        const date = cell.dataset.date;
+        if (!date) return;
+        const stops = getDayStops(date);
+        if (!stops.length) return;
+
+        dates.add(date);
+        total += stops.length;
+        completed += stops.filter(s => s.completed).length;
+    });
+
+    const avg = dates.size ? (total / dates.size).toFixed(1) : "0";
+    const rate = total ? Math.round((completed / total) * 100) : 0;
+
+    document.getElementById("stat-total").textContent = total;
+    document.getElementById("stat-completed").textContent = completed;
+    document.getElementById("stat-rate").textContent = rate + "%";
+    document.getElementById("stat-avg").textContent = avg;
+}
+
+/* ===================== Side panel ===================== */
+const overlay = document.getElementById("overlay");
+const panel = document.getElementById("side-panel");
+const panelDateEl = document.getElementById("panel-date");
+const panelContent = document.getElementById("panel-content");
+
+const estDistanceEl = document.getElementById("est-distance");
+const estTimeEl = document.getElementById("est-time");
+
+const cfgMinPerStop = document.getElementById("cfg-min-per-stop");
+const cfgMiBetween = document.getElementById("cfg-mi-between");
+const cfgMph = document.getElementById("cfg-mph");
+
+let activeDate = null;
+
+function openPanel(date) {
+    activeDate = date;
+    panelDateEl.textContent = date;
+
+    overlay.classList.remove("hidden");
+    panel.classList.remove("translate-x-full");
+
+    // load cfg into inputs
+    const cfg = getCfg();
+    cfgMinPerStop.value = cfg.minPerStop;
+    cfgMiBetween.value = cfg.miBetween;
+    cfgMph.value = cfg.mph;
+
+    renderPanel();
+}
+
+function closePanel() {
+    activeDate = null;
+    overlay.classList.add("hidden");
+    panel.classList.add("translate-x-full");
+}
+
+function renderPanel() {
+    if (!activeDate) return;
+    const stops = getDayStops(activeDate);
+    const done = getDoneMap(activeDate);
+
+    // Estimates (honest rough model)
+    const cfg = getCfg();
+    const n = stops.length;
+
+    // distance ~ (n-1)*miBetween, time = n*minPerStop + travelTime
+    const miles = n > 1 ? (n - 1) * cfg.miBetween : 0;
+    const travelHours = cfg.mph > 0 ? (miles / cfg.mph) : 0;
+    const travelMin = travelHours * 60;
+    const stopMin = n * cfg.minPerStop;
+    const totalMin = stopMin + travelMin;
+
+    estDistanceEl.textContent = `${miles.toFixed(1)} mi`;
+    estTimeEl.textContent = `${Math.round(totalMin)} min`;
+
+    const completedCount = stops.filter(s => s.completed).length;
+    const header = `
+        <div class="text-xs text-gray-400 mb-2">
+            ${completedCount} / ${n} completed
+        </div>
+    `;
+
+    const list = stops.map((s, idx) => {
+        const key = getStopKey(s) || `${idx}`;
+        const checked = s.completed ? "checked" : "";
+        return `
+            <div class="bg-gray-900 border border-gray-800 rounded-lg px-3 py-2 flex items-center gap-3">
+                <input type="checkbox" class="done-toggle accent-blue-500" data-key="${escapeAttr(key)}" ${checked} />
+                <div class="min-w-0 flex-1">
+                    <div class="text-sm font-medium truncate">${escapeHtml(s.customer_name)}</div>
+                    <div class="text-xs text-gray-500 truncate">${s.customer_id ? ("ID: " + escapeHtml(String(s.customer_id))) : ""}</div>
+                </div>
+                <div class="text-xs text-gray-500">#${idx + 1}</div>
+            </div>
+        `;
+    }).join("");
+
+    panelContent.innerHTML = header + (list || `<div class="text-gray-500">No stops for this day.</div>`);
+
+    // wire toggles
+    panelContent.querySelectorAll(".done-toggle").forEach(cb => {
+        cb.addEventListener("change", () => {
+            const k = cb.dataset.key;
+            const map = getDoneMap(activeDate);
+            map[k] = cb.checked;
+            setDoneMap(activeDate, map);
+            renderAll();
+            renderPanel();
+        });
+    });
+}
+
+/* ===================== Optimize order (persist) ===================== */
+function optimizeDay(date) {
+    const stops = getDayStops(date);
+    if (!stops.length) return;
+
+    // UI-only: "optimize" = stable shuffle.
+    // Later replace with backend / real algorithm.
+    const shuffled = [...stops]
+        .map(v => ({ v, r: Math.random() }))
+        .sort((a, b) => a.r - b.r)
+        .map(x => x.v);
+
+    const orderKeys = shuffled.map(getStopKey).filter(Boolean);
+    setOrder(date, orderKeys);
+
+    renderAll();
+    if (activeDate === date) renderPanel();
+}
+
+/* ===================== Export (Print/PDF) ===================== */
+function exportDay(date) {
+    const stops = getDayStops(date);
+    const cfg = getCfg();
+
+    const n = stops.length;
+    const miles = n > 1 ? (n - 1) * cfg.miBetween : 0;
+    const travelHours = cfg.mph > 0 ? (miles / cfg.mph) : 0;
+    const travelMin = travelHours * 60;
+    const stopMin = n * cfg.minPerStop;
+    const totalMin = stopMin + travelMin;
+
+    const html = `
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Route ${date}</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 24px; color: #111; }
+    h1 { margin: 0 0 8px; font-size: 20px; }
+    .meta { margin: 0 0 18px; color: #444; font-size: 12px; }
+    .card { border: 1px solid #ddd; border-radius: 12px; padding: 14px; margin-bottom: 10px; }
+    .row { display:flex; justify-content:space-between; gap: 12px; }
+    .name { font-weight: 600; }
+    .small { color:#555; font-size: 12px; }
+    @media print { body { margin: 0.5in; } }
+  </style>
+</head>
+<body>
+  <h1>Daily Route — ${escapeHtml(date)}</h1>
+  <p class="meta">
+    Stops: ${n} · Rough distance: ${miles.toFixed(1)} mi · Rough time: ${Math.round(totalMin)} min
+    <br/>Generated from Calendar (Print → Save as PDF on mobile/desktop)
+  </p>
+
+  ${stops.map((s, i) => `
+    <div class="card">
+      <div class="row">
+        <div>
+          <div class="name">${i + 1}. ${escapeHtml(s.customer_name)}</div>
+          <div class="small">${s.customer_id ? ("Customer ID: " + escapeHtml(String(s.customer_id))) : ""}</div>
+        </div>
+        <div class="small">${s.completed ? "Completed ✓" : "Pending"}</div>
+      </div>
+    </div>
+  `).join("")}
+
+  <script>
+    window.onload = () => window.print();
+  </script>
+</body>
+</html>
+    `;
+
+    const w = window.open("", "_blank");
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+}
+
+/* ===================== Auto-queue from balances ===================== */
+function autoQueueFromBalances() {
+    const params = new URLSearchParams(window.location.search);
+    const ids = params.getAll("customers");
+    if (!ids.length) return;
+
+    // Default: queue onto TODAY
+    const date = TODAY || ids.length ? TODAY : null;
+    if (!date) return;
+
+    const existing = new Set(getQueue(date).map(String));
+    ids.map(String).forEach(id => existing.add(id));
+    setQueue(date, [...existing]);
+
+    // Remove query params (avoid re-queue on refresh)
+    params.delete("customers");
+    const newUrl = window.location.pathname + (params.toString() ? ("?" + params.toString()) : "");
+    window.history.replaceState({}, "", newUrl);
+
+    // Open today's panel so the user sees the result immediately
+    renderAll();
+    openPanel(date);
+}
+
+/* ===================== Wire UI ===================== */
+document.getElementById("panel-close").addEventListener("click", closePanel);
+overlay.addEventListener("click", closePanel);
+
+document.getElementById("today-btn").addEventListener("click", () => openPanel(TODAY));
+
+document.getElementById("panel-optimize").addEventListener("click", () => {
+    if (!activeDate) return;
+    optimizeDay(activeDate);
+});
+
+document.getElementById("panel-export").addEventListener("click", () => {
+    if (!activeDate) return;
+    exportDay(activeDate);
+});
+
+document.getElementById("panel-clear-queue").addEventListener("click", () => {
+    if (!activeDate) return;
+    setQueue(activeDate, []);
+    renderAll();
+    renderPanel();
+});
+
+// Estimate config persistence
+function saveCfgFromInputs() {
+    const cfg = {
+        minPerStop: clamp(Number(cfgMinPerStop.value || 10), 1, 180),
+        miBetween: clamp(Number(cfgMiBetween.value || 3), 0, 200),
+        mph: clamp(Number(cfgMph.value || 25), 5, 90),
+    };
+    setCfg(cfg);
+    renderPanel();
+}
+[cfgMinPerStop, cfgMiBetween, cfgMph].forEach(inp => {
+    inp.addEventListener("change", saveCfgFromInputs);
+    inp.addEventListener("keyup", (e) => { if (e.key === "Enter") saveCfgFromInputs(); });
+});
+
+// Day click open panel (week + month)
+document.querySelectorAll(".day-cell").forEach(cell => {
+    cell.addEventListener("click", (e) => {
+        // avoid conflict with buttons inside
+        if (e.target.closest("button")) return;
+        openPanel(cell.dataset.date);
+    });
+});
+
+// Optimize / Export buttons within cells
+document.querySelectorAll(".optimize-btn").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        optimizeDay(btn.dataset.date);
+    });
+});
+document.querySelectorAll(".export-btn").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        exportDay(btn.dataset.date);
+    });
+});
+
+// View toggle
+const weekView = document.getElementById("week-view");
+const monthView = document.getElementById("month-view");
+document.querySelectorAll(".view-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+        document.querySelectorAll(".view-btn").forEach(b => b.classList.remove("bg-blue-600","text-white"));
+        btn.classList.add("bg-blue-600","text-white");
+        const isWeek = btn.dataset.view === "week";
+        weekView.classList.toggle("hidden", !isWeek);
+        monthView.classList.toggle("hidden", isWeek);
+        renderAll();
+    });
+});
+
+/* ===================== Escaping helpers ===================== */
+function escapeHtml(s) {
+    return String(s ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+}
+function escapeAttr(s) {
+    return escapeHtml(s).replaceAll("`","&#096;");
+}
+
+/* ===================== Init ===================== */
+renderAll();
+autoQueueFromBalances();
 </script>
 
 {% endblock %}
