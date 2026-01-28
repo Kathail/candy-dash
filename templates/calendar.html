@@ -1,183 +1,98 @@
 {% extends "base.html" %} {% block title %}Calendar{% endblock %} {% block
 content %}
-
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+<div class="max-w-6xl mx-auto space-y-10">
     <!-- Header -->
-    <header class="flex items-center justify-between">
-        <div>
-            <h1 class="text-3xl font-bold">Calendar & Planning</h1>
-            <p class="text-gray-400 mt-1">
-                Plan routes and track customer visits
-            </p>
-        </div>
-
-        <button data-action="quick-add" class="btn-primary">+ Quick Add</button>
-    </header>
-
-    <!-- Summary Row -->
-    <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {% include "calendar/_priority_visits.html" %} {% include
-        "calendar/_visit_analytics.html" %} {% include
-        "calendar/_quick_actions.html" %}
+    <section>
+        <h1 class="text-3xl font-bold">Calendar</h1>
+        <p class="text-gray-400 mt-1">
+            Plan routes, review upcoming visits, and add stops.
+        </p>
     </section>
 
-    <!-- Calendar -->
-    <section class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
-        <header class="flex items-center justify-between mb-6">
-            <div class="flex items-center gap-4">
-                <button data-action="prev-month" class="icon-btn">‹</button>
-                <h2 id="calendar-month" class="text-xl font-semibold"></h2>
-                <button data-action="next-month" class="icon-btn">›</button>
-            </div>
-
-            <button data-action="today" class="btn-secondary">Today</button>
-        </header>
-
-        <div
-            class="grid grid-cols-7 gap-2 text-xs text-gray-400 font-semibold mb-2"
-        >
-            <div class="text-center">Sun</div>
-            <div class="text-center">Mon</div>
-            <div class="text-center">Tue</div>
-            <div class="text-center">Wed</div>
-            <div class="text-center">Thu</div>
-            <div class="text-center">Fri</div>
-            <div class="text-center">Sat</div>
+    <!-- Stats -->
+    <section class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+            <div class="text-xs text-gray-500">Visits this week</div>
+            <div class="text-2xl font-bold">{{ visits_this_week }}</div>
         </div>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+            <div class="text-xs text-gray-500">Visits this month</div>
+            <div class="text-2xl font-bold">{{ visits_this_month }}</div>
+        </div>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+            <div class="text-xs text-gray-500">Avg / week</div>
+            <div class="text-2xl font-bold">{{ avg_per_week }}</div>
+        </div>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+            <div class="text-xs text-gray-500">Completion rate</div>
+            <div class="text-2xl font-bold">{{ completion_rate }}%</div>
+        </div>
+    </section>
 
-        <div id="calendar-grid" class="grid grid-cols-7 gap-2"></div>
+    <!-- Quick Add -->
+    <section class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+        <h2 class="text-xl font-semibold mb-4">Add Customer to Route</h2>
+
+        <form
+            method="post"
+            action="{{ url_for('route.route_add') }}"
+            class="grid grid-cols-1 md:grid-cols-3 gap-4"
+        >
+            <select
+                name="customer_id"
+                required
+                class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2"
+            >
+                <option value="">Select customer…</option>
+                {% for c in all_customers %}
+                <option value="{{ c.id }}">
+                    {{ c.name }} {% if c.balance_cents > 0 %} — owes ${{
+                    (c.balance_cents / 100) | round(2) }} {% endif %}
+                </option>
+                {% endfor %}
+            </select>
+
+            <input
+                type="date"
+                name="date"
+                value="{{ today }}"
+                class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2"
+            />
+
+            <button
+                type="submit"
+                class="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 font-medium"
+            >
+                Add to Route
+            </button>
+        </form>
+    </section>
+
+    <!-- Scheduled Routes -->
+    <section>
+        <h2 class="text-xl font-semibold mb-4">Scheduled Routes</h2>
+
+        {% if scheduled_visits %}
+        <div class="space-y-4">
+            {% for date, visits in scheduled_visits.items() %}
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+                <div class="font-semibold mb-3">{{ date }}</div>
+                <ul class="space-y-2">
+                    {% for v in visits %}
+                    <li class="flex justify-between text-sm">
+                        <span>{{ v.customer_name }}</span>
+                        {% if v.completed %}
+                        <span class="text-green-400">✓</span>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-gray-500">No scheduled routes yet.</p>
+        {% endif %}
     </section>
 </div>
-
-{% include "calendar/_quick_add_modal.html" %} {% include
-"calendar/_day_detail_modal.html" %} {% include "calendar/_area_modal.html" %}
-{% endblock %} {% block scripts %}
-<script>
-    (() => {
-        const state = {
-            date: new Date(),
-            selectedDate: null,
-            visits: {{ scheduled_visits | tojson }},
-        };
-
-        const grid = document.getElementById('calendar-grid');
-        const label = document.getElementById('calendar-month');
-
-        const fmt = d => d.toISOString().split('T')[0];
-
-        function render() {
-            const y = state.date.getFullYear();
-            const m = state.date.getMonth();
-
-            label.textContent = state.date.toLocaleDateString('en-US', {
-                month: 'long',
-                year: 'numeric'
-            });
-
-            grid.innerHTML = '';
-
-            const first = new Date(y, m, 1).getDay();
-            const days = new Date(y, m + 1, 0).getDate();
-            const prevDays = new Date(y, m, 0).getDate();
-            const today = fmt(new Date());
-
-            for (let i = first - 1; i >= 0; i--) {
-                grid.appendChild(dayCell(prevDays - i, true));
-            }
-
-            for (let d = 1; d <= days; d++) {
-                const date = new Date(y, m, d);
-                const key = fmt(date);
-                const list = state.visits[key] || [];
-                grid.appendChild(dayCell(d, false, key, list, key === today));
-            }
-
-            while (grid.children.length < 42) {
-                grid.appendChild(dayCell(grid.children.length, true));
-            }
-        }
-
-        function dayCell(day, muted, key = null, visits = [], today = false) {
-            const el = document.createElement('div');
-            el.className = `
-                min-h-[100px] rounded-lg p-2 cursor-pointer transition
-                ${muted ? 'bg-gray-800/30 opacity-40' : 'bg-gray-800 hover:bg-gray-750'}
-                ${today ? 'ring-2 ring-blue-500' : ''}
-            `;
-
-            el.innerHTML = `
-                <div class="text-xs ${today ? 'text-blue-400 font-bold' : 'text-gray-400'}">
-                    ${day}
-                    ${today ? '<span class="ml-1 text-[10px] bg-blue-500 text-white px-1.5 py-0.5 rounded">Today</span>' : ''}
-                </div>
-                ${visits.slice(0, 3).map(v => `
-                    <div class="mt-1 text-[10px] px-2 py-0.5 rounded
-                        ${v.completed ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'} truncate">
-                        ${v.customer_name}
-                    </div>
-                `).join('')}
-                ${visits.length > 3 ? `<div class="text-[10px] text-gray-500 mt-1">+${visits.length - 3} more</div>` : ''}
-            `;
-
-            if (!muted && key) {
-                el.addEventListener('click', () => openDay(key));
-            }
-
-            return el;
-        }
-
-        async function openDay(dateStr) {
-            state.selectedDate = dateStr;
-            const modal = document.getElementById('dayDetailModal');
-            const title = document.getElementById('dayDetailTitle');
-            const body = document.getElementById('dayDetailContent');
-
-            title.textContent = new Date(dateStr).toLocaleDateString('en-US', {
-                weekday: 'long',
-                month: 'long',
-                day: 'numeric',
-                year: 'numeric'
-            });
-
-            modal.classList.remove('hidden');
-            body.innerHTML = '<div class="text-center py-8 text-gray-500">Loading…</div>';
-
-            try {
-                const res = await fetch(`/api/calendar/visits/${dateStr}`);
-                const data = await res.json();
-
-                body.innerHTML = data.length
-                    ? data.map(v => `
-                        <div class="bg-gray-800 rounded-lg p-4 border border-gray-700 mb-2 ${v.completed ? 'opacity-60' : ''}">
-                            <div class="font-medium">${v.name}</div>
-                            ${v.address ? `<div class="text-sm text-gray-400">${v.address}</div>` : ''}
-                        </div>
-                    `).join('')
-                    : '<div class="text-center py-12 text-gray-500">No visits</div>';
-            } catch {
-                body.innerHTML = '<div class="text-center py-8 text-red-400">Failed to load</div>';
-            }
-        }
-
-        document.addEventListener('click', e => {
-            const a = e.target.closest('[data-action]');
-            if (!a) return;
-
-            if (a.dataset.action === 'prev-month') state.date.setMonth(state.date.getMonth() - 1);
-            if (a.dataset.action === 'next-month') state.date.setMonth(state.date.getMonth() + 1);
-            if (a.dataset.action === 'today') state.date = new Date();
-            if (a.dataset.action === 'quick-add') document.getElementById('quickAddModal').classList.remove('hidden');
-
-            render();
-        });
-
-        document.addEventListener('keydown', e => {
-            if (e.key === 'Escape') {
-                document.querySelectorAll('.modal').forEach(m => m.classList.add('hidden'));
-            }
-        });
-
-        render();
-    })();
-</script>
 {% endblock %}

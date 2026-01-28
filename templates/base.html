@@ -1,175 +1,107 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark">
     <head>
-        <meta charset="UTF-8" />
-        <title>{% block title %}Candy Route Planner{% endblock %}</title>
+        <meta charset="utf-8" />
+        <title>{% block title %}Candy Dash{% endblock %}</title>
+
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="theme-color" content="#0e1117" />
 
-        <!-- Tailwind (CDN for now) -->
-        <script src="https://cdn.tailwindcss.com"></script>
-
-        <!-- App styles -->
+        <!-- App CSS -->
         <link
             rel="stylesheet"
-            href="{{ url_for('static', filename='app.css') }}"
+            href="{{ url_for('static', filename='css/app.css') }}"
         />
+
+        {% block head %}{% endblock %}
     </head>
 
-    <body class="bg-gray-950 text-gray-100 font-sans antialiased">
-        {% set section = request.endpoint.split('.')[0] if request.endpoint else '' %}
-
+    <body class="bg-gray-950 text-gray-200 min-h-screen">
         <div class="flex min-h-screen">
             <!-- Sidebar -->
             <aside
-                class="w-64 bg-gray-900 border-r border-gray-800 flex flex-col"
+                class="w-64 shrink-0 bg-gray-900 border-r border-gray-800 hidden md:flex flex-col"
             >
-                <!-- Header -->
-                <div class="p-6 border-b border-gray-800">
-                    <div class="flex items-center gap-3">
-                        <div
-                            class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center"
-                        >
-                            <svg
-                                class="w-6 h-6 text-white"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
-                                />
-                            </svg>
-                        </div>
-                        <div>
-                            <h1 class="text-lg font-bold leading-tight">
-                                Candy Routes
-                            </h1>
-                            <p class="text-xs text-gray-400">
-                                Sales Management
-                            </p>
-                        </div>
-                    </div>
+                <div class="px-6 py-5 border-b border-gray-800">
+                    <h1 class="text-xl font-bold tracking-tight">
+                        🍬 Candy Dash
+                    </h1>
+                    <p class="text-xs text-gray-500 mt-1">Route Planner</p>
                 </div>
 
-                <!-- Navigation -->
-                <nav class="flex-1 p-4 space-y-1">
-                    <!-- Dashboard -->
+                <nav class="flex-1 px-4 py-6 space-y-1 sidebar-nav">
                     <a
                         href="{{ url_for('dashboard.dashboard') }}"
-                        aria-current="{{ 'page' if section == 'dashboard' else 'false' }}"
-                        class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg transition-all
-                        {% if section == 'dashboard' %}
-                            bg-blue-500/10 text-blue-400 border-l-2 border-blue-500
-                        {% else %}
-                            text-gray-400 hover:bg-gray-800 hover:text-gray-200
-                        {% endif %}"
+                        class="block px-3 py-2 rounded-lg hover:bg-gray-800 transition"
                     >
-                        <svg
-                            class="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0v-10a1 1 0 011-1h3m0 0l-3-3"
-                            />
-                        </svg>
-                        <span class="text-sm font-medium">Dashboard</span>
+                        Dashboard
                     </a>
-
-                    <!-- Calendar -->
+                    <a
+                        href="{{ url_for('route.route') }}"
+                        class="block px-3 py-2 rounded-lg hover:bg-gray-800 transition"
+                    >
+                        Today’s Route
+                    </a>
                     <a
                         href="{{ url_for('calendar.calendar') }}"
-                        aria-current="{{ 'page' if section == 'calendar' else 'false' }}"
-                        class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg transition-all
-                        {% if section == 'calendar' %}
-                            bg-blue-500/10 text-blue-400 border-l-2 border-blue-500
-                        {% else %}
-                            text-gray-400 hover:bg-gray-800 hover:text-gray-200
-                        {% endif %}"
+                        class="block px-3 py-2 rounded-lg hover:bg-gray-800 transition"
                     >
-                        <svg
-                            class="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                            />
-                        </svg>
-                        <span class="text-sm font-medium">Calendar</span>
+                        Calendar
                     </a>
-
-                    <!-- Balances -->
+                    <a
+                        href="{{ url_for('customers.customers') }}"
+                        class="block px-3 py-2 rounded-lg hover:bg-gray-800 transition"
+                    >
+                        Customers
+                    </a>
                     <a
                         href="{{ url_for('balances.balances') }}"
-                        aria-current="{{ 'page' if section == 'balances' else 'false' }}"
-                        class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg transition-all
-                        {% if section == 'balances' %}
-                            bg-blue-500/10 text-blue-400 border-l-2 border-blue-500
-                        {% else %}
-                            text-gray-400 hover:bg-gray-800 hover:text-gray-200
-                        {% endif %}"
+                        class="block px-3 py-2 rounded-lg hover:bg-gray-800 transition"
                     >
-                        <svg
-                            class="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
-                        </svg>
-                        <span class="text-sm font-medium">Balances</span>
+                        Balances
                     </a>
                 </nav>
 
-                <!-- Footer / Stats -->
-                <div class="p-4 border-t border-gray-800">
-                    {% if sidebar_stats is defined %}
-                    <div class="bg-gray-800 rounded-lg p-4">
-                        <div class="text-xs text-gray-400 mb-2">
-                            Quick Stats
-                        </div>
-                        <div class="space-y-1 text-xs">
-                            <div class="flex justify-between">
-                                <span class="text-gray-400">Today</span>
-                                <span class="font-medium text-white">
-                                    {{ sidebar_stats.done }}/{{ sidebar_stats.total }} stops
-                                </span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-400">Total Owed</span>
-                                <span class="font-medium text-red-400">
-                                    ${{ sidebar_stats.total_owed }}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
+                <div
+                    class="px-6 py-4 border-t border-gray-800 text-xs text-gray-500"
+                >
+                    <div>© {{ now.year }} Candy Dash</div>
                 </div>
             </aside>
 
-            <!-- Main -->
-            <main class="flex-1 p-10 overflow-y-auto">
-                {% block content %}{% endblock %}
+            <!-- Main content -->
+            <main class="flex-1 flex flex-col">
+                <!-- Top bar (mobile) -->
+                <header
+                    class="md:hidden flex items-center justify-between px-4 py-3 border-b border-gray-800 bg-gray-900"
+                >
+                    <span class="font-semibold">🍬 Candy Dash</span>
+                </header>
+
+                <!-- Flash messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                <div class="px-6 pt-4 space-y-2">
+                    {% for category, message in messages %}
+                    <div
+                        class="rounded-lg px-4 py-3 text-sm {% if category == 'success' %} bg-green-500/15 text-green-400 {% elif category == 'error' %} bg-red-500/15 text-red-400 {% elif category == 'warning' %} bg-yellow-500/15 text-yellow-400 {% else %} bg-gray-800 text-gray-300 {% endif %}"
+                    >
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %} {% endwith %}
+
+                <!-- Page content -->
+                <div class="flex-1 px-4 py-6 md:px-8 md:py-8">
+                    {% block content %}{% endblock %}
+                </div>
             </main>
         </div>
 
-        <script src="{{ url_for('static', filename='js/app.js') }}"></cript>
+        <!-- App JS -->
+        <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+
+        {% block scripts %}{% endblock %}
     </body>
 </html>
