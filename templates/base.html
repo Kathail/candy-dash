@@ -5,6 +5,10 @@
         <title>{% block title %}Candy Route Planner{% endblock %}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <script src="https://cdn.tailwindcss.com"></script>
+        <link
+            rel="stylesheet"
+            href="{{ url_for('static', filename='app.css') }}"
+        />
     </head>
     <body class="bg-gray-950 text-gray-100 font-sans antialiased">
         <div class="flex min-h-screen">

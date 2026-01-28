@@ -1,4 +1,6 @@
-/* Design tokens as CSS variables for custom values */
+/* ============================================= */
+/* Design tokens - unchanged from your original   */
+/* ============================================= */
 :root {
     --bg-app: #0e1117;
     --bg-sidebar: #0b0f16;
@@ -8,32 +10,232 @@
     --border-subtle: #1f2937;
 }
 
-/* Active sidebar nav item */
+/* ============================================= */
+/* Base resets & global mobile improvements      */
+/* ============================================= */
+html,
+body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background: var(--bg-app);
+    color: #e5e7eb;
+    font-family:
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        sans-serif;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+}
+
+/* Container padding scales down on mobile */
+.max-w-7xl {
+    padding-left: 1rem;
+    padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+    .max-w-7xl {
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .max-w-7xl {
+        padding-left: 2rem;
+        padding-right: 2rem;
+    }
+}
+
+/* Active sidebar nav item - unchanged */
 .sidebar-nav a.active {
     background: rgba(96, 165, 250, 0.08);
     color: #60a5fa;
 }
 
-/* Sort indicators for tables */
+/* Sort indicators - unchanged */
 .sort-indicator {
     opacity: 0.3;
     font-size: 0.8em;
     margin-left: 0.25rem;
 }
-
 .sortable.asc .sort-indicator::before {
     content: "↑";
     opacity: 1;
 }
-
 .sortable.desc .sort-indicator::before {
     content: "↓";
     opacity: 1;
 }
-
 .sortable.asc .sort-indicator,
 .sortable.desc .sort-indicator {
     opacity: 1;
 }
 
-/* Optional: Any other non-Tailwind overrides you want to keep */
+/* ============================================= */
+/* Mobile-friendly tables                        */
+/* ============================================= */
+/* Allow horizontal scroll on tables */
+.overflow-x-auto {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Smaller text & padding on mobile tables */
+@media (max-width: 640px) {
+    table {
+        font-size: 0.875rem;
+    }
+    th,
+    td {
+        padding: 0.75rem 0.5rem !important;
+    }
+}
+
+/* Optional: Card-like rows for very small screens (add data-label to <td> in HTML) */
+@media (max-width: 640px) {
+    .card-table tbody tr {
+        display: block;
+        background: var(--bg-card);
+        border-radius: 0.75rem;
+        margin-bottom: 1rem;
+        padding: 1rem;
+        box-shadow:
+            0 4px 6px -1px rgba(0, 0, 0, 0.1),
+            0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+    .card-table td {
+        display: block;
+        text-align: right;
+        border: none;
+        position: relative;
+        padding-left: 50%;
+        min-height: 2.5rem;
+    }
+    .card-table td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 0;
+        width: 45%;
+        padding-left: 1rem;
+        font-weight: 500;
+        color: #9ca3af;
+        text-align: left;
+    }
+}
+
+/* ============================================= */
+/* Responsive buttons & tap targets              */
+/* ============================================= */
+button,
+a[role="button"],
+input[type="submit"] {
+    min-height: 44px; /* iOS/Android tap target minimum */
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: manipulation;
+}
+
+/* Larger buttons on mobile */
+@media (max-width: 640px) {
+    button,
+    .btn {
+        padding: 0.75rem 1.25rem;
+        font-size: 1rem;
+    }
+}
+
+/* ============================================= */
+/* Headers & action bars stack on mobile         */
+/* ============================================= */
+header .flex.items-center.justify-between {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+@media (min-width: 640px) {
+    header .flex.items-center.justify-between {
+        flex-direction: row;
+        align-items: center;
+    }
+}
+
+/* ============================================= */
+/* Modals - full-width on mobile                 */
+/* ============================================= */
+.fixed.inset-0 .bg-gray-900.rounded-2xl {
+    width: 95%;
+    max-width: 28rem; /* ~448px */
+    margin: 1rem auto;
+    max-height: 90vh;
+}
+
+@media (min-width: 640px) {
+    .fixed.inset-0 .bg-gray-900.rounded-2xl {
+        width: 90%;
+        max-width: 32rem;
+    }
+}
+
+/* ============================================= */
+/* Forms - stack inputs on mobile                */
+/* ============================================= */
+.grid.grid-cols-1.md\\:grid-cols-2 {
+    grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+    .grid.grid-cols-1.md\\:grid-cols-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* ============================================= */
+/* Search inputs & filters - full-width mobile   */
+/* ============================================= */
+input[type="text"],
+input[type="search"] {
+    width: 100%;
+    max-width: 100%;
+}
+
+@media (min-width: 640px) {
+    input[type="text"],
+    input[type="search"] {
+        width: 16rem;
+    }
+}
+
+/* ============================================= */
+/* Misc - better spacing & readability           */
+/* ============================================= */
+.mb-8 {
+    margin-bottom: 2rem;
+}
+.mb-6 {
+    margin-bottom: 1.5rem;
+}
+
+@media (max-width: 640px) {
+    .text-3xl {
+        font-size: 1.875rem;
+        line-height: 2.25rem;
+    }
+    .text-4xl {
+        font-size: 2.25rem;
+        line-height: 2.5rem;
+    }
+    .p-6 {
+        padding: 1.25rem;
+    }
+    .p-8 {
+        padding: 1.5rem;
+    }
+}
