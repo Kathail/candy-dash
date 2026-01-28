@@ -1,166 +1,82 @@
-{% extends "base.html" %} {% block title %}Customers - Candy Dash{% endblock %}
+{% extends "base.html" %}
+{% block title %}Customers - Candy Dash{% endblock %}
+
 {% block content %}
-<div
-    class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-10 space-y-10"
-    x-data="customersApp"
->
-    <!-- Header – matches dashboard style -->
-    <header
-        class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6"
-    >
+<div class="max-w-7xl mx-auto space-y-10" x-data="customersApp">
+
+    <!-- Header – matches dashboard welcome header -->
+    <header class="flex items-center justify-between">
         <div>
-            <h1 class="text-3xl font-bold text-gray-200">Customers</h1>
-            <p class="mt-1 text-sm text-gray-400">
-                Manage contacts, addresses & balances
-            </p>
+            <h1 class="text-3xl font-bold text-gray-200 mb-1">Customers</h1>
+            <p class="text-gray-400">Manage contacts, addresses & balances</p>
         </div>
-        <button
-            type="button"
-            @click="addCustomerOpen = true"
-            class="theme-btn-primary flex items-center gap-2 justify-center w-full sm:w-auto"
-        >
-            <svg
-                class="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                stroke-width="2"
-            >
-                <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M12 4v16m8-8H4"
-                />
+        <button type="button" @click="addCustomerOpen = true" class="theme-btn-primary flex items-center gap-2 justify-center w-full sm:w-auto">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
             </svg>
             Add Customer
         </button>
     </header>
 
-    <!-- Stats Cards – matches dashboard KPI style -->
-    {% set owing = customers | selectattr('balance_cents', 'gt', 0) | list %} {%
-    set total_owed = (owing | sum(attribute='balance_cents') / 100) | round(2)
-    %}
+    <!-- Stats Cards – exact dashboard KPI style -->
+    {% set owing = customers | selectattr('balance_cents', 'gt', 0) | list %}
+    {% set total_owed = (owing | sum(attribute='balance_cents') / 100) | round(2) %}
 
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <div class="theme-card p-6">
-            <p
-                class="text-xs font-medium text-gray-400 uppercase tracking-wide"
-            >
-                Total Customers
-            </p>
-            <p class="mt-3 text-4xl font-bold text-gray-200">
-                {{ customers | length }}
-            </p>
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="theme-card p-6 hover:border-blue-500 transition-colors group">
+            <p class="text-sm text-gray-400 mb-2">Total Customers</p>
+            <p class="text-3xl font-bold mb-1">{{ customers | length }}</p>
+            <p class="text-xs text-gray-500">In system</p>
         </div>
-        <div class="theme-card p-6">
-            <p
-                class="text-xs font-medium text-gray-400 uppercase tracking-wide"
-            >
-                Total Owed
-            </p>
-            <p
-                class="mt-3 text-4xl font-bold {{ 'theme-text-danger' if total_owed > 0 else 'text-gray-300' }}"
-            >
-                ${{ total_owed }}
-            </p>
+        <div class="theme-card p-6 hover:border-red-500 transition-colors group">
+            <p class="text-sm text-gray-400 mb-2">Total Owed</p>
+            <p class="text-3xl font-bold mb-1 {{ 'theme-text-danger' if total_owed > 0 else 'text-gray-300' }}">${{ total_owed }}</p>
+            <p class="text-xs text-gray-500">{{ owing | length }} owing</p>
         </div>
-        <div class="theme-card p-6">
-            <p
-                class="text-xs font-medium text-gray-400 uppercase tracking-wide"
-            >
-                Customers Owing
-            </p>
-            <p class="mt-3 text-4xl font-bold text-amber-400">
-                {{ owing | length }}
-            </p>
+        <div class="theme-card p-6 hover:border-amber-500 transition-colors group">
+            <p class="text-sm text-gray-400 mb-2">Customers Owing</p>
+            <p class="text-3xl font-bold mb-1 theme-text-warning">{{ owing | length }}</p>
+            <p class="text-xs text-gray-500">Active balances</p>
         </div>
-    </div>
+    </section>
 
-    <!-- Bulk Actions -->
-    <div
-        id="bulk-bar"
-        x-show="selectedIds.length > 0"
-        class="sticky top-4 z-20 theme-card px-6 py-4 shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-    >
+    <!-- Bulk Actions – matches dashboard card feel -->
+    <div id="bulk-bar" x-show="selectedIds.length > 0" class="sticky top-4 z-20 theme-card px-6 py-4 shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <span class="text-sm font-medium text-gray-300">
-            <span
-                class="text-gray-200 font-bold"
-                x-text="selectedIds.length"
-            ></span>
-            selected
+            <span class="text-gray-200 font-bold" x-text="selectedIds.length"></span> selected
         </span>
         <div class="flex flex-wrap gap-3">
-            <button
-                type="button"
-                hx-post="/calendar/add_to_route"
-                hx-vals='{"customers": selectedIds}'
-                hx-swap="none"
-                hx-on::after-request="selectedIds = []; updateSelectUI()"
-                class="theme-btn-primary px-6 py-2.5"
-            >
+            <button type="button" hx-post="/calendar/add_to_route" hx-vals='{"customers": selectedIds}' hx-swap="none" hx-on::after-request="selectedIds = []; updateSelectUI()" class="theme-btn-primary px-6 py-2.5">
                 Add to Route
             </button>
-            <button
-                type="button"
-                @click="clearSelection"
-                class="theme-btn-secondary px-6 py-2.5"
-            >
+            <button type="button" @click="clearSelection" class="theme-btn-secondary px-6 py-2.5">
                 Clear
             </button>
         </div>
     </div>
 
-    <!-- Customer List Card -->
-    <div class="theme-card overflow-hidden">
+    <!-- Customer List Card – matches dashboard card style -->
+    <section class="theme-card overflow-hidden">
         <!-- Controls -->
-        <div
-            class="p-6 border-b border-gray-800 flex flex-col lg:flex-row lg:items-center justify-between gap-6"
-        >
+        <div class="p-6 border-b border-gray-800 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div class="flex items-baseline gap-4">
-                <h2 class="text-xl font-semibold text-gray-200">
-                    Customer List
-                </h2>
-                <span class="text-sm text-gray-500"
-                    >({{ customers | length }})</span
-                >
+                <h2 class="text-xl font-semibold text-gray-200">Customer List</h2>
+                <span class="text-sm text-gray-500">({{ customers | length }})</span>
             </div>
 
             <div class="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
                 <div class="relative flex-1 min-w-[300px]">
-                    <input
-                        id="customer-search"
-                        type="search"
-                        placeholder="Search name, phone, email, address, notes…"
-                        class="theme-input pl-11"
-                    />
-                    <svg
-                        class="w-5 h-5 text-gray-500 absolute left-4 top-1/2 -translate-y-1/2"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        stroke-width="2"
-                    >
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
-                        />
+                    <input id="customer-search" type="search" placeholder="Search name, phone, email, address, notes…" class="theme-input pl-11" />
+                    <svg class="w-5 h-5 text-gray-500 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
                     </svg>
                 </div>
                 <div class="flex gap-3 flex-wrap">
-                    <button
-                        type="button"
-                        @click="compactMode = !compactMode"
-                        class="theme-btn-secondary px-5 py-3"
-                    >
+                    <button type="button" @click="compactMode = !compactMode" class="theme-btn-secondary px-5 py-3">
                         <template x-if="!compactMode">Compact</template>
                         <template x-if="compactMode">Comfort</template>
                     </button>
-                    <button
-                        type="button"
-                        @click="selectMode = !selectMode"
-                        class="theme-btn-secondary px-5 py-3"
-                    >
+                    <button type="button" @click="selectMode = !selectMode" class="theme-btn-secondary px-5 py-3">
                         <template x-if="!selectMode">Select</template>
                         <template x-if="selectMode">Done</template>
                     </button>
@@ -168,165 +84,192 @@
             </div>
         </div>
 
-        <!-- Table -->
+        <!-- Pagination – subtle opacity header like dashboard sections -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 px-6 py-4 border-b border-gray-800 bg-gray-800/50">
+            <div class="text-sm text-gray-400" x-text="`Showing ${showingCount} of ${totalCount}`"></div>
+            <div class="flex items-center gap-4 flex-wrap">
+                <select id="page-size" class="theme-input px-4 py-2.5 w-auto">
+                    <option value="10">10 per page</option>
+                    <option value="20" selected>20 per page</option>
+                    <option value="50">50 per page</option>
+                    <option value="100">100 per page</option>
+                </select>
+                <div class="flex items-center gap-3">
+                    <button id="prev-page" :disabled="currentPage <= 1" class="theme-btn-secondary px-5 py-2.5 disabled:opacity-50">Prev</button>
+                    <span class="text-sm text-gray-300" x-text="`Page ${currentPage}`"></span>
+                    <button id="next-page" :disabled="currentPage >= totalPages" class="theme-btn-secondary px-5 py-2.5 disabled:opacity-50">Next</button>
+                </div>
+            </div>
+        </div>
+
+        {% if customers %}
         <div class="overflow-x-auto">
-            <table
-                class="min-w-full divide-y divide-gray-800 text-sm"
-                id="customer-table"
-            >
-                <thead>
-                    <tr>
+            <table class="min-w-full divide-y divide-gray-800 text-sm" id="customer-table">
+                <thead class="bg-gray-800/50 sticky top-0 z-10">
+                    <tr class="text-left text-xs font-medium text-gray-400 uppercase tracking-wide">
                         <th class="theme-table-th w-12">
-                            <input
-                                type="checkbox"
-                                x-show="selectMode"
-                                x-model="selectAll"
-                                class="h-5 w-5 rounded border-gray-700 text-app-accent focus:ring-app-accent bg-gray-800"
-                            />
+                            <input type="checkbox" x-show="selectMode" x-model="selectAll" class="h-5 w-5 rounded border-gray-700 text-blue-500 focus:ring-blue-500 bg-gray-800" />
                         </th>
-                        <th
-                            class="theme-table-th sortable cursor-pointer"
-                            @click="sort('name')"
-                        >
+                        <th class="theme-table-th sortable cursor-pointer hover:text-blue-300 transition" data-key="name">
                             Name
+                            <span class="sort-indicator ml-1 opacity-70" data-for="name">—</span>
                         </th>
-                        <th
-                            class="theme-table-th sortable cursor-pointer hidden lg:table-cell"
-                            @click="sort('phone')"
-                        >
+                        <th class="theme-table-th sortable cursor-pointer hover:text-blue-300 transition hidden lg:table-cell" data-key="phone">
                             Phone
+                            <span class="sort-indicator ml-1 opacity-70" data-for="phone">—</span>
                         </th>
-                        <th
-                            class="theme-table-th sortable cursor-pointer hidden lg:table-cell"
-                            @click="sort('email')"
-                        >
+                        <th class="theme-table-th sortable cursor-pointer hover:text-blue-300 transition hidden lg:table-cell" data-key="email">
                             Email
+                            <span class="sort-indicator ml-1 opacity-70" data-for="email">—</span>
                         </th>
-                        <th class="theme-table-th hidden xl:table-cell">
-                            Address
+                        <th class="theme-table-th hidden xl:table-cell">Address</th>
+                        <th class="theme-table-th sortable text-right cursor-pointer hover:text-blue-300 transition" data-key="balance" data-sort-default="desc">
+                            <div class="flex items-center justify-end gap-2">
+                                Balance
+                                <span class="sort-indicator opacity-70" data-for="balance">↓</span>
+                            </div>
                         </th>
-                        <th
-                            class="theme-table-th text-right sortable cursor-pointer"
-                            @click="sort('balance')"
-                        >
-                            Balance
-                        </th>
-                        <th
-                            class="theme-table-th hidden md:table-cell sortable cursor-pointer"
-                            @click="sort('lastvisit')"
-                        >
+                        <th class="theme-table-th sortable cursor-pointer hover:text-blue-300 transition hidden md:table-cell" data-key="lastvisit">
                             Last Visit
+                            <span class="sort-indicator ml-1 opacity-70" data-for="lastvisit">—</span>
                         </th>
                         <th class="theme-table-th text-right">Notes</th>
                         <th class="theme-table-th text-right">Actions</th>
                     </tr>
                 </thead>
-                <tbody
-                    id="customer-table-body"
-                    class="divide-y divide-gray-800"
-                >
-                    {% for c in customers %} {% set bal = c.balance_cents /
-                    100.0 %} {% set bal_class = 'theme-text-warning' if 0 < bal
-                    < 20 else 'text-orange-400' if bal < 100 else
-                    'theme-text-danger' if bal > 0 else 'text-gray-400' %}
-                    <tr
-                        class="hover:bg-gray-800/50 transition-colors"
-                        :class="{ 'density-compact': compactMode }"
-                    >
-                        <td class="theme-table-td">
-                            <input
-                                type="checkbox"
-                                x-show="selectMode"
-                                x-model="selectedIds"
-                                value="{{ c.id }}"
-                                class="h-5 w-5 rounded border-gray-700 text-app-accent focus:ring-app-accent bg-gray-800"
-                            />
+                <tbody id="customer-body" class="divide-y divide-gray-800">
+                    {% for c in customers %}
+                    {% set bal = c.balance_cents / 100.0 %}
+                    {% set bal_class = 'text-yellow-300' if bal > 0 and bal < 20 else 'text-orange-400' if bal < 100 else 'text-red-400' if bal > 0 else 'text-gray-400' %}
+                    <tr class="customer-row hover:bg-gray-800/50 transition-colors {{ 'bg-red-950/10' if c.balance_cents > 0 else '' }}"
+                        data-id="{{ c.id }}"
+                        data-name="{{ c.name | lower }}"
+                        data-phone="{{ (c.phone or '') | lower }}"
+                        data-email="{{ (c.email or '') | lower }}"
+                        data-address="{{ (c.address or '') | lower }}"
+                        data-balance="{{ c.balance_cents }}"
+                        data-lastvisit="{{ c.last_visit_at.isoformat() if c.last_visit_at else '1900-01-01' }}"
+                        data-notes="{{ (c.notes or '') | e }}"
+                        data-search="{{ (c.name ~ ' ' ~ (c.phone or '') ~ ' ' ~ (c.email or '') ~ ' ' ~ (c.address or '') ~ ' ' ~ (c.notes or '') ) | lower }}">
+                        <td class="px-6 py-5">
+                            <input type="checkbox" class="row-check hidden h-5 w-5 rounded border-gray-700 text-blue-500 focus:ring-blue-500 bg-gray-800" />
                         </td>
-                        <td class="theme-table-td font-medium">
-                            <button
-                                @click="openEdit({id: '{{ c.id }}', name: '{{ c.name|e }}', phone: '{{ c.phone|e }}', email: '{{ c.email|e }}', address: '{{ c.address|e }}', notes: '{{ c.notes|e }}', balance: '{{ bal|round(2) }}'})"
-                                class="text-app-accent hover:underline"
-                            >
+                        <td class="px-6 py-5 font-medium text-gray-200">
+                            <button type="button" class="btn-edit hover:text-blue-300 hover:underline transition focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+                                    data-id="{{ c.id }}"
+                                    data-name="{{ c.name }}"
+                                    data-phone="{{ c.phone or '' }}"
+                                    data-email="{{ c.email or '' }}"
+                                    data-address="{{ c.address or '' }}"
+                                    data-balance="{{ bal | round(2) }}">
                                 {{ c.name }}
                             </button>
-                        </td>
-                        <td class="theme-table-td hidden lg:table-cell">
-                            {% if c.phone %}
-                            <a
-                                href="tel:{{ c.phone }}"
-                                class="text-app-accent hover:underline"
-                                >{{ c.phone }}</a
-                            >
-                            {% else %}-{% endif %}
-                        </td>
-                        <td class="theme-table-td hidden lg:table-cell">
-                            {% if c.email %}
-                            <a
-                                href="mailto:{{ c.email }}"
-                                class="text-app-accent hover:underline"
-                                >{{ c.email }}</a
-                            >
-                            {% else %}-{% endif %}
-                        </td>
-                        <td class="theme-table-td hidden xl:table-cell">
-                            {% if c.address %}
-                            <a
-                                href="https://www.google.com/maps/search/?api=1&query={{ c.address | urlencode }}"
-                                target="_blank"
-                                rel="noopener"
-                                class="text-app-accent hover:underline"
-                            >
-                                {{ c.address }}
-                            </a>
-                            {% else %}-{% endif %}
+                            <div class="mt-3 text-xs text-gray-400 space-y-2 lg:hidden">
+                                {% if c.phone %}
+                                <div>
+                                    Phone:
+                                    <span class="text-gray-300"
+                                        ><a href="tel:{{ c.phone }}" class="text-blue-400 hover:underline">{{ c.phone }}</a></span
+                                    >
+                                </div>
+                                {% endif %} {% if c.email %}
+                                <div>
+                                    Email:
+                                    <span class="text-gray-300"
+                                        ><a href="mailto:{{ c.email }}" class="text-blue-400 hover:underline">{{ c.email }}</a></span
+                                    >
+                                </div>
+                                {% endif %} {% if c.address %}
+                                <div class="truncate">
+                                    Addr:
+                                    <span class="text-gray-300"
+                                        >{{ c.address }}</span
+                                    >
+                                </div>
+                                {% endif %}
+                                <div>
+                                    Last:
+                                    <span class="text-gray-300"
+                                        >{% if c.last_visit_at %}{{
+                                        c.last_visit_at.strftime('%b %d, %Y')
+                                        }}{% else %}Never{% endif %}</span
+                                    >
+                                </div>
+                            </div>
                         </td>
                         <td
-                            class="theme-table-td text-right font-semibold"
-                            :class="'{{ bal_class }}'"
+                            class="px-6 py-5 text-gray-400 hidden lg:table-cell"
                         >
-                            ${{ bal|round(2) }}
+                            {% if c.phone %}
+                            <a href="tel:{{ c.phone }}" class="text-blue-400 hover:underline">{{ c.phone }}</a>
+                            {% else %}—{% endif %}
                         </td>
-                        <td class="theme-table-td hidden md:table-cell">
+                        <td
+                            class="px-6 py-5 text-gray-400 hidden lg:table-cell"
+                        >
+                            {% if c.email %}
+                            <a href="mailto:{{ c.email }}" class="text-blue-400 hover:underline">{{ c.email }}</a>
+                            {% else %}—{% endif %}
+                        </td>
+                        <td
+                            class="px-6 py-5 text-gray-400 hidden xl:table-cell truncate"
+                        >
+                            {{ c.address or '—' }}
+                        </td>
+                        <td
+                            class="px-6 py-5 text-right font-semibold {{ bal_class }}"
+                        >
+                            ${{ bal | round(2) }}
+                        </td>
+                        <td
+                            class="px-6 py-5 text-gray-400 hidden md:table-cell"
+                        >
                             {% if c.last_visit_at %}{{
                             c.last_visit_at.strftime('%b %d, %Y') }}{% else
                             %}Never{% endif %}
                         </td>
-                        <td class="theme-table-td text-right">
+                        <td class="px-6 py-5 text-right">
+                            {% if c.notes %}
                             <button
-                                @click="toggleNotes('{{ c.id }}')"
-                                class="text-app-accent hover:text-blue-300 text-sm font-medium"
+                                type="button"
+                                onclick="toggleNotes(this)"
+                                class="text-blue-400 hover:text-blue-300 text-sm font-medium transition"
                             >
-                                <template x-if="!notesOpen['{{ c.id }}']"
-                                    >View / Add</template
-                                >
-                                <template x-if="notesOpen['{{ c.id }}']"
-                                    >Hide</template
-                                >
+                                View/Edit
                             </button>
-                            <div x-show="notesOpen['{{ c.id }}']" class="mt-3">
+                            {% else %}
+                            <button
+                                type="button"
+                                onclick="toggleNotes(this)"
+                                class="text-gray-400 hover:text-gray-300 text-sm font-medium transition"
+                            >
+                                Add Notes
+                            </button>
+                            {% endif %}
+                            <div class="notes-section hidden mt-4">
                                 <form
-                                    hx-post="{{ url_for('customers.update_notes', customer_id=c.id) }}"
-                                    hx-swap="none"
-                                    hx-on::after-request="toggleNotes('{{ c.id }}')"
+                                    method="post"
+                                    action="{{ url_for('route.route_update_notes', stop_id=c.id) }}"
+                                    class="space-y-3"
                                 >
                                     <textarea
                                         name="notes"
                                         rows="3"
-                                        class="theme-input resize-y"
+                                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-sm text-gray-200 placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-y"
                                     >
-{{ c.notes or '' }}</textarea
+{{ c.notes or "" }}</textarea
                                     >
-                                    <div class="flex justify-end gap-3 mt-2">
+                                    <div class="flex justify-end gap-3">
                                         <button
                                             type="button"
-                                            @click="toggleNotes('{{ c.id }}')"
-                                            class="theme-btn-secondary text-xs px-4 py-2"
+                                            onclick="toggleNotes(this)"
+                                            class="text-gray-400 hover:text-gray-300 text-xs"
                                         >
                                             Cancel
                                         </button>
                                         <button
                                             type="submit"
-                                            class="theme-btn-primary text-xs px-4 py-2"
+                                            class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-xs font-medium transition"
                                         >
                                             Save
                                         </button>
@@ -334,11 +277,17 @@
                                 </form>
                             </div>
                         </td>
-                        <td class="theme-table-td text-right">
+                        <td class="px-6 py-5 text-right">
                             <div class="flex items-center justify-end gap-3">
                                 <button
-                                    @click="openEdit({id: '{{ c.id }}', name: '{{ c.name|e }}', phone: '{{ c.phone|e }}', email: '{{ c.email|e }}', address: '{{ c.address|e }}', notes: '{{ c.notes|e }}', balance: '{{ bal|round(2) }}'})"
-                                    class="theme-btn-secondary text-sm px-4 py-2"
+                                    type="button"
+                                    class="btn-edit bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 text-sm px-5 py-2.5 rounded-lg transition"
+                                    data-id="{{ c.id }}"
+                                    data-name="{{ c.name }}"
+                                    data-phone="{{ c.phone or '' }}"
+                                    data-email="{{ c.email or '' }}"
+                                    data-address="{{ c.address or '' }}"
+                                    data-balance="{{ bal | round(2) }}"
                                 >
                                     Edit
                                 </button>
@@ -350,7 +299,7 @@
                                     <button
                                         type="submit"
                                         onclick="return confirm('Delete {{ c.name | e }}?');"
-                                        class="theme-btn-danger text-sm px-4 py-2"
+                                        class="bg-red-900/50 hover:bg-red-700 text-red-300 hover:text-white text-sm px-5 py-2.5 rounded-lg transition"
                                     >
                                         Delete
                                     </button>
@@ -361,108 +310,125 @@
                     {% endfor %}
                 </tbody>
             </table>
-        </div>
-    </div>
-
-    <!-- Add Customer Modal -->
-    <div
-        x-show="addCustomerOpen"
-        class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
-        @click.away="addCustomerOpen = false"
-        @keydown.escape="addCustomerOpen = false"
-    >
-        <div class="theme-modal" @click.stop>
-            <h2 class="text-2xl font-semibold text-gray-200 mb-6">
-                Add New Customer
-            </h2>
-            <form
-                method="post"
-                action="{{ url_for('customers.customer_add') }}"
-                class="grid grid-cols-1 md:grid-cols-2 gap-6"
+            <p
+                id="no-results"
+                class="hidden py-16 text-center text-gray-500 text-sm"
             >
-                <div>
-                    <label class="block text-sm text-gray-400 mb-2"
-                        >Name <span class="text-red-400">*</span></label
-                    >
-                    <input name="name" required class="theme-input" />
-                </div>
-                <div>
-                    <label class="block text-sm text-gray-400 mb-2"
-                        >Phone</label
-                    >
-                    <input name="phone" class="theme-input" />
-                </div>
-                <div>
-                    <label class="block text-sm text-gray-400 mb-2"
-                        >Email</label
-                    >
-                    <input name="email" type="email" class="theme-input" />
-                </div>
-                <div class="md:col-span-2">
-                    <label class="block text-sm text-gray-400 mb-2"
-                        >Address</label
-                    >
-                    <input name="address" class="theme-input" />
-                </div>
-                <div class="md:col-span-2">
-                    <label class="block text-sm text-gray-400 mb-2"
-                        >Notes</label
-                    >
-                    <textarea
-                        name="notes"
-                        rows="3"
-                        class="theme-input resize-y"
-                    ></textarea>
-                </div>
-                <div>
-                    <label class="block text-sm text-gray-400 mb-2"
-                        >Starting Balance ($)</label
-                    >
-                    <input
-                        name="balance"
-                        type="number"
-                        step="0.01"
-                        value="0.00"
-                        class="theme-input"
-                    />
-                </div>
-                <div class="md:col-span-2 flex justify-end gap-4">
-                    <button
-                        type="button"
-                        @click="addCustomerOpen = false"
-                        class="theme-btn-secondary px-6 py-3"
-                    >
-                        Cancel
-                    </button>
-                    <button type="submit" class="theme-btn-primary px-6 py-3">
-                        Add Customer
-                    </button>
-                </div>
-            </form>
+                No customers match your search.
+            </p>
         </div>
-    </div>
-
-    <!-- Edit Customer Modal -->
-    <div
-        x-show="editCustomerOpen"
-        class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
-        @click.away="editCustomerOpen = false"
-        @keydown.escape="editCustomerOpen = false"
-    >
-        <div class="theme-modal" @click.stop>
-            <h3 class="text-2xl font-semibold text-gray-200 mb-6">
-                Edit Customer
-            </h3>
-            <form
-                method="post"
-                :action="`/customers/edit/${editCustomer.id}`"
-                class="space-y-6"
+        {% else %}
+        <div class="py-20 text-center text-gray-500">
+            <svg
+                class="w-20 h-20 mx-auto mb-6 opacity-60"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                stroke-width="1.5"
             >
-                <input
-                    type="hidden"
-                    name="customer_id"
-                    x-model="editCustomer.id"
+                <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"
                 />
+            </svg>
+            <p class="text-xl text-gray-300">No customers added yet.</p>
+            <p class="mt-3 text-sm">
+                Click "Add Customer" above to get started.
+            </p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Add Customer Form – matches dashboard card -->
+    <section class="theme-card p-6">
+        <h2 class="text-xl font-semibold text-gray-200 mb-5">Add New Customer</h2>
+        <form
+            method="post"
+            action="{{ url_for('customers.customer_add') }}"
+            class="grid grid-cols-1 md:grid-cols-2 gap-6"
+        >
+            <div>
+                <label class="block text-sm text-gray-400 mb-2"
+                    >Name <span class="text-red-400">*</span></label
+                >
+                <input
+                    name="name"
+                    required
+                    class="theme-input"
+                />
+            </div>
+            <div>
+                <label class="block text-sm text-gray-400 mb-2">Phone</label>
+                <input
+                    name="phone"
+                    class="theme-input"
+                />
+            </div>
+            <div>
+                <label class="block text-sm text-gray-400 mb-2">Email</label>
+                <input
+                    name="email"
+                    type="email"
+                    class="theme-input"
+                />
+            </div>
+            <div class="md:col-span-2">
+                <label class="block text-sm text-gray-400 mb-2">Address</label>
+                <input
+                    name="address"
+                    class="theme-input"
+                />
+            </div>
+            <div class="md:col-span-2">
+                <label class="block text-sm text-gray-400 mb-2">Notes</label>
+                <textarea
+                    name="notes"
+                    rows="3"
+                    class="theme-input resize-y"
+                ></textarea>
+            </div>
+            <div>
+                <label class="block text-sm text-gray-400 mb-2"
+                    >Starting Balance ($)</label
+                >
+                <input
+                    name="balance"
+                    type="number"
+                    step="0.01"
+                    value="0.00"
+                    class="theme-input"
+                />
+            </div>
+            <div class="md:col-span-2 flex justify-end gap-4">
+                <button
+                    type="button"
+                    data-action="close"
+                    class="theme-btn-secondary py-3.5"
+                >
+                    Cancel
+                </button>
+                <button
+                    type="submit"
+                    class="theme-btn-primary py-3.5"
+                >
+                    Add Customer
+                </button>
+            </div>
+        </form>
+    </section>
+
+    <!-- Edit Modal – matches dashboard card feel -->
+    <div
+        id="edit-modal"
+        class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
+    >
+        <div
+            class="theme-modal w-full max-w-lg"
+        >
+            <h3 class="text-2xl font-semibold text-gray-200 mb-8">Edit Customer</h3>
+            <form id="edit-form" method="post" class="space-y-6">
+                <input type="hidden" name="customer_id" />
                 <div>
                     <label class="block text-sm text-gray-400 mb-2"
                         >Name <span class="text-red-400">*</span></label
@@ -470,7 +436,6 @@
                     <input
                         name="name"
                         required
-                        x-model="editCustomer.name"
                         class="theme-input"
                     />
                 </div>
@@ -480,7 +445,6 @@
                     >
                     <input
                         name="phone"
-                        x-model="editCustomer.phone"
                         class="theme-input"
                     />
                 </div>
@@ -491,7 +455,6 @@
                     <input
                         name="email"
                         type="email"
-                        x-model="editCustomer.email"
                         class="theme-input"
                     />
                 </div>
@@ -501,7 +464,6 @@
                     >
                     <input
                         name="address"
-                        x-model="editCustomer.address"
                         class="theme-input"
                     />
                 </div>
@@ -512,7 +474,6 @@
                     <textarea
                         name="notes"
                         rows="4"
-                        x-model="editCustomer.notes"
                         class="theme-input resize-y"
                     ></textarea>
                 </div>
@@ -524,21 +485,20 @@
                         name="balance"
                         type="number"
                         step="0.01"
-                        x-model="editCustomer.balance"
                         class="theme-input font-medium"
                     />
                 </div>
                 <div class="flex gap-4 pt-4">
                     <button
                         type="button"
-                        @click="editCustomerOpen = false"
-                        class="theme-btn-secondary flex-1 py-3.5"
+                        data-action="close"
+                        class="flex-1 theme-btn-secondary py-3.5"
                     >
                         Cancel
                     </button>
                     <button
                         type="submit"
-                        class="theme-btn-primary flex-1 py-3.5"
+                        class="flex-1 theme-btn-primary py-3.5"
                     >
                         Save Changes
                     </button>
@@ -546,47 +506,298 @@
             </form>
         </div>
     </div>
+
 </div>
 
+<!-- Full JavaScript -->
 <script>
-    document.addEventListener("alpine:init", () => {
-        Alpine.data("customersApp", () => ({
-            addCustomerOpen: false,
-            editCustomerOpen: false,
-            editCustomer: {
-                id: "",
-                name: "",
-                phone: "",
-                email: "",
-                address: "",
-                notes: "",
-                balance: "",
-            },
-            selectMode: false,
-            selectAll: false,
-            selectedIds: [],
-            compactMode: false,
-            notesOpen: {},
+    document.addEventListener("DOMContentLoaded", () => {
+        const modal = document.getElementById("edit-modal");
+        const editForm = document.getElementById("edit-form");
+        const searchInput = document.getElementById("customer-search");
+        const selectAllChk = document.getElementById("select-all");
+        const selectedCount = document.getElementById("selected-count");
+        const bulkBar = document.getElementById("bulk-bar");
+        const noResults = document.getElementById("no-results");
+        const rows = Array.from(document.querySelectorAll(".customer-row"));
+        let pageSize = 20;
+        let currentPage = 1;
+        let sortState = { key: "balance", dir: -1 };
+        let selectMode = false;
+        let compactMode = false;
 
-            openEdit(customer) {
-                this.editCustomer = { ...customer };
-                this.editCustomerOpen = true;
-            },
+        // ── Search ─────────────────────────────────────────────────────────────
+        function filterRows() {
+            const term = searchInput.value.toLowerCase();
+            rows.forEach((row) => {
+                const match = row.dataset.search?.includes(term) ?? false;
+                row.dataset.filtered = match ? "true" : "false";
+            });
+            paginate();
+        }
+        if (searchInput) {
+            let timeout;
+            searchInput.addEventListener("input", () => {
+                clearTimeout(timeout);
+                timeout = setTimeout(filterRows, 250);
+            });
+        }
 
-            toggleNotes(id) {
-                this.notesOpen[id] = !this.notesOpen[id];
-            },
+        // ── Sorting ────────────────────────────────────────────────────────────
+        function updateSortIndicators() {
+            document
+                .querySelectorAll("[data-for]")
+                .forEach((el) => (el.textContent = "—"));
+            document
+                .querySelectorAll(".sortable")
+                .forEach((th) => th.classList.remove("text-blue-300"));
 
-            clearSelection() {
-                this.selectedIds = [];
-                this.selectAll = false;
-            },
+            const active = document.querySelector(
+                `[data-key="${sortState.key}"]`,
+            );
+            if (active) {
+                active.classList.add("text-blue-300");
+                const ind = active.querySelector(".sort-indicator");
+                if (ind) ind.textContent = sortState.dir === -1 ? "↓" : "↑";
+            }
+        }
 
-            sort(key) {
-                // Implement sorting logic here or leave for backend
-                console.log("Sort by", key);
-            },
-        }));
+        function sortRows() {
+            const visibleRows = rows.filter(
+                (r) => r.dataset.filtered !== "false",
+            );
+            visibleRows.sort((a, b) => {
+                let va = a.dataset[sortState.key] ?? "";
+                let vb = b.dataset[sortState.key] ?? "";
+                const na = Number(va), nb = Number(vb);
+                const num = !isNaN(na) && !isNaN(nb);
+                return sortState.dir * (num ? na - nb : va.localeCompare(vb));
+            });
+            visibleRows.forEach((r) => r.parentElement.appendChild(r));
+            updateSortIndicators();
+        }
+
+        document.querySelectorAll(".sortable").forEach((th) => {
+            th.addEventListener("click", () => {
+                const key = th.dataset.key;
+                sortState.dir =
+                    sortState.key === key
+                        ? -sortState.dir
+                        : th.dataset.sortDefault === "desc"
+                          ? -1
+                          : 1;
+                sortState.key = key;
+                sortRows();
+                paginate();
+            });
+        });
+
+        // ── Pagination ─────────────────────────────────────────────────────────
+        function paginate() {
+            const visibleRows = rows.filter(
+                (r) => r.dataset.filtered !== "false",
+            );
+            const totalVisible = visibleRows.length;
+            const totalPages = Math.ceil(totalVisible / pageSize);
+
+            currentPage = Math.max(1, Math.min(currentPage, totalPages || 1));
+
+            rows.forEach((r) => (r.style.display = "none"));
+            const start = (currentPage - 1) * pageSize;
+            const end = start + pageSize;
+
+            visibleRows
+                .slice(start, end)
+                .forEach((r) => (r.style.display = ""));
+            document.getElementById("showing-count").textContent = Math.min(
+                end,
+                totalVisible,
+            );
+            document.getElementById("current-page").textContent = currentPage;
+            document.getElementById("prev-page").disabled = currentPage <= 1;
+            document.getElementById("next-page").disabled =
+                currentPage >= totalPages;
+
+            noResults?.classList.toggle("hidden", totalVisible > 0);
+        }
+
+        document
+            .getElementById("page-size")
+            ?.addEventListener("change", (e) => {
+                pageSize = parseInt(e.target.value, 10);
+                currentPage = 1;
+                paginate();
+            });
+
+        document.getElementById("prev-page")?.addEventListener("click", () => {
+            if (currentPage > 1) {
+                currentPage--;
+                paginate();
+            }
+        });
+
+        document.getElementById("next-page")?.addEventListener("click", () => {
+            const visible = rows.filter(
+                (r) => r.dataset.filtered !== "false",
+            ).length;
+            if (currentPage * pageSize < visible) {
+                currentPage++;
+                paginate();
+            }
+        });
+
+        // ── Inline Notes Toggle ────────────────────────────────────────────────
+        window.toggleNotes = function (btn) {
+            const row = btn.closest("tr");
+            const section = row.querySelector(".notes-section");
+            if (section) section.classList.toggle("hidden");
+        };
+
+        // Close notes on outside click
+        document.addEventListener("click", (e) => {
+            if (
+                !e.target.closest('button[onclick*="toggleNotes"]') &&
+                !e.target.closest(".notes-section")
+            ) {
+                document
+                    .querySelectorAll(".notes-section:not(.hidden)")
+                    .forEach((s) => s.classList.add("hidden"));
+            }
+        });
+
+        // ── Edit Modal ─────────────────────────────────────────────────────────
+        document.querySelectorAll(".btn-edit").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                editForm.action =
+                    "{{ url_for('customers.customer_edit', customer_id=0) }}".replace(
+                        "0",
+                        btn.dataset.id,
+                    );
+                editForm.querySelector('[name="customer_id"]').value =
+                    btn.dataset.id;
+                editForm.querySelector('[name="name"]').value =
+                    btn.dataset.name;
+                editForm.querySelector('[name="phone"]').value =
+                    btn.dataset.phone;
+                editForm.querySelector('[name="email"]').value =
+                    btn.dataset.email;
+                editForm.querySelector('[name="address"]').value =
+                    btn.dataset.address;
+                editForm.querySelector('[name="notes"]').value =
+                    btn.dataset.notes || "";
+                editForm.querySelector('[name="balance"]').value =
+                    btn.dataset.balance;
+                modal.classList.remove("hidden");
+            });
+        });
+
+        function closeModal() {
+            modal.classList.add("hidden");
+        }
+        modal?.addEventListener("click", (e) => {
+            if (e.target === modal) closeModal();
+        });
+        document
+            .querySelectorAll('[data-action="close"]')
+            .forEach((b) => b.addEventListener("click", closeModal));
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") closeModal();
+        });
+
+        // ── Select / Bulk ──────────────────────────────────────────────────────
+        function getRowCheckboxes() {
+            return [...document.querySelectorAll(".row-check")];
+        }
+
+        function updateBulkUI() {
+            const checked = getRowCheckboxes().filter((c) => c.checked).length;
+            selectedCount.textContent = checked;
+            bulkBar.classList.toggle("hidden", checked === 0);
+
+            if (selectAllChk) {
+                const visibleChecks = getRowCheckboxes().filter(
+                    (c) => c.closest("tr").style.display !== "none",
+                );
+                const allChecked =
+                    visibleChecks.length > 0 &&
+                    visibleChecks.every((c) => c.checked);
+                const someChecked = visibleChecks.some((c) => c.checked);
+                selectAllChk.checked = allChecked;
+                selectAllChk.indeterminate = someChecked && !allChecked;
+            }
+        }
+
+        function toggleSelectMode(enable) {
+            selectMode = enable;
+            getRowCheckboxes().forEach((c) =>
+                c.classList.toggle("hidden", !enable),
+            );
+            selectAllChk?.classList.toggle("hidden", !enable);
+            document.getElementById("toggle-select").textContent = enable
+                ? "Done"
+                : "Select";
+
+            if (!enable) {
+                getRowCheckboxes().forEach((c) => (c.checked = false));
+                updateBulkUI();
+            }
+        }
+
+        document
+            .getElementById("toggle-select")
+            ?.addEventListener("click", () => toggleSelectMode(!selectMode));
+        selectAllChk?.addEventListener("change", (e) => {
+            getRowCheckboxes().forEach((c) => {
+                if (c.closest("tr").style.display !== "none")
+                    c.checked = e.target.checked;
+            });
+            updateBulkUI();
+        });
+        document.addEventListener("change", (e) => {
+            if (e.target.classList.contains("row-check")) updateBulkUI();
+        });
+
+        document.getElementById("bulk-clear")?.addEventListener("click", () => {
+            getRowCheckboxes().forEach((c) => (c.checked = false));
+            updateBulkUI();
+        });
+
+        document
+            .getElementById("bulk-add-to-route")
+            ?.addEventListener("click", () => {
+                const ids = getRowCheckboxes()
+                    .filter((c) => c.checked)
+                    .map((c) => c.closest("tr")?.dataset.id)
+                    .filter(Boolean);
+
+                if (ids.length === 0) return;
+
+                const params = new URLSearchParams();
+                ids.forEach((id) => params.append("customers", id));
+                window.location.href = `/calendar?${params}`;
+            });
+
+        // ── Compact Mode ───────────────────────────────────────────────────────
+        document
+            .getElementById("toggle-density")
+            ?.addEventListener("click", () => {
+                compactMode = !compactMode;
+                document.getElementById("toggle-density").textContent =
+                    compactMode ? "Comfort" : "Compact";
+
+                rows.forEach((row) => {
+                    row.querySelectorAll("td").forEach((td) => {
+                        td.classList.toggle("py-4", !compactMode);
+                        td.classList.toggle("py-2.5", compactMode);
+                    });
+                });
+            });
+
+        // ── Initial Setup ──────────────────────────────────────────────────────
+        toggleSelectMode(false);
+        filterRows();
+        sortRows();
+        paginate();
     });
 </script>
 {% endblock %}
