@@ -1,6 +1,6 @@
 // static/js/app.js
 // Candy Flask – Frontend Behavior
-// Minimal, no frameworks, only what's needed
+// Minimal, no frameworks, Tailwind-only
 
 document.addEventListener("DOMContentLoaded", () => {
   console.log("Candy Flask frontend loaded");
@@ -9,7 +9,6 @@ document.addEventListener("DOMContentLoaded", () => {
      Utilities
      ========================================================= */
 
-  // Format currency helper (expects cents)
   function formatCurrency(amount) {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -19,10 +18,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }).format(amount / 100);
   }
 
-  // Global reference to selected date from calendar
   let selectedDate = null;
 
-  // Expose setter for calendar.js
   window.setSelectedDate = (dateStr) => {
     selectedDate = dateStr;
   };
@@ -42,10 +39,10 @@ document.addEventListener("DOMContentLoaded", () => {
       Array.from(rows).forEach((row) => {
         const cells = row.cells;
         const searchableText = [
-          cells[0]?.textContent || "", // name
-          cells[1]?.textContent || "", // phone
-          cells[2]?.textContent || "", // address
-          cells[3]?.textContent || "", // notes / balance cell fallback
+          cells[0]?.textContent || "",
+          cells[1]?.textContent || "",
+          cells[2]?.textContent || "",
+          cells[3]?.textContent || "",
         ]
           .join(" ")
           .toLowerCase();
@@ -60,8 +57,8 @@ document.addEventListener("DOMContentLoaded", () => {
      ========================================================= */
 
   const editModal = document.getElementById("editModal");
-  const closeModalBtn = document.querySelector(".close-modal");
   const editButtons = document.querySelectorAll(".edit-button");
+  const closeModalBtn = editModal?.querySelector(".close-modal");
 
   if (editModal && closeModalBtn && editButtons.length > 0) {
     editButtons.forEach((button) => {
@@ -147,7 +144,7 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
 
     try {
-      const response = await fetch("/customers_by_area");
+      const response = await fetch("/calendar/customers_by_area");
       if (!response.ok) throw new Error("Failed to load areas");
 
       const groups = await response.json();
