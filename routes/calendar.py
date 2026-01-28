@@ -7,7 +7,7 @@ from flask import Blueprint, jsonify, render_template
 
 from .db import get_conn
 
-# Blueprint must be created before any route decorators use it
+# Blueprint first — must be before any @calendar_bp decorators
 calendar_bp = Blueprint("calendar", __name__)
 
 
@@ -47,12 +47,14 @@ def fetch_visit_analytics(cur, today):
     cur.execute(
         "SELECT COUNT(*) AS count FROM visits WHERE visited_at >= %s", (week_ago,)
     )
-    visits_this_week = cur.fetchone()["count"] or 0
+    row = cur.fetchone()
+    visits_this_week = row["count"] if row else 0
 
     cur.execute(
         "SELECT COUNT(*) AS count FROM visits WHERE visited_at >= %s", (month_ago,)
     )
-    visits_this_month = cur.fetchone()["count"] or 0
+    row = cur.fetchone()
+    visits_this_month = row["count"] if row else 0
 
     cur.execute(
         """
@@ -62,7 +64,8 @@ def fetch_visit_analytics(cur, today):
         """,
         (today - timedelta(days=28),),
     )
-    avg_per_week = cur.fetchone()["avg_per_week"] or 0
+    row = cur.fetchone()
+    avg_per_week = row["avg_per_week"] if row else 0
 
     cur.execute(
         """
@@ -76,7 +79,8 @@ def fetch_visit_analytics(cur, today):
         """,
         (month_ago,),
     )
-    completion_rate = cur.fetchone()["rate"] or 0
+    row = cur.fetchone()
+    completion_rate = row["rate"] if row else 0
 
     return visits_this_week, visits_this_month, avg_per_week, completion_rate
 
@@ -120,25 +124,19 @@ def calendar():
 
     with get_conn() as conn:
         with conn.cursor() as cur:
-            # Priority customers for the card
             priority_visits = fetch_priority_customers(cur)
-
-            # Analytics numbers
             visits_this_week, visits_this_month, avg_per_week, completion_rate = (
                 fetch_visit_analytics(cur, today)
             )
 
-            # Count never-visited customers (for New Customers badge)
             cur.execute("SELECT last_visit_at FROM customers")
             never_visited = sum(
                 1 for row in cur.fetchall() if row["last_visit_at"] is None
             )
 
-            # Main calendar data
             scheduled_visits = fetch_scheduled_routes(cur, today)
 
-            # Date ranges for template + JS
-            week_start = today - timedelta(days=today.weekday())  # Monday
+            week_start = today - timedelta(days=today.weekday())
             week_dates = [
                 (week_start + timedelta(days=i)).isoformat() for i in range(7)
             ]
