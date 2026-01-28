@@ -1,7 +1,6 @@
 {% extends "base.html" %} {% block title %}Calendar{% endblock %} {% block
 content %}
-
-<div class="max-w-7xl mx-auto">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <!-- Header -->
     <header class="mb-8">
         <div class="flex items-center justify-between mb-2">
@@ -260,6 +259,41 @@ content %}
                         </div>
                     </button>
                 </li>
+                <!-- NEW: Area Quick Add button -->
+                <li>
+                    <button
+                        onclick="openAreaOptimizer()"
+                        class="w-full bg-gray-800 hover:bg-gray-750 rounded-lg p-3 text-left transition group"
+                    >
+                        <div class="flex items-center gap-3">
+                            <div
+                                class="bg-purple-500/20 p-2 rounded-lg group-hover:bg-purple-500/30 transition"
+                            >
+                                <svg
+                                    class="w-5 h-5 text-purple-400"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0zM15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                                    />
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="font-medium text-sm">
+                                    Area Quick Add
+                                </div>
+                                <div class="text-xs text-gray-400">
+                                    Group & add by city/zip
+                                </div>
+                            </div>
+                        </div>
+                    </button>
+                </li>
             </ul>
         </div>
     </section>
@@ -478,26 +512,70 @@ content %}
     </div>
 </div>
 
+<!-- Area Quick Add Modal (new) -->
+<div
+    id="area-optimizer-modal"
+    class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50"
+>
+    <div
+        class="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-5xl max-h-[90vh] flex flex-col"
+    >
+        <div
+            class="p-6 border-b border-gray-800 flex items-center justify-between"
+        >
+            <h3 class="text-xl font-semibold">Quick Add by Area</h3>
+            <button
+                onclick="
+                    document
+                        .getElementById('area-optimizer-modal')
+                        .classList.add('hidden')
+                "
+                class="text-gray-400 hover:text-white transition"
+            >
+                <svg
+                    class="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12"
+                    />
+                </svg>
+            </button>
+        </div>
+        <div class="flex-1 overflow-y-auto p-6" id="area-content">
+            <!-- Dynamic content loaded here by JS -->
+        </div>
+    </div>
+</div>
+
 <script>
     const scheduledVisits = {{ scheduled_visits | tojson }};
     let currentDate = new Date();
     let selectedDate = null;
 
+    function setSelectedDate(dateStr) {
+        selectedDate = dateStr;
+        // You can also call window.setSelectedDate(dateStr) if you want to expose it globally for app.js
+    }
+
     function renderCalendar() {
         const year = currentDate.getFullYear();
         const month = currentDate.getMonth();
         const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-
         document.getElementById('currentMonth').textContent = `${monthNames[month]} ${year}`;
 
         const firstDay = new Date(year, month, 1).getDay();
         const daysInMonth = new Date(year, month + 1, 0).getDate();
         const today = new Date();
-
         const calendarDays = document.getElementById('calendarDays');
         calendarDays.innerHTML = '';
 
-        // Previous month days
+        // Previous month filler days
         const prevMonthDays = new Date(year, month, 0).getDate();
         for (let i = firstDay - 1; i >= 0; i--) {
             calendarDays.innerHTML += `<div class="min-h-[100px] bg-gray-800/30 rounded-lg p-2 opacity-40"><div class="text-xs text-gray-600">${prevMonthDays - i}</div></div>`;
@@ -510,7 +588,6 @@ content %}
             const isToday = date.toDateString() === today.toDateString();
             const dayOfWeek = date.getDay();
             const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-
             const visits = scheduledVisits[dateStr] || [];
             const visitCount = visits.length;
 
@@ -538,7 +615,7 @@ content %}
             `;
         }
 
-        // Next month days
+        // Next month filler days
         const remainingCells = 42 - (firstDay + daysInMonth);
         for (let day = 1; day <= remainingCells; day++) {
             calendarDays.innerHTML += `<div class="min-h-[100px] bg-gray-800/30 rounded-lg p-2 opacity-40"><div class="text-xs text-gray-600">${day}</div></div>`;
@@ -570,8 +647,13 @@ content %}
 
     async function openDayDetail(dateStr) {
         selectedDate = dateStr;
+        setSelectedDate(dateStr);  // sync with app.js if needed
+
         const date = new Date(dateStr + 'T00:00:00');
-        document.getElementById('dayDetailTitle').textContent = date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        document.getElementById('dayDetailTitle').textContent = date.toLocaleDateString('en-US', {
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+        });
+
         document.getElementById('dayDetailModal').classList.remove('hidden');
 
         const content = document.getElementById('dayDetailContent');
@@ -642,24 +724,99 @@ content %}
         alert(`Overdue visits (14+ days):\n\n${customers.map(c => `• ${c.name} (${c.days_since || 'Never visited'} days)`).join('\n')}`);
     }
 
+    // Area Quick Add functions (called from button)
+    async function openAreaOptimizer() {
+        const modal = document.getElementById('area-optimizer-modal');
+        if (!modal) return;
+
+        modal.classList.remove('hidden');
+
+        const container = document.getElementById('area-content');
+        container.innerHTML = '<div class="text-center py-16 text-gray-400">Loading areas...</div>';
+
+        try {
+            const res = await fetch('/calendar/customers_by_area');
+            if (!res.ok) throw new Error('Failed to load');
+
+            const groups = await res.json();
+
+            if (Object.keys(groups).length === 0) {
+                container.innerHTML = '<div class="text-center py-16 text-gray-400">No priority customers found.</div>';
+                return;
+            }
+
+            let html = '';
+            Object.entries(groups).forEach(([area, customers]) => {
+                html += `
+                    <div class="mb-10">
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 class="text-xl font-semibold">${area} <span class="text-sm text-gray-500">(${customers.length})</span></h4>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            ${customers.map(c => `
+                                <div class="bg-gray-800 rounded-xl p-5 border border-gray-700 hover:bg-gray-750 transition">
+                                    <div class="font-medium text-lg mb-1">${c.name}</div>
+                                    <div class="text-sm text-gray-400 mb-3">${c.address}</div>
+                                    <div class="flex flex-wrap gap-2 mb-4">
+                                        ${c.balance_cents > 0 ? `<span class="text-xs bg-red-500/30 text-red-400 px-2.5 py-1 rounded-full">Owes $${(c.balance_cents / 100).toFixed(2)}</span>` : ''}
+                                        ${c.days_since > 14 ? `<span class="text-xs bg-amber-500/30 text-amber-400 px-2.5 py-1 rounded-full">${c.days_since}+ days</span>` : ''}
+                                    </div>
+                                    <button onclick="quickAddFromArea(${c.id})"
+                                            class="w-full bg-green-600 hover:bg-green-700 py-2.5 rounded-lg font-medium transition">
+                                        + Add to ${selectedDate ? 'selected day' : 'Today'}
+                                    </button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        } catch (err) {
+            container.innerHTML = '<div class="text-center py-16 text-red-400">Error loading areas.</div>';
+        }
+    }
+
+    function quickAddFromArea(customerId) {
+        const modal = document.getElementById('quickAddModal');
+        if (!modal) return;
+
+        const form = modal.querySelector('form');
+        if (!form) return;
+
+        form.querySelector('select[name="customer_id"]').value = customerId;
+        form.querySelector('input[name="date"]').value = selectedDate || new Date().toISOString().split('T')[0];
+
+        const notes = form.querySelector('textarea[name="notes"]');
+        if (notes) notes.value = (notes.value ? notes.value + '\n' : '') + 'Added from Area Quick Add';
+
+        modal.classList.remove('hidden');
+    }
+
+    // Close modals on escape / click outside
     document.addEventListener('keydown', e => {
         if (e.key === 'Escape') {
-            closeQuickAddModal();
-            closeDayDetailModal();
+            document.getElementById('quickAddModal')?.classList.add('hidden');
+            document.getElementById('dayDetailModal')?.classList.add('hidden');
+            document.getElementById('area-optimizer-modal')?.classList.add('hidden');
         }
     });
 
     document.getElementById('quickAddModal')?.addEventListener('click', e => {
-        if (e.target.id === 'quickAddModal') closeQuickAddModal();
+        if (e.target.id === 'quickAddModal') e.target.classList.add('hidden');
     });
 
     document.getElementById('dayDetailModal')?.addEventListener('click', e => {
-        if (e.target.id === 'dayDetailModal') closeDayDetailModal();
+        if (e.target.id === 'dayDetailModal') e.target.classList.add('hidden');
     });
 
+    document.getElementById('area-optimizer-modal')?.addEventListener('click', e => {
+        if (e.target.id === 'area-optimizer-modal') e.target.classList.add('hidden');
+    });
+
+    // Initial render
     document.addEventListener('DOMContentLoaded', () => {
         renderCalendar();
     });
 </script>
-
 {% endblock %}

@@ -1,4 +1,5 @@
 # routes/calendar.py
+from collections import defaultdict
 from datetime import date, datetime, timedelta
 
 from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
@@ -15,7 +16,7 @@ def calendar():
 
     with get_conn() as conn:
         with conn.cursor() as cur:
-            # Get priority visits (customers with high balances or not visited recently)
+            # Priority visits (customers with high balances or not visited recently)
             cur.execute("""
                 SELECT
                     c.id,
@@ -41,37 +42,23 @@ def calendar():
             month_ago = today - timedelta(days=30)
 
             cur.execute(
-                """
-                SELECT COUNT(*) as count
-                FROM visits
-                WHERE visited_at >= %s
-            """,
+                "SELECT COUNT(*) as count FROM visits WHERE visited_at >= %s",
                 (week_ago,),
             )
             visits_this_week = cur.fetchone()["count"]
 
             cur.execute(
-                """
-                SELECT COUNT(*) as count
-                FROM visits
-                WHERE visited_at >= %s
-            """,
+                "SELECT COUNT(*) as count FROM visits WHERE visited_at >= %s",
                 (month_ago,),
             )
             visits_this_month = cur.fetchone()["count"]
 
-            # Average visits per week (last 4 weeks)
             cur.execute(
-                """
-                SELECT COUNT(*)::float / 4 as avg_per_week
-                FROM visits
-                WHERE visited_at >= %s
-            """,
+                "SELECT COUNT(*)::float / 4 as avg_per_week FROM visits WHERE visited_at >= %s",
                 (today - timedelta(days=28),),
             )
             avg_per_week = cur.fetchone()["avg_per_week"] or 0
 
-            # Completion rate (completed vs total stops this month)
             cur.execute(
                 """
                 SELECT
@@ -84,7 +71,7 @@ def calendar():
             )
             completion_rate = cur.fetchone()["rate"] or 0
 
-            # Get all customers for the quick add modal
+            # All customers for quick add modal
             cur.execute("""
                 SELECT id, name, balance_cents, last_visit_at
                 FROM customers
@@ -92,7 +79,7 @@ def calendar():
             """)
             all_customers = cur.fetchall()
 
-            # Get scheduled visits (planned routes) - convert dates to strings for JSON
+            # Scheduled visits for calendar (next ~2 months + past week)
             cur.execute(
                 """
                 SELECT
@@ -108,14 +95,12 @@ def calendar():
                 FROM routes r
                 JOIN route_stops rs ON r.id = rs.route_id
                 JOIN customers c ON rs.customer_id = c.id
-                WHERE r.route_date >= %s
-                AND r.route_date <= %s
+                WHERE r.route_date >= %s AND r.route_date <= %s
                 GROUP BY r.route_date
             """,
                 (today - timedelta(days=7), today + timedelta(days=60)),
             )
 
-            # Convert date keys to strings for JSON serialization
             scheduled_visits = {}
             for row in cur.fetchall():
                 date_str = row["route_date"].isoformat()
@@ -162,6 +147,7 @@ def get_visits_for_date(date_str):
             """,
                 (visit_date,),
             )
+
             visits = cur.fetchall()
 
             return jsonify(
@@ -184,7 +170,7 @@ def get_visits_for_date(date_str):
 
 @calendar_bp.post("/calendar/add_visit")
 def add_visit():
-    """Add a visit to a specific date"""
+    """Add a single visit to a specific date"""
     customer_id = request.form.get("customer_id")
     visit_date_str = request.form.get("date")
     notes = request.form.get("notes", "").strip()
@@ -201,7 +187,7 @@ def add_visit():
 
     with get_conn() as conn:
         with conn.cursor() as cur:
-            # Get or create route for that date
+            # Get or create route
             cur.execute(
                 """
                 INSERT INTO routes (route_date)
@@ -214,7 +200,7 @@ def add_visit():
             )
             route_id = cur.fetchone()["id"]
 
-            # Check if customer already on that route
+            # Prevent duplicates
             cur.execute(
                 """
                 SELECT id FROM route_stops
@@ -222,12 +208,11 @@ def add_visit():
             """,
                 (route_id, customer_id),
             )
-
             if cur.fetchone():
                 flash("Customer is already scheduled for that day", "warning")
                 return redirect(url_for("calendar.calendar"))
 
-            # Get next stop order
+            # Next stop order
             cur.execute(
                 """
                 SELECT COALESCE(MAX(stop_order), -1) + 1 as next_order
@@ -238,7 +223,6 @@ def add_visit():
             )
             next_order = cur.fetchone()["next_order"]
 
-            # Add the stop
             cur.execute(
                 """
                 INSERT INTO route_stops (route_id, customer_id, stop_order, notes)
@@ -255,7 +239,7 @@ def add_visit():
 
 @calendar_bp.get("/calendar/new_customers")
 def new_customers():
-    """Get customers who have never been visited"""
+    """Customers who have never been visited"""
     with get_conn() as conn:
         with conn.cursor() as cur:
             cur.execute("""
@@ -283,20 +267,14 @@ def new_customers():
 
 @calendar_bp.get("/calendar/overdue")
 def overdue_customers():
-    """Get customers not visited in 14+ days"""
+    """Customers not visited in 14+ days"""
     cutoff_date = date.today() - timedelta(days=14)
-
     with get_conn() as conn:
         with conn.cursor() as cur:
             cur.execute(
                 """
                 SELECT
-                    id,
-                    name,
-                    phone,
-                    address,
-                    balance_cents,
-                    last_visit_at,
+                    id, name, phone, address, balance_cents, last_visit_at,
                     DATE_PART('day', NOW() - last_visit_at) as days_since
                 FROM customers
                 WHERE last_visit_at < %s OR last_visit_at IS NULL
@@ -322,3 +300,51 @@ def overdue_customers():
             for c in customers
         ]
     )
+
+
+@calendar_bp.get("/calendar/customers_by_area")
+def customers_by_area():
+    """
+    Returns customers grouped by area (city → zip → Unknown)
+    Focused on priority / actionable customers
+    """
+    today = date.today()
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            # Customers worth visiting soon
+            cur.execute("""
+                SELECT
+                    c.id,
+                    c.name,
+                    c.address,
+                    c.city,
+                    c.zip_code,
+                    c.balance_cents,
+                    COALESCE(DATE_PART('day', NOW() - c.last_visit_at), 999) as days_since
+                FROM customers c
+                WHERE
+                    (c.balance_cents > 0 OR c.last_visit_at IS NULL OR DATE_PART('day', NOW() - c.last_visit_at) > 14)
+                    AND c.active = true  -- assuming you have an active flag; remove if not
+                ORDER BY c.city, c.zip_code, c.name
+            """)
+            rows = cur.fetchall()
+
+    # Group by city, fallback to zip, fallback to "Unknown"
+    grouped = defaultdict(list)
+
+    for row in rows:
+        area = row["city"] or row["zip_code"] or "Unknown"
+        grouped[area].append(
+            {
+                "id": row["id"],
+                "name": row["name"],
+                "address": row["address"] or "No address",
+                "balance_cents": row["balance_cents"],
+                "days_since": int(row["days_since"]) if row["days_since"] else None,
+            }
+        )
+
+    # Sort groups by size (largest first), then by area name
+    sorted_groups = dict(sorted(grouped.items(), key=lambda x: (-len(x[1]), x[0])))
+
+    return jsonify(sorted_groups)
