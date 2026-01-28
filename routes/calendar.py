@@ -40,7 +40,7 @@ def fetch_priority_customers(cur):
             c.name,
             c.balance_cents,
             c.last_visit_at,
-            COALESCE(DATE_PART('day', CURRENT_DATE - c.last_visit_at::date), %s) AS days_since_visit
+            COALESCE(CURRENT_DATE - c.last_visit_at::date, %s) AS days_since_visit
         FROM customers c
         WHERE c.balance_cents > 0 OR c.last_visit_at IS NULL
         ORDER BY
@@ -243,7 +243,7 @@ def overdue_customers():
                     """
                     SELECT
                         id, name, phone, address, balance_cents, last_visit_at,
-                        DATE_PART('day', CURRENT_DATE - last_visit_at::date) AS days_since
+                        CURRENT_DATE - last_visit_at::date AS days_since
                     FROM customers
                     WHERE last_visit_at < %s OR last_visit_at IS NULL
                     ORDER BY last_visit_at ASC NULLS FIRST
@@ -263,7 +263,9 @@ def overdue_customers():
                     "last_visit_at": c["last_visit_at"].isoformat()
                     if c["last_visit_at"]
                     else None,
-                    "days_since": int(c["days_since"]) if c["days_since"] else None,
+                    "days_since": int(c["days_since"])
+                    if c["days_since"] is not None
+                    else None,
                 }
                 for c in customers
             ]
@@ -282,12 +284,12 @@ def customers_by_area():
                     """
                     SELECT
                         id, name, address, city, zip_code, balance_cents,
-                        COALESCE(DATE_PART('day', CURRENT_DATE - last_visit_at::date), %s) AS days_since
+                        COALESCE(CURRENT_DATE - last_visit_at::date, %s) AS days_since
                     FROM customers
                     WHERE
                         balance_cents > 0
                         OR last_visit_at IS NULL
-                        OR DATE_PART('day', CURRENT_DATE - last_visit_at::date) > %s
+                        OR CURRENT_DATE - last_visit_at::date > %s
                     ORDER BY city, zip_code, name
                     """
                 )
@@ -303,7 +305,9 @@ def customers_by_area():
                     "name": r["name"],
                     "address": r["address"] or "No address",
                     "balance_cents": r["balance_cents"],
-                    "days_since": int(r["days_since"]) if r["days_since"] else None,
+                    "days_since": int(r["days_since"])
+                    if r["days_since"] is not None
+                    else None,
                 }
             )
 
