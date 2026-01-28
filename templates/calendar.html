@@ -1,40 +1,48 @@
-{% extends "base.html" %}
-{% block title %}Calendar{% endblock %}
-
-{% block content %}
-<div class="max-w-6xl mx-auto space-y-8">
-
+{% extends "base.html" %} {% block title %}Calendar{% endblock %} {% block
+content %}
+<div class="max-w-7xl mx-auto space-y-6">
     <!-- Header -->
-    <section>
-        <h1 class="text-2xl sm:text-3xl font-bold">Calendar</h1>
-        <p class="text-sm text-gray-400 mt-1">
-            Plan routes, optimize daily runs, and review performance.
-        </p>
-    </section>
-
-    <!-- Controls -->
-    <div class="flex flex-wrap items-center justify-between gap-3">
-        <div class="flex gap-2">
-            <button class="view-btn bg-blue-600 text-white px-4 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-950" data-view="week">Week</button>
-            <button class="view-btn bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-950" data-view="month">Month</button>
+    <header class="flex flex-wrap items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl sm:text-3xl font-bold">Calendar</h1>
+            <p class="text-sm text-gray-400 mt-1">
+                Plan routes, optimize daily runs, and review performance
+            </p>
         </div>
 
-        <div class="flex gap-2">
-            <button id="today-btn" class="bg-gray-800 hover:bg-gray-700 px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-950">
+        <div class="flex items-center gap-2">
+            <button
+                data-view="week"
+                class="view-btn bg-blue-600 text-white px-4 py-2 rounded-lg text-sm"
+            >
+                Week
+            </button>
+            <button
+                data-view="month"
+                class="view-btn bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg text-sm"
+            >
+                Month
+            </button>
+            <button
+                id="today-btn"
+                class="bg-gray-800 hover:bg-gray-700 px-3 py-2 rounded-lg text-sm"
+            >
                 Today
             </button>
         </div>
-    </div>
+    </header>
 
     <!-- Analytics -->
-    <section class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <section class="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
             <div class="text-xs text-gray-500">Total Stops</div>
             <div class="text-2xl font-bold" id="stat-total">—</div>
         </div>
         <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
             <div class="text-xs text-gray-500">Completed</div>
-            <div class="text-2xl font-bold text-green-400" id="stat-completed">—</div>
+            <div class="text-2xl font-bold text-green-400" id="stat-completed">
+                —
+            </div>
         </div>
         <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
             <div class="text-xs text-gray-500">Completion %</div>
@@ -47,32 +55,47 @@
     </section>
 
     <!-- WEEK VIEW -->
-    <section id="week-view" class="space-y-2">
-        <div class="grid grid-cols-7 gap-2 text-xs text-gray-400 uppercase">
-            <div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div>
+    <section id="week-view" class="space-y-3">
+        <div class="grid grid-cols-7 text-xs text-gray-400 uppercase">
+            <div>Mon</div>
+            <div>Tue</div>
+            <div>Wed</div>
+            <div>Thu</div>
+            <div>Fri</div>
+            <div>Sat</div>
+            <div>Sun</div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-7 gap-2" id="week-grid">
+        <div class="grid grid-cols-1 sm:grid-cols-7 gap-3">
             {% for date in week_dates %}
-            <div class="day-cell bg-gray-900 border border-gray-800 rounded-xl p-2 min-h-[160px] cursor-pointer"
-                 data-date="{{ date }}">
-                <div class="flex justify-between items-center mb-1">
+            <div
+                class="day-cell bg-gray-900 border border-gray-800 rounded-xl p-3 cursor-pointer"
+                data-date="{{ date }}"
+            >
+                <div class="flex justify-between items-center mb-2">
                     <span class="font-semibold text-sm">
-                        {{ date[-2:] }}
-                        {% if date == today %}
-                        <span class="ml-1 text-xs bg-blue-600 px-1.5 rounded">Today</span>
+                        {{ date[-2:] }} {% if date == today %}
+                        <span class="ml-1 text-xs bg-blue-600 px-1.5 rounded"
+                            >Today</span
+                        >
                         {% endif %}
                     </span>
-                    <span class="text-xs text-gray-500 day-count">—</span>
+                    <span class="text-xs text-gray-500 day-count">0</span>
                 </div>
 
-                <ul class="space-y-1 text-xs day-list"></ul>
+                <ul class="day-list text-xs space-y-1 mb-2"></ul>
 
-                <div class="mt-2 flex gap-2">
-                    <button class="optimize-btn flex-1 text-xs bg-gray-800 hover:bg-gray-700 rounded py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-950" data-date="{{ date }}">
+                <div class="flex gap-2">
+                    <button
+                        class="optimize-btn flex-1 bg-gray-800 hover:bg-gray-700 rounded py-1 text-xs"
+                        data-date="{{ date }}"
+                    >
                         Optimize
                     </button>
-                    <button class="export-btn flex-1 text-xs bg-gray-800 hover:bg-gray-700 rounded py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-950" data-date="{{ date }}">
+                    <button
+                        class="export-btn flex-1 bg-gray-800 hover:bg-gray-700 rounded py-1 text-xs"
+                        data-date="{{ date }}"
+                    >
                         Export
                     </button>
                 </div>
@@ -82,640 +105,247 @@
     </section>
 
     <!-- MONTH VIEW -->
-    <section id="month-view" class="hidden space-y-2">
-        <div class="grid grid-cols-7 gap-2 text-xs text-gray-400 uppercase">
-            <div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div>
+    <section id="month-view" class="hidden space-y-3">
+        <div class="grid grid-cols-7 text-xs text-gray-400 uppercase">
+            <div>Mon</div>
+            <div>Tue</div>
+            <div>Wed</div>
+            <div>Thu</div>
+            <div>Fri</div>
+            <div>Sat</div>
+            <div>Sun</div>
         </div>
 
-        <div class="grid grid-cols-7 gap-2" id="month-grid">
+        <div class="grid grid-cols-7 gap-2">
             {% for date in month_dates %}
-            <div class="day-cell border border-gray-800 rounded-xl p-2 min-h-[120px] cursor-pointer bg-gray-900"
-                 data-date="{{ date }}">
+            <div
+                class="day-cell bg-gray-900 border border-gray-800 rounded-xl p-2 cursor-pointer"
+                data-date="{{ date }}"
+            >
                 <div class="text-xs font-semibold mb-1">
-                    {{ date[-2:] }}
-                    {% if date == today %}
-                    <span class="ml-1 text-[10px] bg-blue-600 px-1.5 rounded">Today</span>
+                    {{ date[-2:] }} {% if date == today %}
+                    <span class="ml-1 text-[10px] bg-blue-600 px-1.5 rounded"
+                        >Today</span
+                    >
                     {% endif %}
                 </div>
-
-                <div class="text-xs space-y-1 month-preview"></div>
-                <div class="mt-2 hidden month-actions">
-                    <button class="optimize-btn w-full text-[10px] bg-gray-800 hover:bg-gray-700 rounded py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-950" data-date="{{ date }}">
-                        Optimize
-                    </button>
-                    <button class="export-btn w-full mt-1 text-[10px] bg-gray-800 hover:bg-gray-700 rounded py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-950" data-date="{{ date }}">
-                        Export
-                    </button>
-                </div>
+                <div class="month-preview text-xs space-y-1"></div>
             </div>
             {% endfor %}
         </div>
 
-        <!-- Heatmap legend -->
-        <div class="flex flex-wrap items-center gap-3 text-xs text-gray-400 mt-2">
-            <span class="font-semibold text-gray-300">Heatmap:</span>
-            <span class="inline-flex items-center gap-2"><span class="w-4 h-4 rounded bg-gray-900 border border-gray-800"></span>0</span>
-            <span class="inline-flex items-center gap-2"><span class="w-4 h-4 rounded bg-blue-900/40 border border-gray-800"></span>1–2</span>
-            <span class="inline-flex items-center gap-2"><span class="w-4 h-4 rounded bg-orange-900/50 border border-gray-800"></span>3–5</span>
-            <span class="inline-flex items-center gap-2"><span class="w-4 h-4 rounded bg-red-900/60 border border-gray-800"></span>6+</span>
+        <div class="flex gap-3 text-xs text-gray-400">
+            <span class="font-semibold">Heatmap:</span>
+            <span>0</span>
+            <span class="text-blue-400">1–2</span>
+            <span class="text-orange-400">3–5</span>
+            <span class="text-red-400">6+</span>
         </div>
     </section>
 </div>
 
-<!-- Side Panel -->
-<div id="overlay" class="hidden fixed inset-0 bg-black/40 z-40"></div>
+<!-- Overlay -->
+<div id="overlay" class="hidden fixed inset-0 bg-black/50 z-40"></div>
 
+<!-- Side Panel -->
 <div
     id="side-panel"
     class="fixed top-0 right-0 h-full w-full sm:w-[420px] bg-gray-950 border-l border-gray-800 transform translate-x-full transition-transform z-50 flex flex-col"
 >
     <div class="p-4 border-b border-gray-800 flex justify-between items-center">
         <div>
-            <div class="text-xs text-gray-500">Route Detail</div>
+            <div class="text-xs text-gray-500">Route</div>
             <h3 class="font-semibold text-lg" id="panel-date">—</h3>
         </div>
-        <button id="panel-close" class="text-gray-400 hover:text-white text-xl leading-none">✕</button>
+        <button id="panel-close" class="text-xl text-gray-400 hover:text-white">
+            ✕
+        </button>
     </div>
 
-    <!-- Estimates + actions -->
-    <div class="p-4 border-b border-gray-800 space-y-3">
-        <div class="grid grid-cols-2 gap-2">
-            <div class="bg-gray-900 border border-gray-800 rounded-lg p-3">
-                <div class="text-xs text-gray-500">Rough distance</div>
-                <div class="text-xl font-bold" id="est-distance">—</div>
-            </div>
-            <div class="bg-gray-900 border border-gray-800 rounded-lg p-3">
-                <div class="text-xs text-gray-500">Rough time</div>
-                <div class="text-xl font-bold" id="est-time">—</div>
-            </div>
-        </div>
+    <div id="panel-content" class="flex-1 overflow-auto p-4 space-y-2"></div>
 
-        <details class="bg-gray-900 border border-gray-800 rounded-lg p-3">
-            <summary class="cursor-pointer text-sm font-semibold text-gray-200">Estimate settings</summary>
-            <div class="mt-3 grid grid-cols-2 gap-2 text-sm">
-                <label class="space-y-1">
-                    <div class="text-xs text-gray-500">Minutes / stop</div>
-                    <input id="cfg-min-per-stop" type="number" min="1" step="1"
-                           class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2"
-                           value="10" />
-                </label>
-                <label class="space-y-1">
-                    <div class="text-xs text-gray-500">Miles between stops</div>
-                    <input id="cfg-mi-between" type="number" min="0" step="0.5"
-                           class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2"
-                           value="3" />
-                </label>
-                <label class="space-y-1 col-span-2">
-                    <div class="text-xs text-gray-500">Average MPH</div>
-                    <input id="cfg-mph" type="number" min="5" step="1"
-                           class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2"
-                           value="25" />
-                </label>
-                <div class="col-span-2 text-xs text-gray-500">
-                    These are rough estimates (no GPS/geocoding yet). They help you plan workload, not give exact routing.
-                </div>
-            </div>
-        </details>
-
-        <div class="flex gap-2">
-            <button id="panel-optimize" class="flex-1 bg-gray-800 hover:bg-gray-700 rounded-lg py-2 text-sm">
-                Optimize order
-            </button>
-            <button id="panel-export" class="flex-1 bg-gray-800 hover:bg-gray-700 rounded-lg py-2 text-sm">
-                Export (Print/PDF)
-            </button>
-        </div>
-    </div>
-
-    <!-- Stops list -->
-    <div class="p-4 overflow-auto flex-1 space-y-2" id="panel-content"></div>
-
-    <!-- Bottom actions -->
-    <div class="p-4 border-t border-gray-800">
-        <button id="panel-clear-queue" class="w-full bg-gray-800 hover:bg-gray-700 rounded-lg py-2 text-sm text-gray-200">
-            Clear queued stops for this day
+    <div class="p-4 border-t border-gray-800 flex gap-2">
+        <button
+            id="panel-optimize"
+            class="flex-1 bg-gray-800 hover:bg-gray-700 rounded-lg py-2 text-sm"
+        >
+            Optimize
+        </button>
+        <button
+            id="panel-export"
+            class="flex-1 bg-gray-800 hover:bg-gray-700 rounded-lg py-2 text-sm"
+        >
+            Export
         </button>
     </div>
 </div>
-
+{% endblock %} {% block scripts %}
 <script>
-/* ===================== Data bootstrap ===================== */
-const TODAY = "{{ today }}".trim() || null;
-const scheduledVisits = {{ scheduled_visits | tojson }};
+    /* ===================== Bootstrap ===================== */
+    const TODAY = "{{ today }}";
+    const scheduledVisits = {{ scheduled_visits | tojson }};
 
-/**
- * Customer lookup (for balances auto-queue).
- * Requires all_customers to be passed to calendar route.
- * If missing, we still function, but queued IDs will show as "#123".
- */
-const customerIndex = (() => {
-    try {
-        const list = {{ (all_customers or []) | tojson }};
-        const m = {};
-        (list || []).forEach(c => {
-            const id = (c.id ?? c["id"]);
-            const name = (c.name ?? c["name"]);
-            const city = (c.city ?? c["city"] ?? "");
-            if (id != null) m[String(id)] = { id: String(id), name: name || ("#" + id), city };
-        });
-        return m;
-    } catch {
-        return {};
-    }
-})();
+    /* ===================== Helpers ===================== */
+    const qs = s => document.querySelector(s);
+    const qsa = s => [...document.querySelectorAll(s)];
+    const esc = s => String(s ?? "").replace(/[&<>"']/g, m =>
+        ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
 
-/* ===================== Local storage keys ===================== */
-const K = {
-    order: (date) => `routeOrder:${date}`,   // array of stop keys (stable ids)
-    done:  (date) => `routeDone:${date}`,    // map of stopKey -> boolean
-    queue: (date) => `routeQueue:${date}`,   // array of customer_ids queued from balances
-    est:   () => `routeEstimateCfg`,         // user settings
-};
-
-/* ===================== Helpers ===================== */
-function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
-
-function getStopKey(v) {
-    // IMPORTANT: stable, collision-resistant key for frontend persistence
-    if (v.customer_id != null && String(v.customer_id).length) return "cid:" + String(v.customer_id);
-    if (v.customerId != null && String(v.customerId).length) return "cid:" + String(v.customerId);
-    if (v.id != null && String(v.id).length) return "id:" + String(v.id);
-    const n = (v.customer_name ?? v.customerName ?? v.name ?? "");
-    return "name:" + String(n);
-}
-
-function normalizeVisit(v) {
-    const name = v.customer_name ?? v.customerName ?? (v.name ?? "");
-    const cid  = v.customer_id ?? v.customerId ?? v.id ?? null;
-    const completed = !!(v.completed);
-    return { customer_name: name, customer_id: cid, completed };
-}
-
-function getCfg() {
-    const raw = localStorage.getItem(K.est());
-    if (!raw) return { minPerStop: 10, miBetween: 3, mph: 25 };
-    try {
-        const j = JSON.parse(raw);
-        return {
-            minPerStop: Number(j.minPerStop ?? 10),
-            miBetween: Number(j.miBetween ?? 3),
-            mph: Number(j.mph ?? 25),
-        };
-    } catch {
-        return { minPerStop: 10, miBetween: 3, mph: 25 };
-    }
-}
-
-function setCfg(cfg) {
-    localStorage.setItem(K.est(), JSON.stringify(cfg));
-}
-
-function getQueue(date) {
-    const raw = localStorage.getItem(K.queue(date));
-    if (!raw) return [];
-    try { return JSON.parse(raw) || []; } catch { return []; }
-}
-
-function setQueue(date, arr) {
-    localStorage.setItem(K.queue(date), JSON.stringify(arr));
-}
-
-function getDoneMap(date) {
-    const raw = localStorage.getItem(K.done(date));
-    if (!raw) return {};
-    try { return JSON.parse(raw) || {}; } catch { return {}; }
-}
-
-function setDoneMap(date, map) {
-    localStorage.setItem(K.done(date), JSON.stringify(map));
-}
-
-function getOrder(date) {
-    const raw = localStorage.getItem(K.order(date));
-    if (!raw) return null;
-    try { return JSON.parse(raw) || null; } catch { return null; }
-}
-
-function setOrder(date, orderKeys) {
-    localStorage.setItem(K.order(date), JSON.stringify(orderKeys));
-}
-
-function getDayStops(date) {
-    const base = (scheduledVisits[date] || []).map(normalizeVisit);
-
-    const queuedIds = getQueue(date);
-    const queued = queuedIds.map(id => {
-        const c = customerIndex[String(id)];
-        return normalizeVisit({
-            customer_id: String(id),
-            customer_name: c ? c.name + (c.city ? ` — ${c.city}` : "") : ("#" + id),
-            completed: false,
-        });
+    /* ===================== Storage ===================== */
+    const K = d => ({
+        order: `route:order:${d}`,
+        done:  `route:done:${d}`
     });
 
-    const combined = [...base, ...queued];
+    /* ===================== Core ===================== */
+    function getStops(date) {
+        const base = (scheduledVisits[date] || []).map(v => ({
+            name: v.customer_name,
+            done: !!v.completed,
+            key: String(v.customer_id ?? v.customer_name)
+        }));
 
-    // apply done overrides
-    const done = getDoneMap(date);
-    combined.forEach(v => {
-        const k = getStopKey(v);
-        if (k && done[k] != null) v.completed = !!done[k];
-    });
-
-    // apply persisted order
-    const ord = getOrder(date);
-    if (ord && ord.length) {
-        const map = new Map(combined.map(v => [getStopKey(v), v]));
-        const ordered = [];
-        ord.forEach(k => { if (map.has(k)) ordered.push(map.get(k)); });
-        combined.forEach(v => {
-            const k = getStopKey(v);
-            if (!ord.includes(k)) ordered.push(v);
+        const doneMap = JSON.parse(localStorage.getItem(K(date).done) || "{}");
+        base.forEach(s => {
+            if (doneMap[s.key] !== undefined) s.done = doneMap[s.key];
         });
-        return ordered;
-    }
 
-    return combined;
-}
-
-/* ===================== Render calendars ===================== */
-function intensityClass(count) {
-    if (count === 0) return "bg-gray-900";
-    if (count <= 2) return "bg-blue-900/40";
-    if (count <= 5) return "bg-orange-900/50";
-    return "bg-red-900/60";
-}
-
-function applyHeat(cell, cls) {
-    // Ensure only one heat class is present (tailwind-safe)
-    cell.classList.remove("bg-gray-900", "bg-blue-900/40", "bg-orange-900/50", "bg-red-900/60");
-    cell.classList.add(...cls.split(" "));
-}
-
-function renderDayCell(cell) {
-    const date = cell.dataset.date;
-    if (!date) return;
-
-    const stops = getDayStops(date);
-    const count = stops.length;
-
-    // WEEK VIEW
-    const list = cell.querySelector(".day-list");
-    const countEl = cell.querySelector(".day-count");
-    if (countEl) countEl.textContent = String(count);
-
-    if (list) {
-        if (!count) {
-            list.innerHTML = `<li class="text-gray-500">No stops</li>`;
-        } else {
-            const preview = stops.slice(0, 5).map(v => {
-                const ok = v.completed ? `<span class="text-green-400">✓</span>` : ``;
-                return `<li class="flex justify-between truncate"><span>${escapeHtml(v.customer_name)}</span>${ok}</li>`;
-            }).join("");
-            list.innerHTML = preview;
-            if (count > 5) list.innerHTML += `<li class="text-gray-400">+${count - 5} more</li>`;
+        const order = JSON.parse(localStorage.getItem(K(date).order) || "null");
+        if (order) {
+            const m = Object.fromEntries(base.map(s => [s.key, s]));
+            return [...order.map(k => m[k]).filter(Boolean),
+                    ...base.filter(s => !order.includes(s.key))];
         }
+        return base;
     }
 
-    // MONTH VIEW
-    if (cell.closest("#month-grid")) {
-        applyHeat(cell, intensityClass(count));
-
-        const previewWrap = cell.querySelector(".month-preview");
-        const actions = cell.querySelector(".month-actions");
-
-        if (previewWrap) {
-            if (!count) {
-                previewWrap.innerHTML = `<div class="text-gray-500">No stops</div>`;
-            } else {
-                const lines = stops.slice(0, 3).map(v => {
-                    const ok = v.completed ? `<span class="text-green-400">✓</span>` : ``;
-                    return `<div class="truncate flex justify-between"><span>${escapeHtml(v.customer_name)}</span>${ok}</div>`;
-                }).join("");
-
-                previewWrap.innerHTML = lines;
-                if (count > 3) previewWrap.innerHTML += `<div class="text-gray-400">+${count - 3} more</div>`;
-            }
-        }
-        if (actions) actions.classList.toggle("hidden", count === 0);
-    }
-}
-
-function renderAll() {
-    document.querySelectorAll(".day-cell").forEach(renderDayCell);
-    computeStats();
-}
-
-/* ===================== Analytics ===================== */
-function computeStats() {
-    const dates = new Set();
-    let total = 0;
-    let completed = 0;
-
-    document.querySelectorAll(".day-cell").forEach(cell => {
+    /* ===================== Rendering ===================== */
+    function renderDay(cell) {
         const date = cell.dataset.date;
-        if (!date) return;
-        const stops = getDayStops(date);
-        if (!stops.length) return;
+        const stops = getStops(date);
+        const list = cell.querySelector(".day-list");
+        const count = cell.querySelector(".day-count");
+        const preview = cell.querySelector(".month-preview");
 
-        dates.add(date);
-        total += stops.length;
-        completed += stops.filter(s => s.completed).length;
-    });
+        if (count) count.textContent = stops.length;
 
-    const avg = dates.size ? (total / dates.size).toFixed(1) : "0";
-    const rate = total ? Math.round((completed / total) * 100) : 0;
+        if (list) {
+            list.innerHTML = stops.slice(0,5).map(s =>
+                `<li class="flex justify-between">
+                    <span class="truncate">${esc(s.name)}</span>
+                    ${s.done ? '<span class="text-green-400">✓</span>' : ''}
+                </li>`
+            ).join("") || `<li class="text-gray-500">No stops</li>`;
+        }
 
-    document.getElementById("stat-total").textContent = total;
-    document.getElementById("stat-completed").textContent = completed;
-    document.getElementById("stat-rate").textContent = rate + "%";
-    document.getElementById("stat-avg").textContent = avg;
-}
+        if (preview) {
+            cell.classList.remove("bg-blue-900/40","bg-orange-900/50","bg-red-900/60");
+            if (stops.length > 5) cell.classList.add("bg-red-900/60");
+            else if (stops.length > 2) cell.classList.add("bg-orange-900/50");
+            else if (stops.length > 0) cell.classList.add("bg-blue-900/40");
 
-/* ===================== Side panel ===================== */
-const overlay = document.getElementById("overlay");
-const panel = document.getElementById("side-panel");
-const panelDateEl = document.getElementById("panel-date");
-const panelContent = document.getElementById("panel-content");
+            preview.innerHTML = stops.slice(0,3).map(s =>
+                `<div class="flex justify-between truncate">
+                    <span>${esc(s.name)}</span>
+                    ${s.done ? '✓' : ''}
+                </div>`
+            ).join("") || `<div class="text-gray-500">No stops</div>`;
+        }
+    }
 
-const estDistanceEl = document.getElementById("est-distance");
-const estTimeEl = document.getElementById("est-time");
+    function renderAll() {
+        qsa(".day-cell").forEach(renderDay);
 
-const cfgMinPerStop = document.getElementById("cfg-min-per-stop");
-const cfgMiBetween = document.getElementById("cfg-mi-between");
-const cfgMph = document.getElementById("cfg-mph");
-
-let activeDate = null;
-
-function openPanel(date) {
-    if (!date) return;
-    activeDate = date;
-    panelDateEl.textContent = date;
-
-    overlay.classList.remove("hidden");
-    panel.classList.remove("translate-x-full");
-
-    // load cfg into inputs
-    const cfg = getCfg();
-    cfgMinPerStop.value = cfg.minPerStop;
-    cfgMiBetween.value = cfg.miBetween;
-    cfgMph.value = cfg.mph;
-
-    renderPanel();
-}
-
-function closePanel() {
-    activeDate = null;
-    overlay.classList.add("hidden");
-    panel.classList.add("translate-x-full");
-}
-
-function renderPanel() {
-    if (!activeDate) return;
-    const stops = getDayStops(activeDate);
-
-    // Estimates (rough model)
-    const cfg = getCfg();
-    const n = stops.length;
-
-    const miles = n > 1 ? (n - 1) * cfg.miBetween : 0;
-    const travelHours = cfg.mph > 0 ? (miles / cfg.mph) : 0;
-    const travelMin = travelHours * 60;
-    const stopMin = n * cfg.minPerStop;
-    const totalMin = stopMin + travelMin;
-
-    estDistanceEl.textContent = `${miles.toFixed(1)} mi`;
-    estTimeEl.textContent = `${Math.round(totalMin)} min`;
-
-    const completedCount = stops.filter(s => s.completed).length;
-
-    const header = `
-        <div class="text-xs text-gray-400 mb-2">
-            ${completedCount} / ${n} completed
-        </div>
-    `;
-
-    const list = stops.map((s, idx) => {
-        const key = getStopKey(s) || `${idx}`;
-        const checked = s.completed ? "checked" : "";
-        return `
-            <div class="bg-gray-900 border border-gray-800 rounded-lg px-3 py-2 flex items-center gap-3">
-                <input type="checkbox" class="done-toggle accent-blue-500" data-key="${escapeAttr(key)}" ${checked} />
-                <div class="min-w-0 flex-1">
-                    <div class="text-sm font-medium truncate">${escapeHtml(s.customer_name)}</div>
-                    <div class="text-xs text-gray-500 truncate">${s.customer_id ? ("ID: " + escapeHtml(String(s.customer_id))) : ""}</div>
-                </div>
-                <div class="text-xs text-gray-500">#${idx + 1}</div>
-            </div>
-        `;
-    }).join("");
-
-    panelContent.innerHTML = header + (list || `<div class="text-gray-500">No stops for this day.</div>`);
-
-    // wire toggles
-    panelContent.querySelectorAll(".done-toggle").forEach(cb => {
-        cb.addEventListener("change", () => {
-            const k = cb.dataset.key;
-            const map = getDoneMap(activeDate);
-            map[k] = cb.checked;
-            setDoneMap(activeDate, map);
-            renderAll();
-            renderPanel();
+        let total = 0, done = 0, days = new Set();
+        qsa(".day-cell").forEach(c => {
+            const s = getStops(c.dataset.date);
+            if (!s.length) return;
+            days.add(c.dataset.date);
+            total += s.length;
+            done += s.filter(x => x.done).length;
         });
-    });
-}
 
-/* ===================== Optimize order (persist) ===================== */
-function optimizeDay(date) {
-    const stops = getDayStops(date);
-    if (!stops.length) return;
+        qs("#stat-total").textContent = total;
+        qs("#stat-completed").textContent = done;
+        qs("#stat-rate").textContent = total ? Math.round(done/total*100) + "%" : "0%";
+        qs("#stat-avg").textContent = days.size ? (total/days.size).toFixed(1) : "0";
+    }
 
-    // UI-only: stable shuffle
-    const shuffled = [...stops]
-        .map(v => ({ v, r: Math.random() }))
-        .sort((a, b) => a.r - b.r)
-        .map(x => x.v);
+    /* ===================== Side Panel ===================== */
+    let activeDate = null;
 
-    const orderKeys = shuffled.map(getStopKey).filter(Boolean);
-    setOrder(date, orderKeys);
+    function openPanel(date) {
+        activeDate = date;
+        qs("#panel-date").textContent = date;
+        qs("#overlay").classList.remove("hidden");
+        qs("#side-panel").classList.remove("translate-x-full");
 
-    renderAll();
-    if (activeDate === date) renderPanel();
-}
+        const stops = getStops(date);
+        const doneMap = JSON.parse(localStorage.getItem(K(date).done) || "{}");
 
-/* ===================== Export (Print/PDF) ===================== */
-function exportDay(date) {
-    const stops = getDayStops(date);
-    const cfg = getCfg();
+        qs("#panel-content").innerHTML = stops.map((s,i) =>
+            `<label class="flex items-center gap-3 bg-gray-900 border border-gray-800 rounded-lg p-3">
+                <input type="checkbox" ${s.done?'checked':''} data-key="${esc(s.key)}"
+                    class="done-toggle accent-blue-500">
+                <span class="flex-1 truncate">${i+1}. ${esc(s.name)}</span>
+            </label>`
+        ).join("") || `<div class="text-gray-500">No stops</div>`;
 
-    const n = stops.length;
-    const miles = n > 1 ? (n - 1) * cfg.miBetween : 0;
-    const travelHours = cfg.mph > 0 ? (miles / cfg.mph) : 0;
-    const travelMin = travelHours * 60;
-    const stopMin = n * cfg.minPerStop;
-    const totalMin = stopMin + travelMin;
+        qsa(".done-toggle").forEach(cb => {
+            cb.addEventListener("change", () => {
+                doneMap[cb.dataset.key] = cb.checked;
+                localStorage.setItem(K(date).done, JSON.stringify(doneMap));
+                renderAll();
+            });
+        });
+    }
 
-    const html = `
-<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Route ${escapeHtml(date)}</title>
-  <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 24px; color: #111; }
-    h1 { margin: 0 0 8px; font-size: 20px; }
-    .meta { margin: 0 0 18px; color: #444; font-size: 12px; }
-    .card { border: 1px solid #ddd; border-radius: 12px; padding: 14px; margin-bottom: 10px; }
-    .row { display:flex; justify-content:space-between; gap: 12px; }
-    .name { font-weight: 600; }
-    .small { color:#555; font-size: 12px; }
-    @media print { body { margin: 0.5in; } }
-  </style>
-</head>
-<body>
-  <h1>Daily Route — ${escapeHtml(date)}</h1>
-  <p class="meta">
-    Stops: ${n} · Rough distance: ${miles.toFixed(1)} mi · Rough time: ${Math.round(totalMin)} min
-    <br/>Generated from Calendar (Print → Save as PDF on mobile/desktop)
-  </p>
+    function closePanel() {
+        activeDate = null;
+        qs("#overlay").classList.add("hidden");
+        qs("#side-panel").classList.add("translate-x-full");
+    }
 
-  ${stops.map((s, i) => `
-    <div class="card">
-      <div class="row">
-        <div>
-          <div class="name">${i + 1}. ${escapeHtml(s.customer_name)}</div>
-          <div class="small">${s.customer_id ? ("Customer ID: " + escapeHtml(String(s.customer_id))) : ""}</div>
-        </div>
-        <div class="small">${s.completed ? "Completed ✓" : "Pending"}</div>
-      </div>
-    </div>
-  `).join("")}
-
-  <script>
-    window.onload = () => window.print();
-  </script>
-</body>
-</html>
-    `;
-
-    const w = window.open("", "_blank");
-    w.document.open();
-    w.document.write(html);
-    w.document.close();
-}
-
-/* ===================== Auto-queue from balances ===================== */
-function autoQueueFromBalances() {
-    const params = new URLSearchParams(window.location.search);
-    const ids = params.getAll("customers");
-    if (!ids.length || !TODAY) return;
-
-    const existing = new Set(getQueue(TODAY).map(String));
-    ids.map(String).forEach(id => existing.add(id));
-    setQueue(TODAY, [...existing]);
-
-    params.delete("customers");
-    window.history.replaceState({}, "", window.location.pathname);
-
-    renderAll();
-    openPanel(TODAY);
-}
-
-/* ===================== Wire UI ===================== */
-document.getElementById("panel-close").addEventListener("click", closePanel);
-overlay.addEventListener("click", closePanel);
-
-document.getElementById("today-btn").addEventListener("click", () => {
-    if (!TODAY) return alert("Today is not available.");
-    openPanel(TODAY);
-});
-
-document.getElementById("panel-optimize").addEventListener("click", () => {
-    if (!activeDate) return;
-    optimizeDay(activeDate);
-});
-
-document.getElementById("panel-export").addEventListener("click", () => {
-    if (!activeDate) return;
-    exportDay(activeDate);
-});
-
-document.getElementById("panel-clear-queue").addEventListener("click", () => {
-    if (!activeDate) return;
-    setQueue(activeDate, []);
-    renderAll();
-    renderPanel();
-});
-
-// Estimate config persistence
-function saveCfgFromInputs() {
-    const cfg = {
-        minPerStop: clamp(Number(cfgMinPerStop.value || 10), 1, 180),
-        miBetween: clamp(Number(cfgMiBetween.value || 3), 0, 200),
-        mph: clamp(Number(cfgMph.value || 25), 5, 90),
-    };
-    setCfg(cfg);
-    renderPanel();
-}
-
-[cfgMinPerStop, cfgMiBetween, cfgMph].forEach(inp => {
-    inp.addEventListener("change", saveCfgFromInputs);
-    inp.addEventListener("input", saveCfgFromInputs);
-});
-
-// Day click open panel (week + month)
-document.querySelectorAll(".day-cell").forEach(cell => {
-    cell.addEventListener("click", (e) => {
-        if (e.target.closest("button")) return;
-        openPanel(cell.dataset.date);
-    });
-});
-
-// Optimize / Export buttons
-document.querySelectorAll(".optimize-btn").forEach(btn => {
-    btn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        optimizeDay(btn.dataset.date);
-    });
-});
-document.querySelectorAll(".export-btn").forEach(btn => {
-    btn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        exportDay(btn.dataset.date);
-    });
-});
-
-// View toggle
-const weekView = document.getElementById("week-view");
-const monthView = document.getElementById("month-view");
-document.querySelectorAll(".view-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-        document.querySelectorAll(".view-btn").forEach(b => b.classList.remove("bg-blue-600","text-white"));
-        btn.classList.add("bg-blue-600","text-white");
-        const isWeek = btn.dataset.view === "week";
-        weekView.classList.toggle("hidden", !isWeek);
-        monthView.classList.toggle("hidden", isWeek);
+    /* ===================== Actions ===================== */
+    function optimize(date) {
+        const stops = getStops(date);
+        const shuffled = [...stops].sort(() => Math.random() - 0.5);
+        localStorage.setItem(K(date).order, JSON.stringify(shuffled.map(s => s.key)));
         renderAll();
+        if (activeDate === date) openPanel(date);
+    }
+
+    function exportDay(date) {
+        const w = window.open("", "_blank");
+        const stops = getStops(date);
+        w.document.write(`<h1>Route ${date}</h1>` + stops.map(
+            (s,i)=>`<p>${i+1}. ${esc(s.name)} ${s.done?'✓':''}</p>`
+        ).join(""));
+        w.print();
+    }
+
+    /* ===================== Wiring ===================== */
+    qs("#panel-close").onclick = closePanel;
+    qs("#overlay").onclick = closePanel;
+    qs("#today-btn").onclick = () => openPanel(TODAY);
+
+    qsa(".day-cell").forEach(c => c.onclick = e => {
+        if (e.target.closest("button")) return;
+        openPanel(c.dataset.date);
     });
-});
+    qsa(".optimize-btn").forEach(b =>
+        b.onclick = e => { e.stopPropagation(); optimize(b.dataset.date); });
+    qsa(".export-btn").forEach(b =>
+        b.onclick = e => { e.stopPropagation(); exportDay(b.dataset.date); });
 
-/* ===================== Escaping helpers ===================== */
-function escapeHtml(s) {
-    return String(s ?? "")
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
-}
-function escapeAttr(s) {
-    return escapeHtml(s).replaceAll("`","&#096;");
-}
+    qsa(".view-btn").forEach(b => b.onclick = () => {
+        qsa(".view-btn").forEach(x=>x.classList.remove("bg-blue-600","text-white"));
+        b.classList.add("bg-blue-600","text-white");
+        qs("#week-view").classList.toggle("hidden", b.dataset.view !== "week");
+        qs("#month-view").classList.toggle("hidden", b.dataset.view !== "month");
+    });
 
-/* ===================== Init ===================== */
-renderAll();
-autoQueueFromBalances();
+    /* ===================== Init ===================== */
+    renderAll();
 </script>
-
 {% endblock %}
