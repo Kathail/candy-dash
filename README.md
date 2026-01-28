@@ -1,2 +1,0 @@
-# candy-dash
-# candy-dash
