@@ -1,118 +1,80 @@
 // static/js/app.js
-// Candy Flask – Frontend Behavior
-// Minimal, no frameworks, Tailwind-only
+// Candy Flask – Shared frontend utilities & behaviors
+// Vanilla JS + Tailwind – no build step yet
 
 document.addEventListener("DOMContentLoaded", () => {
   console.log("Candy Flask frontend loaded");
 
-  /* =========================================================
-     Utilities
-     ========================================================= */
+  // ── State ────────────────────────────────────────────────────────────────
+  const appState = {
+    selectedDate: null,
+  };
 
-  function formatCurrency(amount) {
+  window.setSelectedDate = (dateStr) => {
+    appState.selectedDate = dateStr;
+  };
+
+  // ── Utilities ────────────────────────────────────────────────────────────
+  function formatCurrency(cents) {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    }).format(amount / 100);
+    }).format(cents / 100);
   }
 
-  let selectedDate = null;
-
-  window.setSelectedDate = (dateStr) => {
-    selectedDate = dateStr;
-  };
-
-  /* =========================================================
-     Customers Page – Search
-     ========================================================= */
-
-  const customerTable = document.getElementById("customerTable");
-  const searchInput = document.getElementById("searchInput");
-
-  if (customerTable && searchInput) {
-    searchInput.addEventListener("input", () => {
-      const filter = searchInput.value.toLowerCase().trim();
-      const rows = customerTable.tBodies[0]?.rows || [];
-
-      Array.from(rows).forEach((row) => {
-        const cells = row.cells;
-        const searchableText = [
-          cells[0]?.textContent || "",
-          cells[1]?.textContent || "",
-          cells[2]?.textContent || "",
-          cells[3]?.textContent || "",
-        ]
-          .join(" ")
-          .toLowerCase();
-
-        row.style.display = searchableText.includes(filter) ? "" : "none";
-      });
-    });
+  function escapeHTML(str = "") {
+    return str.replace(/[&<>"']/g, (m) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    }[m]));
   }
 
-  /* =========================================================
-     Customers Page – Edit Modal
-     ========================================================= */
+  function debounce(fn, delay = 250) {
+    let timer;
+    return (...args) => {
+      clearTimeout(timer);
+      timer = setTimeout(() => fn(...args), delay);
+    };
+  }
 
-  const editModal = document.getElementById("editModal");
-  const editButtons = document.querySelectorAll(".edit-button");
-  const closeModalBtn = editModal?.querySelector(".close-modal");
+  function openModal(modalEl) {
+    modalEl?.classList.remove("hidden");
+  }
 
-  if (editModal && closeModalBtn && editButtons.length > 0) {
-    editButtons.forEach((button) => {
-      button.addEventListener("click", () => {
-        document.getElementById("editId").value = button.dataset.id;
-        document.getElementById("editName").value = button.dataset.name;
-        document.getElementById("editPhone").value = button.dataset.phone || "";
-        document.getElementById("editAddress").value =
-          button.dataset.address || "";
-        document.getElementById("editNotes").value = button.dataset.notes || "";
-        document.getElementById("editBalance").value =
-          button.dataset.balance || "0.00";
+  function closeModal(modalEl) {
+    modalEl?.classList.add("hidden");
+  }
 
-        editModal.classList.remove("hidden");
-      });
-    });
+  // ── Modal Helpers ────────────────────────────────────────────────────────
+  function setupModal(modalId, closeSelector = ".close-modal, [data-close]") {
+    const modal = document.getElementById(modalId);
+    if (!modal) return null;
 
-    closeModalBtn.addEventListener("click", () => {
-      editModal.classList.add("hidden");
-    });
+    const closeBtn = modal.querySelector(closeSelector);
+    if (closeBtn) {
+      closeBtn.addEventListener("click", () => closeModal(modal));
+    }
 
-    window.addEventListener("click", (event) => {
-      if (event.target === editModal) {
-        editModal.classList.add("hidden");
-      }
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) closeModal(modal);
     });
 
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") {
-        editModal.classList.add("hidden");
+      if (e.key === "Escape" && !modal.classList.contains("hidden")) {
+        closeModal(modal);
       }
     });
+
+    return modal;
   }
 
-  /* =========================================================
-     Route Page – Complete Confirmation
-     ========================================================= */
-
-  document.querySelectorAll(".route-complete-btn").forEach((btn) => {
-    btn.addEventListener("click", (event) => {
-      if (!confirm("Mark this stop as completed?")) {
-        event.preventDefault();
-      }
-    });
-  });
-
-  /* =========================================================
-     Area Optimizer (Quick Add by Area)
-     ========================================================= */
-
-  const areaModal = document.getElementById("area-optimizer-modal");
-  const areaModalCloseBtn =
-    areaModal?.querySelector(".close-area-modal") ||
-    areaModal?.querySelector("button[data-close]");
+  // ── Area Optimizer Modal ─────────────────────────────────────────────────
+  const areaModal = setupModal("area-optimizer-modal", ".close-area-modal, button[data-close]");
 
   window.openAreaOptimizer = async () => {
     if (!areaModal) {
@@ -120,129 +82,74 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    areaModal.classList.remove("hidden");
+    openModal(areaModal);
 
-    const contentContainer =
-      areaModal.querySelector(".flex-1") ||
-      areaModal.querySelector(".overflow-y-auto");
+    const container = areaModal.querySelector(".flex-1, .overflow-y-auto");
+    if (!container) return;
 
-    if (!contentContainer) return;
-
-    contentContainer.innerHTML = `
+    container.innerHTML = `
       <div class="text-center py-12 text-gray-500">
-        <svg class="animate-spin h-8 w-8 mx-auto mb-4 text-blue-500"
-             xmlns="http://www.w3.org/2000/svg"
-             fill="none"
-             viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10"
-                  stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+        <svg class="animate-spin h-8 w-8 mx-auto mb-4 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
         </svg>
         Loading areas…
-      </div>
-    `;
+      </div>`;
 
     try {
-      const response = await fetch("/calendar/customers_by_area");
-      if (!response.ok) throw new Error("Failed to load areas");
+      const res = await fetch("/calendar/customers_by_area");
+      if (!res.ok) throw new Error("Failed to load");
 
-      const groups = await response.json();
+      const groups = await res.json();
 
       if (!Object.keys(groups).length) {
-        contentContainer.innerHTML = `
-          <div class="text-center py-12 text-gray-500">
-            No priority customers found.
-          </div>
-        `;
+        container.innerHTML = `<div class="text-center py-12 text-gray-500">No priority customers found.</div>`;
         return;
       }
 
       let html = "";
-
       Object.entries(groups).forEach(([area, customers]) => {
         html += `
           <div class="mb-8">
             <div class="flex items-center justify-between mb-4">
-              <h4 class="text-xl font-semibold">
-                ${area}
-                <span class="ml-2 text-sm text-gray-500">
-                  (${customers.length})
-                </span>
-              </h4>
+              <h4 class="text-xl font-semibold">${escapeHTML(area)} <span class="ml-2 text-sm text-gray-500">(${customers.length})</span></h4>
             </div>
-
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              ${customers
-                .map((customer) => {
-                  const owes = customer.balance_cents > 0;
-                  const overdue =
-                    customer.days_since && customer.days_since > 14;
-
-                  return `
-                    <div class="bg-gray-800 rounded-xl p-5 border border-gray-700 hover:border-blue-500 transition">
-                      <div class="font-medium text-lg mb-2">
-                        ${customer.name}
-                      </div>
-
-                      <div class="text-sm text-gray-400 mb-3">
-                        ${customer.address || "No address"}
-                      </div>
-
-                      <div class="flex flex-wrap gap-2 mb-4">
-                        ${
-                          owes
-                            ? `<span class="text-xs bg-red-500/30 text-red-400 px-2.5 py-1 rounded-full">
-                                 Owes ${formatCurrency(customer.balance_cents)}
-                               </span>`
-                            : ""
-                        }
-                        ${
-                          overdue
-                            ? `<span class="text-xs bg-amber-500/30 text-amber-400 px-2.5 py-1 rounded-full">
-                                 ${customer.days_since}+ days
-                               </span>`
-                            : ""
-                        }
-                      </div>
-
-                      <button
-                        onclick="quickAddFromArea(${customer.id})"
-                        class="w-full bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-lg font-medium transition">
-                        + Add to ${selectedDate ? "selected day" : "Today"}
-                      </button>
-                    </div>
-                  `;
-                })
-                .join("")}
+              ${customers.map(c => `
+                <div class="bg-gray-800 rounded-xl p-5 border border-gray-700 hover:border-blue-500 transition">
+                  <div class="font-medium text-lg mb-2">${escapeHTML(c.name)}</div>
+                  <div class="text-sm text-gray-400 mb-3">${escapeHTML(c.address || "No address")}</div>
+                  <div class="flex flex-wrap gap-2 mb-4">
+                    ${c.balance_cents > 0 ? `<span class="text-xs bg-red-500/30 text-red-400 px-2.5 py-1 rounded-full">Owes ${formatCurrency(c.balance_cents)}</span>` : ""}
+                    ${c.days_since > 14 ? `<span class="text-xs bg-amber-500/30 text-amber-400 px-2.5 py-1 rounded-full">${c.days_since}+ days</span>` : ""}
+                  </div>
+                  <button onclick="quickAddFromArea(${c.id})" class="w-full bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-lg font-medium transition">
+                    + Add to ${appState.selectedDate ? "selected day" : "Today"}
+                  </button>
+                </div>
+              `).join("")}
             </div>
-          </div>
-        `;
+          </div>`;
       });
 
-      contentContainer.innerHTML = html;
+      container.innerHTML = html;
     } catch (err) {
       console.error(err);
-      contentContainer.innerHTML = `
-        <div class="text-center py-12 text-red-400">
-          Failed to load customers by area.
-        </div>
-      `;
+      container.innerHTML = `<div class="text-center py-12 text-red-400">Failed to load customers by area.</div>`;
     }
   };
 
-  /* =========================================================
-     Quick Add From Area
-     ========================================================= */
-
+  // ── Quick Add from Area ──────────────────────────────────────────────────
   window.quickAddFromArea = (customerId) => {
-    const quickAddModal = document.getElementById("quickAddModal");
-    if (!quickAddModal) {
-      alert("Quick add modal not found");
+    const modal = document.getElementById("quickAddModal");
+    if (!modal) {
+      console.warn("Quick add modal not found");
       return;
     }
 
-    const form = quickAddModal.querySelector("form");
+    openModal(modal);
+
+    const form = modal.querySelector("form");
     if (!form) return;
 
     const customerSelect = form.querySelector('select[name="customer_id"]');
@@ -250,32 +157,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const dateInput = form.querySelector('input[name="date"]');
     if (dateInput) {
-      dateInput.value = selectedDate || new Date().toISOString().split("T")[0];
+      dateInput.value = appState.selectedDate || new Date().toISOString().split("T")[0];
     }
 
-    const notesTextarea = form.querySelector('textarea[name="notes"]');
-    if (notesTextarea) {
-      notesTextarea.value = "Added from Area Optimizer";
-    }
-
-    quickAddModal.classList.remove("hidden");
+    const notes = form.querySelector('textarea[name="notes"]');
+    if (notes) notes.value = "Added from Area Optimizer";
   };
 
-  /* =========================================================
-     Modal Close Handlers
-     ========================================================= */
-
-  if (areaModalCloseBtn) {
-    areaModalCloseBtn.addEventListener("click", () => {
-      areaModal.classList.add("hidden");
-    });
-  }
-
-  if (areaModal) {
-    areaModal.addEventListener("click", (e) => {
-      if (e.target === areaModal) {
-        areaModal.classList.add("hidden");
+  // ── Route Complete Confirmation ──────────────────────────────────────────
+  document.querySelectorAll(".route-complete-btn").forEach(btn => {
+    btn.addEventListener("click", e => {
+      if (!confirm("Mark this stop as completed?")) {
+        e.preventDefault();
       }
     });
-  }
-});
+  });
