@@ -10,7 +10,7 @@ services:
           name: candy-dash-db
           property: connectionString
       - key: SECRET_KEY
-        generateValue: true
+        generateValue: true # Auto-generates a secure one
 
 databases:
   - name: candy-dash-db
