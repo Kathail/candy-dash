@@ -1,28 +1,34 @@
 {% extends "base.html" %} {% block title %}Route{% endblock %} {% block content
 %}
-<div class="max-w-7xl mx-auto space-y-8">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-10 space-y-8">
     <!-- Header -->
-    <header class="flex items-start justify-between gap-4 flex-wrap">
+    <div
+        class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 flex-wrap"
+    >
         <div>
-            <h1 class="text-3xl font-bold mb-1">Today's Route</h1>
-            <p class="text-gray-400">{{ today.strftime("%A, %B %d") }}</p>
+            <h1 class="text-2xl sm:text-3xl font-bold text-white">
+                Today's Route
+            </h1>
+            <p class="mt-1 text-sm text-gray-400">
+                {{ today.strftime("%A, %B %d, %Y") }}
+            </p>
         </div>
 
-        <div class="flex gap-2">
+        <div class="flex items-center gap-3 flex-wrap">
             <button
                 onclick="openAddCustomerModal()"
-                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition flex items-center gap-2"
+                class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition shadow-sm"
             >
                 <svg
                     class="w-4 h-4"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
+                    stroke-width="2"
                 >
                     <path
                         stroke-linecap="round"
                         stroke-linejoin="round"
-                        stroke-width="2"
                         d="M12 4v16m8-8H4"
                     />
                 </svg>
@@ -32,83 +38,91 @@
             {% if stops %}
             <button
                 onclick="toggleSelectMode()"
-                class="text-sm text-gray-400 hover:text-blue-400 transition px-3 py-2"
+                class="text-sm font-medium text-gray-300 hover:text-blue-400 px-4 py-2 transition"
             >
                 <span id="selectModeText">Select</span>
             </button>
             {% endif %}
         </div>
-    </header>
+    </div>
 
     {% if not stops %}
+
     <!-- Empty State -->
-    <section
-        class="bg-gray-900 border border-gray-800 rounded-xl text-center p-10"
+    <div
+        class="bg-gray-800 border border-gray-700 rounded-xl text-center py-16 px-6"
     >
-        <div class="text-4xl mb-3">📍</div>
-        <h2 class="text-lg font-semibold mb-2">No stops scheduled</h2>
-        <p class="text-gray-400 mb-5 text-sm">
-            Add customers to build today’s route.
+        <div class="text-6xl mb-4">📍</div>
+        <h2 class="text-xl font-semibold text-white mb-3">
+            No stops scheduled today
+        </h2>
+        <p class="text-gray-400 mb-6 max-w-md mx-auto">
+            Add customers to plan your route and start tracking visits.
         </p>
         <button
             onclick="openAddCustomerModal()"
-            class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg text-sm font-medium transition"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition shadow-md"
         >
-            Add Customers
+            Add First Stop
         </button>
-    </section>
+    </div>
 
     {% else %} {% set completed = stops | selectattr("completed") | list %} {%
     set remaining = stops | rejectattr("completed") | list %} {% set total =
-    stops | length %} {% set done = completed | length %} {% set progress_pct =
-    (done / total * 100) if total > 0 else 0 %}
+    stops | length %} {% set done = completed | length %} {% set pct = (done /
+    total * 100) | round(0) if total > 0 else 0 %}
 
-    <!-- Progress Card (Dashboard style) -->
-    <section class="bg-gray-900 border border-gray-800 rounded-xl p-6">
-        <div class="flex items-center justify-between mb-3">
+    <!-- Progress Card -->
+    <div class="bg-gray-800 border border-gray-700 rounded-xl p-6 shadow-sm">
+        <div
+            class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4"
+        >
             <div>
-                <p class="text-xs text-gray-400">Today's Progress</p>
-                <p class="text-xl font-semibold">
+                <p
+                    class="text-xs font-medium text-gray-400 uppercase tracking-wide"
+                >
+                    Today's Progress
+                </p>
+                <p class="text-xl sm:text-2xl font-bold text-white mt-1">
                     {{ done }} / {{ total }} stops completed
                 </p>
             </div>
-            <div class="text-lg font-semibold text-gray-300">
-                {{ progress_pct | round | int }}%
+            <div class="text-2xl sm:text-3xl font-bold text-blue-400">
+                {{ pct }}%
             </div>
         </div>
-
-        <div class="bg-gray-800 rounded-full h-2 overflow-hidden">
+        <div class="bg-gray-700 rounded-full h-2.5 overflow-hidden">
             <div
-                class="bg-blue-600 h-full transition-all duration-500"
-                style="width: {{ progress_pct | round }}%"
+                class="bg-blue-600 h-full transition-all duration-700 ease-out"
+                style="width: {{ pct }}%"
             ></div>
         </div>
-    </section>
+    </div>
 
-    <!-- Bulk Actions -->
+    <!-- Bulk Actions Bar -->
     <div
         id="bulkActions"
-        class="hidden bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-center justify-between"
+        class="hidden sticky top-4 z-20 bg-gray-950 border border-gray-700 rounded-xl px-5 py-4 shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all duration-200"
     >
-        <span class="text-sm text-gray-400">
-            <span id="selectedCount">0</span> selected
+        <span class="text-sm font-medium text-gray-300">
+            <span id="selectedCount" class="text-white">0</span> selected
         </span>
-        <div class="flex gap-2">
+        <div class="flex flex-wrap gap-2">
             <button
                 onclick="bulkComplete()"
-                class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-sm"
+                class="bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition"
             >
-                Complete
+                Complete Selected
             </button>
             <button
                 onclick="bulkRemove()"
-                class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-sm"
+                class="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition"
             >
-                Remove
+                Remove Selected
             </button>
             <button
                 onclick="cancelSelect()"
-                class="bg-gray-800 hover:bg-gray-700 text-white px-3 py-1.5 rounded-lg text-sm"
+                class="bg-gray-700 hover:bg-gray-600 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition"
             >
                 Cancel
             </button>
@@ -116,49 +130,55 @@
     </div>
 
     <!-- Remaining Stops -->
-    <section class="space-y-3">
+    <section class="space-y-4">
         <div class="flex items-center justify-between">
-            <h2 class="text-lg font-semibold">Remaining Stops</h2>
-            <span class="text-sm text-gray-400">
-                {{ remaining | length }}
-            </span>
+            <h2 class="text-lg font-semibold text-white">Remaining Stops</h2>
+            <span class="text-sm text-gray-400">{{ remaining|length }}</span>
         </div>
 
         {% if remaining %}
-        <ul class="space-y-2" id="stopsList">
+        <div class="space-y-3" id="stopsList">
             {% for stop in remaining %}
-            <li
-                class="bg-gray-900 border border-gray-800 rounded-lg p-4 hover:border-gray-700 transition"
+            <div
+                class="bg-gray-800 border border-gray-700 rounded-xl p-4 hover:border-gray-500 transition-all group"
                 data-stop-id="{{ stop.stop_id }}"
             >
-                <div class="flex gap-3 items-start">
-                    <input type="checkbox" class="stop-checkbox hidden mt-1" />
+                <div class="flex items-start gap-4">
+                    <input
+                        type="checkbox"
+                        class="stop-checkbox hidden h-5 w-5 mt-1 rounded border-gray-600 text-blue-500 focus:ring-blue-500 bg-gray-700"
+                    />
 
                     <div class="flex-1 min-w-0">
-                        <div class="flex justify-between gap-3">
-                            <div>
-                                <h3 class="text-sm font-medium truncate">
+                        <div
+                            class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3"
+                        >
+                            <div class="min-w-0">
+                                <h3 class="font-medium text-gray-100 truncate">
                                     {{ stop.name }}
                                 </h3>
-
                                 {% if stop.customer_address %}
                                 <a
                                     href="https://www.google.com/maps/search/?api=1&query={{ stop.customer_address | urlencode }}"
                                     target="_blank"
-                                    class="text-xs text-blue-400 hover:text-blue-300"
+                                    rel="noopener noreferrer"
+                                    class="text-xs text-blue-400 hover:text-blue-300 hover:underline mt-0.5 inline-block"
                                 >
                                     {{ stop.customer_address }}
                                 </a>
                                 {% endif %}
                             </div>
 
-                            <div class="flex gap-2 stop-actions">
+                            <div
+                                class="flex items-center gap-2 stop-actions shrink-0"
+                            >
                                 <form
                                     method="post"
                                     action="{{ url_for('route.route_complete', stop_id=stop.stop_id) }}"
                                 >
                                     <button
-                                        class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-xs"
+                                        type="submit"
+                                        class="bg-green-600/90 hover:bg-green-700 text-white text-xs font-medium px-4 py-2 rounded-lg transition"
                                     >
                                         Complete
                                     </button>
@@ -166,7 +186,7 @@
 
                                 <button
                                     onclick="toggleNotes(this)"
-                                    class="bg-gray-800 hover:bg-gray-700 text-white px-3 py-1.5 rounded-lg text-xs"
+                                    class="bg-gray-700 hover:bg-gray-600 text-white text-xs font-medium px-4 py-2 rounded-lg transition"
                                 >
                                     Notes
                                 </button>
@@ -176,19 +196,23 @@
                                     action="{{ url_for('route.route_remove', stop_id=stop.stop_id) }}"
                                 >
                                     <button
-                                        class="text-red-400 hover:text-red-300 px-2 text-sm"
+                                        type="submit"
                                         onclick="
-                                            return confirm('Remove this stop?');
+                                            return confirm(
+                                                'Remove this stop from today’s route?',
+                                            );
                                         "
+                                        class="text-red-400 hover:text-red-300 text-xl font-bold px-2 transition"
                                     >
-                                        ✕
+                                        ×
                                     </button>
                                 </form>
                             </div>
                         </div>
 
+                        <!-- Notes -->
                         <div
-                            class="notes-section hidden mt-3 border-t border-gray-800 pt-3"
+                            class="notes-section hidden mt-4 pt-4 border-t border-gray-700 transition-all duration-200"
                         >
                             <form
                                 method="post"
@@ -196,42 +220,46 @@
                             >
                                 <textarea
                                     name="notes"
-                                    rows="2"
-                                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
+                                    rows="3"
+                                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2.5 text-sm text-gray-100 placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-y"
                                 >
 {{ stop.notes or "" }}</textarea
                                 >
-                                <button
-                                    class="mt-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs"
-                                >
-                                    Save Notes
-                                </button>
+                                <div class="mt-3 flex justify-end">
+                                    <button
+                                        type="submit"
+                                        class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-medium transition"
+                                    >
+                                        Save Notes
+                                    </button>
+                                </div>
                             </form>
                         </div>
                     </div>
                 </div>
-            </li>
+            </div>
             {% endfor %}
-        </ul>
+        </div>
         {% else %}
         <div
-            class="bg-gray-900 border border-gray-800 rounded-xl text-center p-8"
+            class="bg-gray-800/70 border border-gray-700 rounded-xl p-10 text-center"
         >
-            <p class="text-gray-400 text-sm">All stops completed 🎉</p>
+            <p class="text-lg text-gray-300">All stops completed today 🎉</p>
         </div>
         {% endif %}
     </section>
 
-    <!-- Completed -->
+    <!-- Completed Stops -->
     {% if completed %}
-    <section>
-        <h2 class="text-sm font-semibold text-gray-400 mb-2">
-            Completed ({{ completed | length }})
+    <section class="pt-4">
+        <h2 class="text-sm font-semibold text-gray-400 mb-3">
+            Completed ({{ completed|length }})
         </h2>
-        <ul class="space-y-1">
+        <ul class="space-y-1.5 text-sm">
             {% for stop in completed %}
-            <li class="text-sm text-gray-500 line-through px-1">
-                {{ stop.name }}
+            <li class="text-gray-500 line-through flex items-center gap-2 px-1">
+                <span class="text-green-400">✓</span>
+                <span class="truncate">{{ stop.name }}</span>
             </li>
             {% endfor %}
         </ul>
@@ -240,11 +268,9 @@
 </div>
 {% endblock %} {% block scripts %}
 <script>
-    function toggleNotes(button) {
-        button
-            .closest("li")
-            .querySelector(".notes-section")
-            .classList.toggle("hidden");
+    function toggleNotes(btn) {
+        const section = btn.closest(".min-w-0").querySelector(".notes-section");
+        section.classList.toggle("hidden");
     }
 
     let selectMode = false;
@@ -253,14 +279,22 @@
         selectMode = !selectMode;
         document
             .querySelectorAll(".stop-checkbox")
-            .forEach((cb) => cb.classList.toggle("hidden"));
+            .forEach((el) => el.classList.toggle("hidden", !selectMode));
         document
             .querySelectorAll(".stop-actions")
-            .forEach((a) => a.classList.toggle("hidden"));
-        document.getElementById("bulkActions").classList.toggle("hidden");
+            .forEach((el) => el.classList.toggle("hidden", selectMode));
+        document
+            .getElementById("bulkActions")
+            ?.classList.toggle("hidden", !selectMode);
         document.getElementById("selectModeText").textContent = selectMode
             ? "Cancel"
             : "Select";
+        if (!selectMode) {
+            document
+                .querySelectorAll(".stop-checkbox")
+                .forEach((chk) => (chk.checked = false));
+            updateSelectedCount();
+        }
     }
 
     function cancelSelect() {
@@ -268,20 +302,38 @@
     }
 
     function updateSelectedCount() {
-        document.getElementById("selectedCount").textContent =
-            document.querySelectorAll(".stop-checkbox:checked").length;
+        const count = document.querySelectorAll(
+            ".stop-checkbox:checked",
+        ).length;
+        document.getElementById("selectedCount").textContent = count;
     }
 
     document.addEventListener("change", (e) => {
-        if (e.target.classList.contains("stop-checkbox")) updateSelectedCount();
+        if (e.target.classList.contains("stop-checkbox")) {
+            updateSelectedCount();
+        }
     });
 
     function bulkComplete() {
-        alert("Bulk complete requires backend endpoint.");
+        // TODO: collect checked stop IDs → POST to bulk-complete endpoint
+        alert("Bulk complete – implement backend call here");
     }
 
     function bulkRemove() {
-        alert("Bulk remove requires backend endpoint.");
+        // TODO: collect checked stop IDs → POST to bulk-remove endpoint
+        alert("Bulk remove – implement backend call here");
     }
+
+    // Optional: close notes when clicking outside (nice UX)
+    document.addEventListener("click", (e) => {
+        if (
+            !e.target.closest(".notes-section") &&
+            !e.target.closest('button[onclick*="toggleNotes"]')
+        ) {
+            document
+                .querySelectorAll(".notes-section:not(.hidden)")
+                .forEach((el) => el.classList.add("hidden"));
+        }
+    });
 </script>
 {% endblock %}
