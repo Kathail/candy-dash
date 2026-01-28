@@ -1,6 +1,6 @@
 {% extends "base.html" %} {% block title %}Customers - Candy Dash{% endblock %}
 {% block content %}
-<div class="max-w-7xl mx-auto space-y-10">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-10 space-y-10">
     <!-- Header -->
     <header
         class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6"
@@ -39,7 +39,9 @@
     %}
 
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <div class="bg-card border border-gray-800 rounded-xl p-6 shadow-sm">
+        <div
+            class="bg-gray-900 border border-gray-800 rounded-xl p-6 shadow-sm"
+        >
             <p
                 class="text-xs font-medium text-gray-400 uppercase tracking-wide"
             >
@@ -49,7 +51,9 @@
                 {{ customers | length }}
             </p>
         </div>
-        <div class="bg-card border border-gray-800 rounded-xl p-6 shadow-sm">
+        <div
+            class="bg-gray-900 border border-gray-800 rounded-xl p-6 shadow-sm"
+        >
             <p
                 class="text-xs font-medium text-gray-400 uppercase tracking-wide"
             >
@@ -61,7 +65,9 @@
                 ${{ total_owed }}
             </p>
         </div>
-        <div class="bg-card border border-gray-800 rounded-xl p-6 shadow-sm">
+        <div
+            class="bg-gray-900 border border-gray-800 rounded-xl p-6 shadow-sm"
+        >
             <p
                 class="text-xs font-medium text-gray-400 uppercase tracking-wide"
             >
@@ -76,7 +82,7 @@
     <!-- Bulk Actions Bar -->
     <div
         id="bulk-bar"
-        class="hidden sticky top-4 z-20 bg-card border border-gray-800 rounded-xl px-6 py-4 shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+        class="hidden sticky top-4 z-20 bg-gray-900 border border-gray-800 rounded-xl px-6 py-4 shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4"
     >
         <span class="text-sm font-medium text-gray-300">
             <span id="selected-count" class="text-gray-200 font-bold">0</span>
@@ -102,7 +108,7 @@
 
     <!-- Customer List Card -->
     <div
-        class="bg-card border border-gray-800 rounded-xl overflow-hidden shadow-sm"
+        class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden shadow-sm"
     >
         <!-- Controls -->
         <div
@@ -160,7 +166,7 @@
 
         <!-- Pagination Controls -->
         <div
-            class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 px-6 py-4 border-b border-gray-800 bg-gray-950"
+            class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 px-6 py-4 border-b border-gray-800 bg-gray-800/50"
         >
             <div class="text-sm text-gray-400">
                 Showing <span id="showing-count">—</span> of {{ customers |
@@ -203,7 +209,7 @@
                 class="min-w-full divide-y divide-gray-800 text-sm"
                 id="customer-table"
             >
-                <thead class="bg-gray-950 sticky top-0 z-10">
+                <thead class="bg-gray-800/50 sticky top-0 z-10">
                     <tr
                         class="text-left text-xs font-medium text-gray-400 uppercase tracking-wide"
                     >
@@ -372,10 +378,9 @@
                             <div class="notes-section hidden mt-4">
                                 <form
                                     method="post"
-                                    action="{{ url_for('customers.update_notes', customer_id=c.id) }}"
+                                    action="{{ url_for('route.route_update_notes', stop_id=c.id) }}"
                                     class="space-y-3"
                                 >
-                                    <!-- Adjust endpoint as needed -->
                                     <textarea
                                         name="notes"
                                         rows="3"
@@ -466,7 +471,7 @@
     <!-- Add Customer Form -->
     <div
         id="add-form"
-        class="bg-card border border-gray-800 rounded-xl p-8 shadow-sm"
+        class="bg-gray-900 border border-gray-800 rounded-xl p-8 shadow-sm"
     >
         <h2 class="text-2xl font-semibold text-gray-200 mb-8">
             Add New Customer
@@ -538,7 +543,7 @@
     class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
 >
     <div
-        class="bg-card border border-gray-800 rounded-2xl p-8 w-full max-w-lg shadow-2xl"
+        class="bg-gray-900 border border-gray-800 rounded-2xl p-8 w-full max-w-lg shadow-2xl"
     >
         <h3 class="text-2xl font-semibold text-gray-200 mb-8">Edit Customer</h3>
         <form id="edit-form" method="post" class="space-y-6">
@@ -605,9 +610,295 @@
     </div>
 </div>
 
-<!-- Your existing JavaScript block remains unchanged -->
+<!-- Full JavaScript -->
 <script>
-    // ... (keep your full <script> from the original customers.html)
-    // It already works perfectly with these class names
+    document.addEventListener("DOMContentLoaded", () => {
+        const modal = document.getElementById("edit-modal");
+        const editForm = document.getElementById("edit-form");
+        const searchInput = document.getElementById("customer-search");
+        const selectAllChk = document.getElementById("select-all");
+        const selectedCount = document.getElementById("selected-count");
+        const bulkBar = document.getElementById("bulk-bar");
+        const noResults = document.getElementById("no-results");
+        const rows = Array.from(document.querySelectorAll(".customer-row"));
+        let pageSize = 20;
+        let currentPage = 1;
+        let sortState = { key: "balance", dir: -1 };
+        let selectMode = false;
+        let compactMode = false;
+
+        // ── Search ─────────────────────────────────────────────────────────────
+        function filterRows() {
+            const term = searchInput.value.toLowerCase();
+            rows.forEach((row) => {
+                const match = row.dataset.search?.includes(term) ?? false;
+                row.dataset.filtered = match ? "true" : "false";
+            });
+            paginate();
+        }
+        if (searchInput) {
+            let timeout;
+            searchInput.addEventListener("input", () => {
+                clearTimeout(timeout);
+                timeout = setTimeout(filterRows, 250);
+            });
+        }
+
+        // ── Sorting ────────────────────────────────────────────────────────────
+        function updateSortIndicators() {
+            document
+                .querySelectorAll("[data-for]")
+                .forEach((el) => (el.textContent = "—"));
+            document
+                .querySelectorAll(".sortable")
+                .forEach((th) => th.classList.remove("text-blue-300"));
+
+            const active = document.querySelector(
+                `[data-key="${sortState.key}"]`,
+            );
+            if (active) {
+                active.classList.add("text-blue-300");
+                const ind = active.querySelector(".sort-indicator");
+                if (ind) ind.textContent = sortState.dir === -1 ? "↓" : "↑";
+            }
+        }
+
+        function sortRows() {
+            const visibleRows = rows.filter(
+                (r) => r.dataset.filtered !== "false",
+            );
+            visibleRows.sort((a, b) => {
+                let va = a.dataset[sortState.key] ?? "";
+                let vb = b.dataset[sortState.key] ?? "";
+                const na = Number(va),
+                    nb = Number(vb);
+                const num = !isNaN(na) && !isNaN(nb);
+                return sortState.dir * (num ? na - nb : va.localeCompare(vb));
+            });
+            visibleRows.forEach((r) => r.parentElement.appendChild(r));
+            updateSortIndicators();
+        }
+
+        document.querySelectorAll(".sortable").forEach((th) => {
+            th.addEventListener("click", () => {
+                const key = th.dataset.key;
+                sortState.dir =
+                    sortState.key === key
+                        ? -sortState.dir
+                        : th.dataset.sortDefault === "desc"
+                          ? -1
+                          : 1;
+                sortState.key = key;
+                sortRows();
+                paginate();
+            });
+        });
+
+        // ── Pagination ─────────────────────────────────────────────────────────
+        function paginate() {
+            const visibleRows = rows.filter(
+                (r) => r.dataset.filtered !== "false",
+            );
+            const totalVisible = visibleRows.length;
+            const totalPages = Math.ceil(totalVisible / pageSize);
+
+            currentPage = Math.max(1, Math.min(currentPage, totalPages || 1));
+
+            rows.forEach((r) => (r.style.display = "none"));
+            const start = (currentPage - 1) * pageSize;
+            const end = start + pageSize;
+
+            visibleRows
+                .slice(start, end)
+                .forEach((r) => (r.style.display = ""));
+
+            document.getElementById("showing-count").textContent = Math.min(
+                end,
+                totalVisible,
+            );
+            document.getElementById("current-page").textContent = currentPage;
+            document.getElementById("prev-page").disabled = currentPage <= 1;
+            document.getElementById("next-page").disabled =
+                currentPage >= totalPages;
+
+            noResults?.classList.toggle("hidden", totalVisible > 0);
+        }
+
+        document
+            .getElementById("page-size")
+            ?.addEventListener("change", (e) => {
+                pageSize = parseInt(e.target.value, 10);
+                currentPage = 1;
+                paginate();
+            });
+
+        document.getElementById("prev-page")?.addEventListener("click", () => {
+            if (currentPage > 1) {
+                currentPage--;
+                paginate();
+            }
+        });
+
+        document.getElementById("next-page")?.addEventListener("click", () => {
+            const visible = rows.filter(
+                (r) => r.dataset.filtered !== "false",
+            ).length;
+            if (currentPage * pageSize < visible) {
+                currentPage++;
+                paginate();
+            }
+        });
+
+        // ── Inline Notes Toggle ────────────────────────────────────────────────
+        window.toggleNotes = function (btn) {
+            const row = btn.closest("tr");
+            const section = row.querySelector(".notes-section");
+            if (section) section.classList.toggle("hidden");
+        };
+
+        // Close notes on outside click
+        document.addEventListener("click", (e) => {
+            if (
+                !e.target.closest('button[onclick*="toggleNotes"]') &&
+                !e.target.closest(".notes-section")
+            ) {
+                document
+                    .querySelectorAll(".notes-section:not(.hidden)")
+                    .forEach((s) => s.classList.add("hidden"));
+            }
+        });
+
+        // ── Edit Modal ─────────────────────────────────────────────────────────
+        document.querySelectorAll(".btn-edit").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                editForm.action =
+                    "{{ url_for('customers.customer_edit', customer_id=0) }}".replace(
+                        "0",
+                        btn.dataset.id,
+                    );
+                editForm.querySelector('[name="customer_id"]').value =
+                    btn.dataset.id;
+                editForm.querySelector('[name="name"]').value =
+                    btn.dataset.name;
+                editForm.querySelector('[name="phone"]').value =
+                    btn.dataset.phone;
+                editForm.querySelector('[name="address"]').value =
+                    btn.dataset.address;
+                editForm.querySelector('[name="notes"]').value =
+                    btn.dataset.notes || "";
+                editForm.querySelector('[name="balance"]').value =
+                    btn.dataset.balance;
+                modal.classList.remove("hidden");
+            });
+        });
+
+        function closeModal() {
+            modal.classList.add("hidden");
+        }
+        modal?.addEventListener("click", (e) => {
+            if (e.target === modal) closeModal();
+        });
+        document
+            .querySelectorAll('[data-action="close"]')
+            .forEach((b) => b.addEventListener("click", closeModal));
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") closeModal();
+        });
+
+        // ── Select / Bulk ──────────────────────────────────────────────────────
+        function getRowCheckboxes() {
+            return [...document.querySelectorAll(".row-check")];
+        }
+
+        function updateBulkUI() {
+            const checked = getRowCheckboxes().filter((c) => c.checked).length;
+            selectedCount.textContent = checked;
+            bulkBar.classList.toggle("hidden", checked === 0);
+
+            if (selectAllChk) {
+                const visibleChecks = getRowCheckboxes().filter(
+                    (c) => c.closest("tr").style.display !== "none",
+                );
+                const allChecked =
+                    visibleChecks.length > 0 &&
+                    visibleChecks.every((c) => c.checked);
+                const someChecked = visibleChecks.some((c) => c.checked);
+                selectAllChk.checked = allChecked;
+                selectAllChk.indeterminate = someChecked && !allChecked;
+            }
+        }
+
+        function toggleSelectMode(enable) {
+            selectMode = enable;
+            getRowCheckboxes().forEach((c) =>
+                c.classList.toggle("hidden", !enable),
+            );
+            selectAllChk?.classList.toggle("hidden", !enable);
+            document.getElementById("toggle-select").textContent = enable
+                ? "Done"
+                : "Select";
+
+            if (!enable) {
+                getRowCheckboxes().forEach((c) => (c.checked = false));
+                updateBulkUI();
+            }
+        }
+
+        document
+            .getElementById("toggle-select")
+            ?.addEventListener("click", () => toggleSelectMode(!selectMode));
+        selectAllChk?.addEventListener("change", (e) => {
+            getRowCheckboxes().forEach((c) => {
+                if (c.closest("tr").style.display !== "none")
+                    c.checked = e.target.checked;
+            });
+            updateBulkUI();
+        });
+        document.addEventListener("change", (e) => {
+            if (e.target.classList.contains("row-check")) updateBulkUI();
+        });
+
+        document.getElementById("bulk-clear")?.addEventListener("click", () => {
+            getRowCheckboxes().forEach((c) => (c.checked = false));
+            updateBulkUI();
+        });
+
+        document
+            .getElementById("bulk-add-to-route")
+            ?.addEventListener("click", () => {
+                const ids = getRowCheckboxes()
+                    .filter((c) => c.checked)
+                    .map((c) => c.closest("tr")?.dataset.id)
+                    .filter(Boolean);
+
+                if (ids.length === 0) return;
+
+                const params = new URLSearchParams();
+                ids.forEach((id) => params.append("customers", id));
+                window.location.href = `/calendar?${params}`;
+            });
+
+        // ── Compact Mode ───────────────────────────────────────────────────────
+        document
+            .getElementById("toggle-density")
+            ?.addEventListener("click", () => {
+                compactMode = !compactMode;
+                document.getElementById("toggle-density").textContent =
+                    compactMode ? "Comfort" : "Compact";
+
+                rows.forEach((row) => {
+                    row.querySelectorAll("td").forEach((td) => {
+                        td.classList.toggle("py-4", !compactMode);
+                        td.classList.toggle("py-2.5", compactMode);
+                    });
+                });
+            });
+
+        // ── Initial Setup ──────────────────────────────────────────────────────
+        toggleSelectMode(false);
+        filterRows();
+        sortRows();
+        paginate();
+    });
 </script>
 {% endblock %}
