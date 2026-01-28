@@ -4,7 +4,7 @@
     class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-10 space-y-10"
     x-data="customersApp"
 >
-    <!-- Header -->
+    <!-- Header – matches dashboard style -->
     <header
         class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6"
     >
@@ -17,7 +17,7 @@
         <button
             type="button"
             @click="addCustomerOpen = true"
-            class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl text-sm font-medium transition shadow-md flex items-center gap-2 justify-center w-full sm:w-auto"
+            class="theme-btn-primary flex items-center gap-2 justify-center w-full sm:w-auto"
         >
             <svg
                 class="w-5 h-5"
@@ -36,15 +36,13 @@
         </button>
     </header>
 
-    <!-- Stats Cards -->
+    <!-- Stats Cards – matches dashboard KPI style -->
     {% set owing = customers | selectattr('balance_cents', 'gt', 0) | list %} {%
     set total_owed = (owing | sum(attribute='balance_cents') / 100) | round(2)
     %}
 
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <div
-            class="bg-gray-900 border border-gray-800 rounded-xl p-6 shadow-sm"
-        >
+        <div class="theme-card p-6">
             <p
                 class="text-xs font-medium text-gray-400 uppercase tracking-wide"
             >
@@ -54,23 +52,19 @@
                 {{ customers | length }}
             </p>
         </div>
-        <div
-            class="bg-gray-900 border border-gray-800 rounded-xl p-6 shadow-sm"
-        >
+        <div class="theme-card p-6">
             <p
                 class="text-xs font-medium text-gray-400 uppercase tracking-wide"
             >
                 Total Owed
             </p>
             <p
-                class="mt-3 text-4xl font-bold {{ 'text-red-400' if total_owed > 0 else 'text-gray-300' }}"
+                class="mt-3 text-4xl font-bold {{ 'theme-text-danger' if total_owed > 0 else 'text-gray-300' }}"
             >
                 ${{ total_owed }}
             </p>
         </div>
-        <div
-            class="bg-gray-900 border border-gray-800 rounded-xl p-6 shadow-sm"
-        >
+        <div class="theme-card p-6">
             <p
                 class="text-xs font-medium text-gray-400 uppercase tracking-wide"
             >
@@ -86,7 +80,7 @@
     <div
         id="bulk-bar"
         x-show="selectedIds.length > 0"
-        class="sticky top-4 z-20 bg-gray-900 border border-gray-800 rounded-xl px-6 py-4 shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+        class="sticky top-4 z-20 theme-card px-6 py-4 shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4"
     >
         <span class="text-sm font-medium text-gray-300">
             <span
@@ -102,14 +96,14 @@
                 hx-vals='{"customers": selectedIds}'
                 hx-swap="none"
                 hx-on::after-request="selectedIds = []; updateSelectUI()"
-                class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg text-sm font-medium transition"
+                class="theme-btn-primary px-6 py-2.5"
             >
                 Add to Route
             </button>
             <button
                 type="button"
                 @click="clearSelection"
-                class="bg-gray-800 hover:bg-gray-700 text-white px-6 py-2.5 rounded-lg text-sm font-medium transition"
+                class="theme-btn-secondary px-6 py-2.5"
             >
                 Clear
             </button>
@@ -117,9 +111,7 @@
     </div>
 
     <!-- Customer List Card -->
-    <div
-        class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden shadow-sm"
-    >
+    <div class="theme-card overflow-hidden">
         <!-- Controls -->
         <div
             class="p-6 border-b border-gray-800 flex flex-col lg:flex-row lg:items-center justify-between gap-6"
@@ -139,13 +131,7 @@
                         id="customer-search"
                         type="search"
                         placeholder="Search name, phone, email, address, notes…"
-                        hx-get="/customers/table"
-                        hx-trigger="input delay:250ms"
-                        hx-target="#customer-table-body"
-                        hx-swap="innerHTML"
-                        hx-indicator="#loading-indicator"
-                        name="term"
-                        class="w-full bg-gray-800 border border-gray-700 rounded-lg pl-11 pr-4 py-3 text-sm text-gray-200 placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                        class="theme-input pl-11"
                     />
                     <svg
                         class="w-5 h-5 text-gray-500 absolute left-4 top-1/2 -translate-y-1/2"
@@ -165,7 +151,7 @@
                     <button
                         type="button"
                         @click="compactMode = !compactMode"
-                        class="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 px-5 py-3 rounded-lg text-sm font-medium transition"
+                        class="theme-btn-secondary px-5 py-3"
                     >
                         <template x-if="!compactMode">Compact</template>
                         <template x-if="compactMode">Comfort</template>
@@ -173,7 +159,7 @@
                     <button
                         type="button"
                         @click="selectMode = !selectMode"
-                        class="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 px-5 py-3 rounded-lg text-sm font-medium transition"
+                        class="theme-btn-secondary px-5 py-3"
                     >
                         <template x-if="!selectMode">Select</template>
                         <template x-if="selectMode">Done</template>
@@ -182,333 +168,165 @@
             </div>
         </div>
 
-        <!-- Pagination -->
-        <div
-            class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 px-6 py-4 border-b border-gray-800 bg-gray-800/50"
-        >
-            <div
-                class="text-sm text-gray-400"
-                x-text="`Showing ${showingCount} of ${totalCount}`"
-            ></div>
-            <div class="flex items-center gap-4 flex-wrap">
-                <select
-                    id="page-size"
-                    hx-get="/customers/table"
-                    hx-trigger="change"
-                    hx-target="#customer-table-body"
-                    hx-swap="innerHTML"
-                    name="page_size"
-                    class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-gray-200 focus:border-blue-500"
-                >
-                    <option value="10">10 per page</option>
-                    <option value="20" selected>20 per page</option>
-                    <option value="50">50 per page</option>
-                    <option value="100">100 per page</option>
-                </select>
-                <div class="flex items-center gap-3">
-                    <button
-                        id="prev-page"
-                        hx-get="/customers/table"
-                        hx-trigger="click"
-                        hx-target="#customer-table-body"
-                        hx-swap="innerHTML"
-                        name="page"
-                        :value="currentPage - 1"
-                        :disabled="currentPage <= 1"
-                        class="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 px-5 py-2.5 rounded-lg text-sm disabled:opacity-50 transition"
-                    >
-                        Prev
-                    </button>
-                    <span
-                        class="text-sm text-gray-300"
-                        x-text="`Page ${currentPage}`"
-                    ></span>
-                    <button
-                        id="next-page"
-                        hx-get="/customers/table"
-                        hx-trigger="click"
-                        hx-target="#customer-table-body"
-                        hx-swap="innerHTML"
-                        name="page"
-                        :value="currentPage + 1"
-                        :disabled="currentPage >= totalPages"
-                        class="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 px-5 py-2.5 rounded-lg text-sm disabled:opacity-50 transition"
-                    >
-                        Next
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        {% if customers %}
+        <!-- Table -->
         <div class="overflow-x-auto">
             <table
                 class="min-w-full divide-y divide-gray-800 text-sm"
                 id="customer-table"
             >
-                <thead class="bg-gray-800/50 sticky top-0 z-10">
-                    <tr
-                        class="text-left text-xs font-medium text-gray-400 uppercase tracking-wide"
-                    >
-                        <th class="px-6 py-5 w-12">
+                <thead>
+                    <tr>
+                        <th class="theme-table-th w-12">
                             <input
                                 type="checkbox"
                                 x-show="selectMode"
                                 x-model="selectAll"
-                                id="select-all"
-                                class="h-5 w-5 rounded border-gray-700 text-blue-500 focus:ring-blue-500 bg-gray-800"
+                                class="h-5 w-5 rounded border-gray-700 text-app-accent focus:ring-app-accent bg-gray-800"
                             />
                         </th>
                         <th
-                            class="sortable px-6 py-5 cursor-pointer hover:text-blue-300 transition"
-                            hx-get="/customers/table"
-                            hx-trigger="click"
-                            hx-target="#customer-table-body"
-                            hx-swap="innerHTML"
-                            name="sort_key"
-                            value="name"
-                            :name="`sort_dir_${sortKey === 'name' ? -sortDir : 1}`"
+                            class="theme-table-th sortable cursor-pointer"
+                            @click="sort('name')"
                         >
                             Name
-                            <span
-                                class="sort-indicator ml-1 opacity-70"
-                                :text="sortKey === 'name' ? (sortDir === -1 ? '↓' : '↑') : '—'"
-                            ></span>
                         </th>
                         <th
-                            class="sortable px-6 py-5 cursor-pointer hover:text-blue-300 transition hidden lg:table-cell"
-                            hx-get="/customers/table"
-                            hx-trigger="click"
-                            hx-target="#customer-table-body"
-                            hx-swap="innerHTML"
-                            name="sort_key"
-                            value="phone"
-                            :name="`sort_dir_${sortKey === 'phone' ? -sortDir : 1}`"
+                            class="theme-table-th sortable cursor-pointer hidden lg:table-cell"
+                            @click="sort('phone')"
                         >
                             Phone
-                            <span
-                                class="sort-indicator ml-1 opacity-70"
-                                :text="sortKey === 'phone' ? (sortDir === -1 ? '↓' : '↑') : '—'"
-                            ></span>
                         </th>
                         <th
-                            class="sortable px-6 py-5 cursor-pointer hover:text-blue-300 transition hidden lg:table-cell"
-                            hx-get="/customers/table"
-                            hx-trigger="click"
-                            hx-target="#customer-table-body"
-                            hx-swap="innerHTML"
-                            name="sort_key"
-                            value="email"
-                            :name="`sort_dir_${sortKey === 'email' ? -sortDir : 1}`"
+                            class="theme-table-th sortable cursor-pointer hidden lg:table-cell"
+                            @click="sort('email')"
                         >
                             Email
-                            <span
-                                class="sort-indicator ml-1 opacity-70"
-                                :text="sortKey === 'email' ? (sortDir === -1 ? '↓' : '↑') : '—'"
-                            ></span>
                         </th>
-                        <th class="px-6 py-5 hidden xl:table-cell">Address</th>
+                        <th class="theme-table-th hidden xl:table-cell">
+                            Address
+                        </th>
                         <th
-                            class="sortable px-6 py-5 text-right cursor-pointer hover:text-blue-300 transition"
-                            hx-get="/customers/table"
-                            hx-trigger="click"
-                            hx-target="#customer-table-body"
-                            hx-swap="innerHTML"
-                            name="sort_key"
-                            value="balance"
-                            :name="`sort_dir_${sortKey === 'balance' ? -sortDir : -1}`"
+                            class="theme-table-th text-right sortable cursor-pointer"
+                            @click="sort('balance')"
                         >
-                            <!-- Default desc -->
-                            <div class="flex items-center justify-end gap-2">
-                                Balance
-                                <span
-                                    class="sort-indicator opacity-70"
-                                    :text="sortKey === 'balance' ? (sortDir === -1 ? '↓' : '↑') : '↓'"
-                                ></span>
-                            </div>
+                            Balance
                         </th>
                         <th
-                            class="sortable px-6 py-5 cursor-pointer hover:text-blue-300 transition hidden md:table-cell"
-                            hx-get="/customers/table"
-                            hx-trigger="click"
-                            hx-target="#customer-table-body"
-                            hx-swap="innerHTML"
-                            name="sort_key"
-                            value="lastvisit"
-                            :name="`sort_dir_${sortKey === 'lastvisit' ? -sortDir : 1}`"
+                            class="theme-table-th hidden md:table-cell sortable cursor-pointer"
+                            @click="sort('lastvisit')"
                         >
                             Last Visit
-                            <span
-                                class="sort-indicator ml-1 opacity-70"
-                                :text="sortKey === 'lastvisit' ? (sortDir === -1 ? '↓' : '↑') : '—'"
-                            ></span>
                         </th>
-                        <th class="px-6 py-5 text-right">Notes</th>
-                        <th class="px-6 py-5 text-right">Actions</th>
+                        <th class="theme-table-th text-right">Notes</th>
+                        <th class="theme-table-th text-right">Actions</th>
                     </tr>
                 </thead>
                 <tbody
                     id="customer-table-body"
                     class="divide-y divide-gray-800"
-                    hx-get="/customers/table"
-                    hx-trigger="load"
-                    hx-swap="innerHTML"
                 >
-                    <!-- Initial table body will be loaded via HTMX from Flask partial -->
-                    <!-- For initial render, Flask can provide the full body here, but subsequent updates via HTMX -->
                     {% for c in customers %} {% set bal = c.balance_cents /
-                    100.0 %} {% set bal_class = 'text-yellow-300' if bal > 0 and
-                    bal < 20 else 'text-orange-400' if bal < 100 else
-                    'text-red-400' if bal > 0 else 'text-gray-400' %}
+                    100.0 %} {% set bal_class = 'theme-text-warning' if 0 < bal
+                    < 20 else 'text-orange-400' if bal < 100 else
+                    'theme-text-danger' if bal > 0 else 'text-gray-400' %}
                     <tr
-                        class="customer-row hover:bg-gray-800/50 transition-colors {{ 'bg-red-950/10' if c.balance_cents > 0 else '' }}"
-                        :class="{'py-2.5': compactMode, 'py-4': !compactMode}"
-                        data-id="{{ c.id }}"
-                        data-name="{{ c.name | lower }}"
-                        data-phone="{{ (c.phone or '') | lower }}"
-                        data-email="{{ (c.email or '') | lower }}"
-                        data-address="{{ (c.address or '') | lower }}"
-                        data-balance="{{ c.balance_cents }}"
-                        data-lastvisit="{{ c.last_visit_at.isoformat() if c.last_visit_at else '1900-01-01' }}"
-                        data-notes="{{ (c.notes or '') | e }}"
-                        data-search="{{ (c.name ~ ' ' ~ (c.phone or '') ~ ' ' ~ (c.email or '') ~ ' ' ~ (c.address or '') ~ ' ' ~ (c.notes or '') ) | lower }}"
+                        class="hover:bg-gray-800/50 transition-colors"
+                        :class="{ 'density-compact': compactMode }"
                     >
-                        <td class="px-6 py-5">
+                        <td class="theme-table-td">
                             <input
                                 type="checkbox"
                                 x-show="selectMode"
-                                x-model="selectedIds.includes('{{ c.id }}')"
-                                class="row-check h-5 w-5 rounded border-gray-700 text-blue-500 focus:ring-blue-500 bg-gray-800"
+                                x-model="selectedIds"
+                                value="{{ c.id }}"
+                                class="h-5 w-5 rounded border-gray-700 text-app-accent focus:ring-app-accent bg-gray-800"
                             />
                         </td>
-                        <td class="px-6 py-5 font-medium text-gray-200">
+                        <td class="theme-table-td font-medium">
                             <button
-                                type="button"
-                                @click="openEdit({
-                                id: '{{ c.id }}',
-                                name: '{{ c.name | e }}',
-                                phone: '{{ c.phone or '' | e }}',
-                                email: '{{ c.email or '' | e }}',
-                                address: '{{ c.address or '' | e }}',
-                                notes: '{{ c.notes or '' | e }}',
-                                balance: '{{ bal | round(2) }}'
-                            })"
-                                class="hover:text-blue-300 hover:underline transition focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+                                @click="openEdit({id: '{{ c.id }}', name: '{{ c.name|e }}', phone: '{{ c.phone|e }}', email: '{{ c.email|e }}', address: '{{ c.address|e }}', notes: '{{ c.notes|e }}', balance: '{{ bal|round(2) }}'})"
+                                class="text-app-accent hover:underline"
                             >
                                 {{ c.name }}
                             </button>
-                            <div
-                                class="mt-3 text-xs text-gray-400 space-y-2 lg:hidden"
-                            >
-                                {% if c.phone %}
-                                <div>
-                                    Phone:
-                                    <span class="text-gray-300"
-                                        ><a
-                                            href="tel:{{ c.phone }}"
-                                            class="text-blue-400 hover:underline"
-                                            >{{ c.phone }}</a
-                                        ></span
-                                    >
-                                </div>
-                                {% endif %} {% if c.email %}
-                                <div>
-                                    Email:
-                                    <span class="text-gray-300"
-                                        ><a
-                                            href="mailto:{{ c.email }}"
-                                            class="text-blue-400 hover:underline"
-                                            >{{ c.email }}</a
-                                        ></span
-                                    >
-                                </div>
-                                {% endif %} {% if c.address %}
-                                <div class="truncate">
-                                    Addr:
-                                    <span class="text-gray-300"
-                                        >{{ c.address }}</span
-                                    >
-                                </div>
-                                {% endif %}
-                                <div>
-                                    Last:
-                                    <span class="text-gray-300"
-                                        >{% if c.last_visit_at %}{{
-                                        c.last_visit_at.strftime('%b %d, %Y')
-                                        }}{% else %}Never{% endif %}</span
-                                    >
-                                </div>
-                            </div>
                         </td>
-                        <td
-                            class="px-6 py-5 text-gray-400 hidden lg:table-cell"
-                        >
-                            {% if c.phone %}<a
+                        <td class="theme-table-td hidden lg:table-cell">
+                            {% if c.phone %}
+                            <a
                                 href="tel:{{ c.phone }}"
-                                class="text-blue-400 hover:underline"
+                                class="text-app-accent hover:underline"
                                 >{{ c.phone }}</a
-                            >{% else %}—{% endif %}
+                            >
+                            {% else %}-{% endif %}
                         </td>
-                        <td
-                            class="px-6 py-5 text-gray-400 hidden lg:table-cell"
-                        >
-                            {% if c.email %}<a
+                        <td class="theme-table-td hidden lg:table-cell">
+                            {% if c.email %}
+                            <a
                                 href="mailto:{{ c.email }}"
-                                class="text-blue-400 hover:underline"
+                                class="text-app-accent hover:underline"
                                 >{{ c.email }}</a
-                            >{% else %}—{% endif %}
+                            >
+                            {% else %}-{% endif %}
+                        </td>
+                        <td class="theme-table-td hidden xl:table-cell">
+                            {% if c.address %}
+                            <a
+                                href="https://www.google.com/maps/search/?api=1&query={{ c.address | urlencode }}"
+                                target="_blank"
+                                rel="noopener"
+                                class="text-app-accent hover:underline"
+                            >
+                                {{ c.address }}
+                            </a>
+                            {% else %}-{% endif %}
                         </td>
                         <td
-                            class="px-6 py-5 text-gray-400 hidden xl:table-cell truncate"
+                            class="theme-table-td text-right font-semibold"
+                            :class="'{{ bal_class }}'"
                         >
-                            {{ c.address or '—' }}
+                            ${{ bal|round(2) }}
                         </td>
-                        <td
-                            class="px-6 py-5 text-right font-semibold {{ bal_class }}"
-                        >
-                            ${{ bal | round(2) }}
-                        </td>
-                        <td
-                            class="px-6 py-5 text-gray-400 hidden md:table-cell"
-                        >
+                        <td class="theme-table-td hidden md:table-cell">
                             {% if c.last_visit_at %}{{
                             c.last_visit_at.strftime('%b %d, %Y') }}{% else
                             %}Never{% endif %}
                         </td>
-                        <td class="px-6 py-5 text-right">
+                        <td class="theme-table-td text-right">
                             <button
-                                type="button"
                                 @click="toggleNotes('{{ c.id }}')"
-                                class="text-blue-400 hover:text-blue-300 text-sm font-medium transition"
-                                x-text="notesOpen['{{ c.id }}'] ? 'Hide' : 'View/Edit'"
-                            ></button>
-                            <div
-                                x-show="notesOpen['{{ c.id }}']"
-                                class="notes-section mt-4"
+                                class="text-app-accent hover:text-blue-300 text-sm font-medium"
                             >
+                                <template x-if="!notesOpen['{{ c.id }}']"
+                                    >View / Add</template
+                                >
+                                <template x-if="notesOpen['{{ c.id }}']"
+                                    >Hide</template
+                                >
+                            </button>
+                            <div x-show="notesOpen['{{ c.id }}']" class="mt-3">
                                 <form
-                                    hx-post="{{ url_for('route.route_update_notes', stop_id=c.id) }}"
+                                    hx-post="{{ url_for('customers.update_notes', customer_id=c.id) }}"
                                     hx-swap="none"
                                     hx-on::after-request="toggleNotes('{{ c.id }}')"
                                 >
                                     <textarea
                                         name="notes"
                                         rows="3"
-                                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-sm text-gray-200 placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-y"
+                                        class="theme-input resize-y"
                                     >
-{{ c.notes or "" }}</textarea
+{{ c.notes or '' }}</textarea
                                     >
-                                    <div class="flex justify-end gap-3">
+                                    <div class="flex justify-end gap-3 mt-2">
                                         <button
                                             type="button"
                                             @click="toggleNotes('{{ c.id }}')"
-                                            class="text-gray-400 hover:text-gray-300 text-xs"
+                                            class="theme-btn-secondary text-xs px-4 py-2"
                                         >
                                             Cancel
                                         </button>
                                         <button
                                             type="submit"
-                                            class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-xs font-medium transition"
+                                            class="theme-btn-primary text-xs px-4 py-2"
                                         >
                                             Save
                                         </button>
@@ -516,20 +334,11 @@
                                 </form>
                             </div>
                         </td>
-                        <td class="px-6 py-5 text-right">
+                        <td class="theme-table-td text-right">
                             <div class="flex items-center justify-end gap-3">
                                 <button
-                                    type="button"
-                                    @click="openEdit({
-                                    id: '{{ c.id }}',
-                                    name: '{{ c.name | e }}',
-                                    phone: '{{ c.phone or '' | e }}',
-                                    email: '{{ c.email or '' | e }}',
-                                    address: '{{ c.address or '' | e }}',
-                                    notes: '{{ c.notes or '' | e }}',
-                                    balance: '{{ bal | round(2) }}'
-                                })"
-                                    class="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 text-sm px-5 py-2.5 rounded-lg transition"
+                                    @click="openEdit({id: '{{ c.id }}', name: '{{ c.name|e }}', phone: '{{ c.phone|e }}', email: '{{ c.email|e }}', address: '{{ c.address|e }}', notes: '{{ c.notes|e }}', balance: '{{ bal|round(2) }}'})"
+                                    class="theme-btn-secondary text-sm px-4 py-2"
                                 >
                                     Edit
                                 </button>
@@ -540,8 +349,8 @@
                                 >
                                     <button
                                         type="submit"
-                                        hx-confirm="Delete {{ c.name | e }}?"
-                                        class="bg-red-900/50 hover:bg-red-700 text-red-300 hover:text-white text-sm px-5 py-2.5 rounded-lg transition"
+                                        onclick="return confirm('Delete {{ c.name | e }}?');"
+                                        class="theme-btn-danger text-sm px-4 py-2"
                                     >
                                         Delete
                                     </button>
@@ -552,35 +361,7 @@
                     {% endfor %}
                 </tbody>
             </table>
-            <p
-                id="no-results"
-                x-show="totalCount === 0"
-                class="py-16 text-center text-gray-500 text-sm"
-            >
-                No customers match your search.
-            </p>
         </div>
-        {% else %}
-        <div class="py-20 text-center text-gray-500">
-            <svg
-                class="w-20 h-20 mx-auto mb-6 opacity-60"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                stroke-width="1.5"
-            >
-                <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"
-                />
-            </svg>
-            <p class="text-xl text-gray-300">No customers added yet.</p>
-            <p class="mt-3 text-sm">
-                Click "Add Customer" above to get started.
-            </p>
-        </div>
-        {% endif %}
     </div>
 
     <!-- Add Customer Modal -->
@@ -590,58 +371,38 @@
         @click.away="addCustomerOpen = false"
         @keydown.escape="addCustomerOpen = false"
     >
-        <div
-            class="bg-gray-900 border border-gray-800 rounded-2xl p-8 w-full max-w-lg shadow-2xl"
-            @click.stop
-        >
-            <h2 class="text-2xl font-semibold text-gray-200 mb-8">
+        <div class="theme-modal" @click.stop>
+            <h2 class="text-2xl font-semibold text-gray-200 mb-6">
                 Add New Customer
             </h2>
             <form
                 method="post"
                 action="{{ url_for('customers.customer_add') }}"
-                hx-post="{{ url_for('customers.customer_add') }}"
-                hx-swap="none"
-                hx-on::after-request="addCustomerOpen = false; htmx.ajax('GET', '/customers/table', {target: '#customer-table-body'})"
                 class="grid grid-cols-1 md:grid-cols-2 gap-6"
             >
                 <div>
                     <label class="block text-sm text-gray-400 mb-2"
                         >Name <span class="text-red-400">*</span></label
                     >
-                    <input
-                        name="name"
-                        required
-                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-5 py-3 text-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
-                    />
+                    <input name="name" required class="theme-input" />
                 </div>
                 <div>
                     <label class="block text-sm text-gray-400 mb-2"
                         >Phone</label
                     >
-                    <input
-                        name="phone"
-                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-5 py-3 text-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
-                    />
+                    <input name="phone" class="theme-input" />
                 </div>
                 <div>
                     <label class="block text-sm text-gray-400 mb-2"
                         >Email</label
                     >
-                    <input
-                        name="email"
-                        type="email"
-                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-5 py-3 text-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
-                    />
+                    <input name="email" type="email" class="theme-input" />
                 </div>
                 <div class="md:col-span-2">
                     <label class="block text-sm text-gray-400 mb-2"
                         >Address</label
                     >
-                    <input
-                        name="address"
-                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-5 py-3 text-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
-                    />
+                    <input name="address" class="theme-input" />
                 </div>
                 <div class="md:col-span-2">
                     <label class="block text-sm text-gray-400 mb-2"
@@ -650,7 +411,7 @@
                     <textarea
                         name="notes"
                         rows="3"
-                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-5 py-3 text-sm text-gray-200 placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-y"
+                        class="theme-input resize-y"
                     ></textarea>
                 </div>
                 <div>
@@ -662,21 +423,18 @@
                         type="number"
                         step="0.01"
                         value="0.00"
-                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-5 py-3 text-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                        class="theme-input"
                     />
                 </div>
                 <div class="md:col-span-2 flex justify-end gap-4">
                     <button
                         type="button"
                         @click="addCustomerOpen = false"
-                        class="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 py-3.5 rounded-xl font-medium transition"
+                        class="theme-btn-secondary px-6 py-3"
                     >
                         Cancel
                     </button>
-                    <button
-                        type="submit"
-                        class="bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-medium transition"
-                    >
+                    <button type="submit" class="theme-btn-primary px-6 py-3">
                         Add Customer
                     </button>
                 </div>
@@ -691,20 +449,13 @@
         @click.away="editCustomerOpen = false"
         @keydown.escape="editCustomerOpen = false"
     >
-        <div
-            class="bg-gray-900 border border-gray-800 rounded-2xl p-8 w-full max-w-lg shadow-2xl"
-            @click.stop
-        >
-            <h3 class="text-2xl font-semibold text-gray-200 mb-8">
+        <div class="theme-modal" @click.stop>
+            <h3 class="text-2xl font-semibold text-gray-200 mb-6">
                 Edit Customer
             </h3>
             <form
-                id="edit-form"
                 method="post"
                 :action="`/customers/edit/${editCustomer.id}`"
-                hx-post=":action"
-                hx-swap="none"
-                hx-on::after-request="editCustomerOpen = false; htmx.ajax('GET', '/customers/table', {target: '#customer-table-body'})"
                 class="space-y-6"
             >
                 <input
@@ -720,7 +471,7 @@
                         name="name"
                         required
                         x-model="editCustomer.name"
-                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-5 py-3 text-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                        class="theme-input"
                     />
                 </div>
                 <div>
@@ -730,7 +481,7 @@
                     <input
                         name="phone"
                         x-model="editCustomer.phone"
-                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-5 py-3 text-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                        class="theme-input"
                     />
                 </div>
                 <div>
@@ -741,7 +492,7 @@
                         name="email"
                         type="email"
                         x-model="editCustomer.email"
-                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-5 py-3 text-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                        class="theme-input"
                     />
                 </div>
                 <div>
@@ -751,7 +502,7 @@
                     <input
                         name="address"
                         x-model="editCustomer.address"
-                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-5 py-3 text-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                        class="theme-input"
                     />
                 </div>
                 <div>
@@ -762,7 +513,7 @@
                         name="notes"
                         rows="4"
                         x-model="editCustomer.notes"
-                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-5 py-3 text-sm text-gray-200 placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-y"
+                        class="theme-input resize-y"
                     ></textarea>
                 </div>
                 <div>
@@ -774,20 +525,20 @@
                         type="number"
                         step="0.01"
                         x-model="editCustomer.balance"
-                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-5 py-3 text-gray-200 font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                        class="theme-input font-medium"
                     />
                 </div>
                 <div class="flex gap-4 pt-4">
                     <button
                         type="button"
                         @click="editCustomerOpen = false"
-                        class="flex-1 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 py-3.5 rounded-xl font-medium transition"
+                        class="theme-btn-secondary flex-1 py-3.5"
                     >
                         Cancel
                     </button>
                     <button
                         type="submit"
-                        class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-medium transition"
+                        class="theme-btn-primary flex-1 py-3.5"
                     >
                         Save Changes
                     </button>
@@ -798,39 +549,43 @@
 </div>
 
 <script>
-    document.addEventListener('alpine:init', () => {
-        Alpine.data('customersApp', () => ({
+    document.addEventListener("alpine:init", () => {
+        Alpine.data("customersApp", () => ({
             addCustomerOpen: false,
             editCustomerOpen: false,
-            editCustomer: { id: '', name: '', phone: '', email: '', address: '', notes: '', balance: '' },
+            editCustomer: {
+                id: "",
+                name: "",
+                phone: "",
+                email: "",
+                address: "",
+                notes: "",
+                balance: "",
+            },
             selectMode: false,
             selectAll: false,
             selectedIds: [],
             compactMode: false,
             notesOpen: {},
-            sortKey: 'balance',
-            sortDir: -1,
-            currentPage: 1,
-            pageSize: 20,
-            totalCount: {{ customers | length }},
-            showingCount: 20,
-            totalPages: Math.ceil({{ customers | length }} / 20),
 
             openEdit(customer) {
-                this.editCustomer = customer;
+                this.editCustomer = { ...customer };
                 this.editCustomerOpen = true;
             },
+
             toggleNotes(id) {
                 this.notesOpen[id] = !this.notesOpen[id];
             },
+
             clearSelection() {
                 this.selectedIds = [];
                 this.selectAll = false;
-                this.updateSelectUI();
             },
-            updateSelectUI() {
-                // Logic to handle indeterminate, etc. can be added if needed, but Alpine x-model handles most
-            }
+
+            sort(key) {
+                // Implement sorting logic here or leave for backend
+                console.log("Sort by", key);
+            },
         }));
     });
 </script>
