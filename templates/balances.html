@@ -1,7 +1,7 @@
 {% extends "base.html" %} {% block title %}Balances - Candy Dash{% endblock %}
 {% block content %}
 <script>
-    const customers = {{ customers | tojson }};
+    window.CUSTOMERS = {{ customers | tojson }};
 </script>
 
 <div class="max-w-7xl mx-auto space-y-10">
