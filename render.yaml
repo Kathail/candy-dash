@@ -2,6 +2,7 @@ services:
   - type: web
     name: candy-dash
     runtime: python
+    region: virginia # ← Add this!
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 4 'app:create_app()'
     envVars:
@@ -10,9 +11,10 @@ services:
           name: candy-dash-db
           property: connectionString
       - key: SECRET_KEY
-        generateValue: true # Auto-generates a secure one
+        generateValue: true
 
 databases:
   - name: candy-dash-db
     databaseName: candy_dash
     user: candy_user
+    region: virginia
