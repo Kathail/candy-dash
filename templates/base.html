@@ -5,13 +5,16 @@
         <title>{% block title %}Candy Dash{% endblock %}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-        <!-- App CSS -->
+        <!-- Tailwind CSS (REQUIRED for existing templates) -->
+        <script src="https://cdn.tailwindcss.com"></script>
+
+        <!-- App CSS (theme + components) -->
         <link
             rel="stylesheet"
             href="{{ url_for('static', filename='css/app.css') }}"
         />
 
-        <!-- Alpine -->
+        <!-- Alpine.js -->
         <script
             defer
             src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"
