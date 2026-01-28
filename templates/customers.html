@@ -1,9 +1,8 @@
 {% extends "base.html" %} {% block title %}Customers{% endblock %} {% block
 content %}
-
-<div class="max-w-7xl mx-auto">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <!-- Header -->
-    <div class="mb-8">
+    <header class="mb-8">
         <div class="flex items-center justify-between mb-2">
             <div>
                 <h2 class="text-3xl font-bold">Customers</h2>
@@ -35,13 +34,11 @@ content %}
                 Add Customer
             </button>
         </div>
-    </div>
+    </header>
 
     <!-- Stats -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div
-            class="bg-gray-900 border border-gray-800 rounded-xl p-6 shadow-lg"
-        >
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
             <div class="flex items-center justify-between mb-2">
                 <p
                     class="text-sm text-gray-400 uppercase tracking-wide font-medium"
@@ -65,9 +62,7 @@ content %}
             <p class="text-4xl font-bold">{{ customers|length }}</p>
         </div>
 
-        <div
-            class="bg-gray-900 border border-gray-800 rounded-xl p-6 shadow-lg"
-        >
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
             <div class="flex items-center justify-between mb-2">
                 <p
                     class="text-sm text-gray-400 uppercase tracking-wide font-medium"
@@ -94,9 +89,7 @@ content %}
             </p>
         </div>
 
-        <div
-            class="bg-gray-900 border border-gray-800 rounded-xl p-6 shadow-lg"
-        >
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
             <div class="flex items-center justify-between mb-2">
                 <p
                     class="text-sm text-gray-400 uppercase tracking-wide font-medium"
@@ -122,7 +115,7 @@ content %}
                 length }}
             </p>
         </div>
-    </div>
+    </section>
 
     <!-- Customer List -->
     <div
@@ -138,7 +131,7 @@ content %}
                 type="text"
                 id="searchInput"
                 placeholder="Search customers..."
-                class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
+                class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-64"
             />
         </div>
 
@@ -186,7 +179,7 @@ content %}
                 <tbody class="divide-y divide-gray-800">
                     {% for c in customers %}
                     <tr
-                        class="hover:bg-gray-800 transition"
+                        class="hover:bg-gray-750 transition"
                         data-name="{{ c.name }}"
                         data-phone="{{ c.phone or '' }}"
                         data-balance="{{ c.balance_cents / 100 }}"
@@ -304,7 +297,7 @@ content %}
             </table>
         </div>
         {% else %}
-        <div class="p-12 text-center">
+        <div class="p-12 text-center text-gray-500">
             <svg
                 class="w-16 h-16 mx-auto mb-4 text-gray-700"
                 fill="none"
@@ -318,9 +311,7 @@ content %}
                     d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
                 />
             </svg>
-            <p class="text-gray-400 mb-6">
-                No customers yet. Add your first customer below!
-            </p>
+            <p>No customers yet. Add your first customer below!</p>
         </div>
         {% endif %}
     </div>
@@ -348,7 +339,6 @@ content %}
                     placeholder="John Doe"
                 />
             </div>
-
             <div>
                 <label class="block text-sm font-medium text-gray-300 mb-2"
                     >Phone</label
@@ -360,7 +350,6 @@ content %}
                     placeholder="(555) 123-4567"
                 />
             </div>
-
             <div class="md:col-span-2">
                 <label class="block text-sm font-medium text-gray-300 mb-2"
                     >Address</label
@@ -372,7 +361,6 @@ content %}
                     placeholder="123 Main St, Chicago, IL 60601"
                 />
             </div>
-
             <div>
                 <label class="block text-sm font-medium text-gray-300 mb-2"
                     >Starting Balance ($)</label
@@ -389,7 +377,6 @@ content %}
                     Enter as dollars (e.g. 45.50)
                 </p>
             </div>
-
             <div class="md:col-span-2 flex justify-end">
                 <button
                     type="submit"
@@ -428,7 +415,7 @@ content %}
                         id="editName"
                         name="name"
                         required
-                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
                 <div>
@@ -439,7 +426,7 @@ content %}
                         type="tel"
                         id="editPhone"
                         name="phone"
-                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
                 <div>
@@ -450,7 +437,7 @@ content %}
                         type="text"
                         id="editAddress"
                         name="address"
-                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
                 <div>
@@ -462,7 +449,7 @@ content %}
                         id="editBalance"
                         name="balance"
                         step="0.01"
-                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold text-lg"
+                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold text-lg"
                     />
                 </div>
                 <button
@@ -503,16 +490,15 @@ content %}
         const searchInput = document.getElementById("searchInput");
         const table = document.getElementById("customerTable");
 
-        // Edit modal
+        // Edit buttons
         document.querySelectorAll(".edit-button").forEach((btn) => {
             btn.addEventListener("click", () => {
-                const id = btn.dataset.id;
                 editForm.action =
                     "{{ url_for('customers.customer_edit', customer_id=0) }}".replace(
                         "0",
-                        id,
+                        btn.dataset.id,
                     );
-                document.getElementById("editId").value = id;
+                document.getElementById("editId").value = btn.dataset.id;
                 document.getElementById("editName").value = btn.dataset.name;
                 document.getElementById("editPhone").value = btn.dataset.phone;
                 document.getElementById("editAddress").value =
@@ -523,9 +509,10 @@ content %}
             });
         });
 
+        // Close modal
         document
             .querySelector(".close-modal")
-            .addEventListener("click", () => modal.classList.add("hidden"));
+            ?.addEventListener("click", () => modal.classList.add("hidden"));
         window.addEventListener("click", (e) => {
             if (e.target === modal) modal.classList.add("hidden");
         });
@@ -551,7 +538,6 @@ content %}
                 const sortKey = header.dataset.sort;
                 const isAsc = header.classList.contains("asc");
                 const dir = isAsc ? "desc" : "asc";
-
                 document
                     .querySelectorAll(".sortable")
                     .forEach((h) => h.classList.remove("asc", "desc"));
@@ -559,7 +545,6 @@ content %}
 
                 const tbody = table.querySelector("tbody");
                 const rows = Array.from(tbody.rows);
-
                 rows.sort((a, b) => {
                     let valA, valB;
                     switch (sortKey) {
@@ -586,11 +571,9 @@ content %}
                         ? valA.localeCompare(valB)
                         : valB.localeCompare(valA);
                 });
-
                 rows.forEach((row) => tbody.appendChild(row));
             });
         });
     });
 </script>
-
 {% endblock %}

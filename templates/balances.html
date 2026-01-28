@@ -1,10 +1,9 @@
 {% extends "base.html" %} {% block title %}Balances{% endblock %} {% block
 content %}
-
-<div class="max-w-6xl mx-auto">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <!-- Header -->
     <header class="mb-8">
-        <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center justify-between mb-2 flex-wrap gap-4">
             <div>
                 <h2 class="text-3xl font-bold">Balances</h2>
                 <p class="text-gray-400 mt-1">
@@ -55,16 +54,18 @@ content %}
     </header>
 
     <!-- Summary Cards -->
-    <section class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div
-            class="bg-gradient-to-br from-red-600 to-red-700 rounded-2xl p-6 shadow-lg"
+            class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-lg"
         >
-            <div class="flex items-center justify-between mb-2">
-                <h3 class="text-white/80 text-sm font-medium">
+            <div class="flex items-center justify-between mb-4">
+                <h3
+                    class="text-gray-400 text-sm font-medium uppercase tracking-wide"
+                >
                     Total Outstanding
                 </h3>
                 <svg
-                    class="w-5 h-5 text-white/60"
+                    class="w-5 h-5 text-red-500"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -77,11 +78,11 @@ content %}
                     />
                 </svg>
             </div>
-            <p class="text-4xl font-bold text-white">
+            <p class="text-4xl font-bold text-red-400">
                 ${{ (customers | selectattr('balance_cents', 'gt', 0) |
                 sum(attribute='balance_cents') / 100) | round(2) }}
             </p>
-            <p class="text-white/70 text-sm mt-1">
+            <p class="text-gray-500 text-sm mt-1">
                 Across {{ customers | selectattr('balance_cents', 'gt', 0) |
                 list | length }} customers
             </p>
@@ -90,8 +91,10 @@ content %}
         <div
             class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-lg"
         >
-            <div class="flex items-center justify-between mb-2">
-                <h3 class="text-gray-400 text-sm font-medium">
+            <div class="flex items-center justify-between mb-4">
+                <h3
+                    class="text-gray-400 text-sm font-medium uppercase tracking-wide"
+                >
                     Overdue (30+ days)
                 </h3>
                 <svg
@@ -115,8 +118,10 @@ content %}
         <div
             class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-lg"
         >
-            <div class="flex items-center justify-between mb-2">
-                <h3 class="text-gray-400 text-sm font-medium">
+            <div class="flex items-center justify-between mb-4">
+                <h3
+                    class="text-gray-400 text-sm font-medium uppercase tracking-wide"
+                >
                     Collected This Week
                 </h3>
                 <svg
@@ -140,8 +145,10 @@ content %}
         <div
             class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-lg"
         >
-            <div class="flex items-center justify-between mb-2">
-                <h3 class="text-gray-400 text-sm font-medium">
+            <div class="flex items-center justify-between mb-4">
+                <h3
+                    class="text-gray-400 text-sm font-medium uppercase tracking-wide"
+                >
                     Average Balance
                 </h3>
                 <svg
@@ -158,49 +165,50 @@ content %}
                     />
                 </svg>
             </div>
-            {% set owing_customers = customers | selectattr('balance_cents',
-            'gt', 0) | list %}
+            {% set owing = customers | selectattr('balance_cents', 'gt', 0) |
+            list %}
             <p class="text-3xl font-bold text-blue-400">
-                {% if owing_customers %} ${{ ((owing_customers |
-                sum(attribute='balance_cents') / owing_customers | length) /
-                100) | round(2) }} {% else %} $0.00 {% endif %}
+                {% if owing %}${{ (owing | sum(attribute='balance_cents') /
+                owing | length / 100) | round(2) }}{% else %}$0.00{% endif %}
             </p>
-            <p class="text-gray-500 text-sm mt-1">Per customer</p>
+            <p class="text-gray-500 text-sm mt-1">Per customer owing</p>
         </div>
     </section>
 
-    <!-- Filter Tabs -->
-    <div class="flex items-center gap-2 mb-6">
-        <button
-            onclick="filterBalances('all')"
-            class="filter-tab active px-4 py-2 rounded-lg text-sm font-medium transition"
-        >
-            All
-        </button>
-        <button
-            onclick="filterBalances('high')"
-            class="filter-tab px-4 py-2 rounded-lg text-sm font-medium transition"
-        >
-            High ($100+)
-        </button>
-        <button
-            onclick="filterBalances('overdue')"
-            class="filter-tab px-4 py-2 rounded-lg text-sm font-medium transition"
-        >
-            Overdue
-        </button>
-        <button
-            onclick="filterBalances('recent')"
-            class="filter-tab px-4 py-2 rounded-lg text-sm font-medium transition"
-        >
-            Recent Activity
-        </button>
-        <div class="ml-auto">
+    <!-- Filter Tabs + Search -->
+    <div class="flex flex-wrap items-center gap-3 mb-6">
+        <div class="flex gap-2 flex-wrap">
+            <button
+                onclick="filterBalances('all')"
+                class="filter-tab active px-4 py-2 rounded-lg text-sm font-medium transition"
+            >
+                All
+            </button>
+            <button
+                onclick="filterBalances('high')"
+                class="filter-tab px-4 py-2 rounded-lg text-sm font-medium transition"
+            >
+                High ($100+)
+            </button>
+            <button
+                onclick="filterBalances('overdue')"
+                class="filter-tab px-4 py-2 rounded-lg text-sm font-medium transition"
+            >
+                Overdue
+            </button>
+            <button
+                onclick="filterBalances('recent')"
+                class="filter-tab px-4 py-2 rounded-lg text-sm font-medium transition"
+            >
+                Recent Activity
+            </button>
+        </div>
+        <div class="ml-auto w-full sm:w-auto">
             <input
                 type="text"
                 id="balanceSearch"
                 placeholder="Search customers..."
-                class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
+                class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-64"
                 oninput="searchBalances()"
             />
         </div>
@@ -210,10 +218,9 @@ content %}
     <section
         class="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden shadow-lg"
     >
-        {% if customers %} {% set owing_customers = customers |
-        selectattr('balance_cents', 'gt', 0) | list |
-        sort(attribute='balance_cents', reverse=True) %} {% if owing_customers
-        %}
+        {% set owing_customers = customers | selectattr('balance_cents', 'gt',
+        0) | list | sort(attribute='balance_cents', reverse=True) %} {% if
+        owing_customers %}
         <div class="overflow-x-auto" id="balancesList">
             <table class="w-full">
                 <thead class="bg-gray-950 border-b border-gray-800">
@@ -256,10 +263,10 @@ content %}
                 <tbody class="divide-y divide-gray-800" id="balancesTableBody">
                     {% for c in owing_customers %}
                     <tr
-                        class="hover:bg-gray-800 transition balance-row"
+                        class="hover:bg-gray-750 transition balance-row"
                         data-name="{{ c.name }}"
                         data-balance="{{ c.balance_cents }}"
-                        data-last-visit="{{ c.last_visit_at or '1900-01-01' }}"
+                        data-last-visit="{{ c.last_visit_at.isoformat() if c.last_visit_at else '1900-01-01' }}"
                         data-phone="{{ c.phone or '' }}"
                         data-address="{{ c.address or '' }}"
                     >
@@ -275,9 +282,10 @@ content %}
                                         {{ c.name }}
                                     </div>
                                     {% if c.address %}
-                                    <div class="text-xs text-gray-500">
-                                        {{ c.address[:40] }}{% if
-                                        c.address|length > 40 %}...{% endif %}
+                                    <div
+                                        class="text-xs text-gray-500 truncate max-w-xs"
+                                    >
+                                        {{ c.address }}
                                     </div>
                                     {% endif %}
                                 </div>
@@ -310,9 +318,10 @@ content %}
                         </td>
                         <td class="px-6 py-4">
                             <div class="flex items-center gap-2">
-                                <span class="text-lg font-bold text-red-400">
-                                    ${{ (c.balance_cents / 100) | round(2) }}
-                                </span>
+                                <span class="text-lg font-bold text-red-400"
+                                    >${{ (c.balance_cents / 100) | round(2)
+                                    }}</span
+                                >
                                 {% if c.balance_cents >= 10000 %}
                                 <span
                                     class="text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded-full font-medium"
@@ -321,15 +330,15 @@ content %}
                                 {% endif %}
                             </div>
                         </td>
-                        <td class="px-6 py-4">
+                        <td class="px-6 py-4 text-gray-400 text-sm">
                             {% if c.last_visit_at %}
-                            <div class="text-sm text-gray-400">
+                            <div>
                                 {{ c.last_visit_at.strftime('%b %d, %Y') }}
                             </div>
                             <div class="text-xs text-gray-600">
-                                {% set days_ago = (now.date() -
-                                c.last_visit_at).days %} {{ days_ago }} day{{
-                                's' if days_ago != 1 }} ago
+                                {% set days = (now.date() -
+                                c.last_visit_at.date()).days %} {{ days }} day{{
+                                's' if days != 1 }} ago
                             </div>
                             {% else %}
                             <span class="text-gray-600 text-sm"
@@ -338,9 +347,9 @@ content %}
                             {% endif %}
                         </td>
                         <td class="px-6 py-4">
-                            {% if c.last_visit_at %} {% set days_ago =
-                            (now.date() - c.last_visit_at).days %} {% if
-                            days_ago >= 30 %}
+                            {% set days_ago = (now.date() -
+                            c.last_visit_at.date()).days if c.last_visit_at else
+                            9999 %} {% if days_ago >= 30 %}
                             <span
                                 class="inline-flex items-center gap-1 text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded-full font-medium"
                             >
@@ -391,26 +400,11 @@ content %}
                                 </svg>
                                 Recent
                             </span>
-                            {% endif %} {% else %}
-                            <span
-                                class="inline-flex items-center gap-1 text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded-full font-medium"
-                            >
-                                <svg
-                                    class="w-3 h-3"
-                                    fill="currentColor"
-                                    viewBox="0 0 20 20"
-                                >
-                                    <path
-                                        d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 7a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V7z"
-                                    />
-                                </svg>
-                                New
-                            </span>
                             {% endif %}
                         </td>
                         <td class="px-6 py-4 text-right">
                             <button
-                                onclick="openPaymentModal({{ c.id }}, '{{ c.name }}', {{ c.balance_cents }})"
+                                onclick="openPaymentModal({{ c.id }}, '{{ c.name | e }}', {{ c.balance_cents }})"
                                 class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition mr-2"
                             >
                                 Record Payment
@@ -429,13 +423,7 @@ content %}
                                         stroke-linecap="round"
                                         stroke-linejoin="round"
                                         stroke-width="2"
-                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                                    />
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
                                     />
                                 </svg>
                             </a>
@@ -446,18 +434,20 @@ content %}
             </table>
         </div>
         {% else %}
-        <div class="p-12 text-center">
+        <div class="p-12 text-center text-gray-500">
             <div class="text-6xl mb-4">🎉</div>
-            <h3 class="text-xl font-semibold mb-2">All Caught Up!</h3>
-            <p class="text-gray-400">No outstanding balances. Great work!</p>
+            <h3 class="text-xl font-semibold mb-2 text-white">
+                All Caught Up!
+            </h3>
+            <p class="mb-6">No outstanding balances. Great work!</p>
         </div>
         {% endif %} {% else %}
-        <div class="p-12 text-center">
+        <div class="p-12 text-center text-gray-500">
             <div class="text-6xl mb-4">📊</div>
-            <h3 class="text-xl font-semibold mb-2">No Customers Yet</h3>
-            <p class="text-gray-400 mb-6">
-                Add customers to start tracking balances
-            </p>
+            <h3 class="text-xl font-semibold mb-2 text-white">
+                No Customers Yet
+            </h3>
+            <p class="mb-6">Add customers to start tracking balances</p>
             <a
                 href="{{ url_for('customers.customers') }}"
                 class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition"
@@ -504,7 +494,6 @@ content %}
             class="space-y-4"
         >
             <input type="hidden" id="paymentCustomerId" name="customer_id" />
-
             <div class="bg-gray-800 border border-gray-700 rounded-lg p-4">
                 <div class="text-sm text-gray-400 mb-1">Customer</div>
                 <div
@@ -516,7 +505,6 @@ content %}
                     <span id="paymentCurrentBalance" class="font-bold"></span>
                 </div>
             </div>
-
             <div>
                 <label class="block text-sm font-medium text-gray-300 mb-2"
                     >Payment Amount</label
@@ -538,7 +526,6 @@ content %}
                     />
                 </div>
             </div>
-
             <div>
                 <label class="block text-sm font-medium text-gray-300 mb-2"
                     >Payment Method</label
@@ -553,7 +540,6 @@ content %}
                     <option value="other">Other</option>
                 </select>
             </div>
-
             <div>
                 <label class="block text-sm font-medium text-gray-300 mb-2"
                     >Notes (optional)</label
@@ -565,7 +551,6 @@ content %}
                     placeholder="Add any notes about this payment..."
                 ></textarea>
             </div>
-
             <div class="flex gap-3 pt-2">
                 <button
                     type="button"
@@ -590,30 +575,27 @@ content %}
         background: transparent;
         color: #9ca3af;
         border: 1px solid transparent;
+        transition: all 0.2s;
     }
-
     .filter-tab:hover {
         color: #e5e7eb;
         background: #374151;
+        border-color: #4b5563;
     }
-
     .filter-tab.active {
         background: #3b82f6;
         color: white;
         border-color: #3b82f6;
     }
-
     .sort-icon {
         opacity: 0.3;
         font-size: 0.8em;
         margin-left: 0.25rem;
     }
-
     .sortable.asc .sort-icon::before {
         content: "↑";
         opacity: 1;
     }
-
     .sortable.desc .sort-icon::before {
         content: "↓";
         opacity: 1;
@@ -622,7 +604,6 @@ content %}
 
 <script>
     let currentFilter = "all";
-    let currentSort = { column: null, direction: "asc" };
 
     function openPaymentModal(customerId, customerName, balanceCents) {
         document.getElementById("paymentCustomerId").value = customerId;
@@ -651,15 +632,12 @@ content %}
 
     function filterBalances(filter) {
         currentFilter = filter;
-
-        // Update active tab
         document
             .querySelectorAll(".filter-tab")
             .forEach((tab) => tab.classList.remove("active"));
         event.target.classList.add("active");
 
-        const rows = document.querySelectorAll(".balance-row");
-        rows.forEach((row) => {
+        document.querySelectorAll(".balance-row").forEach((row) => {
             const balance = parseInt(row.dataset.balance);
             const lastVisit = row.dataset.lastVisit;
             const daysSince =
@@ -669,7 +647,6 @@ content %}
                               (1000 * 60 * 60 * 24),
                       )
                     : 9999;
-
             let show = true;
 
             switch (filter) {
@@ -692,11 +669,10 @@ content %}
         const query = document
             .getElementById("balanceSearch")
             .value.toLowerCase();
-        const rows = document.querySelectorAll(".balance-row");
-
-        rows.forEach((row) => {
-            const text = row.textContent.toLowerCase();
-            row.style.display = text.includes(query) ? "" : "none";
+        document.querySelectorAll(".balance-row").forEach((row) => {
+            row.style.display = row.textContent.toLowerCase().includes(query)
+                ? ""
+                : "none";
         });
     }
 
@@ -704,25 +680,17 @@ content %}
         const tbody = document.getElementById("balancesTableBody");
         const rows = Array.from(tbody.querySelectorAll(".balance-row"));
 
-        // Toggle direction
-        if (currentSort.column === column) {
-            currentSort.direction =
-                currentSort.direction === "asc" ? "desc" : "asc";
-        } else {
-            currentSort.column = column;
-            currentSort.direction = "asc";
-        }
+        const header = event.target.closest(".sortable");
+        const isAsc = header.classList.contains("asc");
+        const dir = isAsc ? "desc" : "asc";
 
-        // Update sort icons
-        document.querySelectorAll(".sortable").forEach((th) => {
-            th.classList.remove("asc", "desc");
-        });
-        event.target.closest(".sortable").classList.add(currentSort.direction);
+        document
+            .querySelectorAll(".sortable")
+            .forEach((th) => th.classList.remove("asc", "desc"));
+        header.classList.add(dir);
 
-        // Sort rows
         rows.sort((a, b) => {
             let valA, valB;
-
             switch (column) {
                 case "name":
                     valA = a.dataset.name.toLowerCase();
@@ -733,18 +701,13 @@ content %}
                     valB = parseInt(b.dataset.balance);
                     break;
                 case "lastVisit":
-                    valA = a.dataset.lastVisit;
-                    valB = b.dataset.lastVisit;
+                    valA = a.dataset.lastVisit || "9999";
+                    valB = b.dataset.lastVisit || "9999";
                     break;
             }
-
-            if (typeof valA === "number") {
-                return currentSort.direction === "asc"
-                    ? valA - valB
-                    : valB - valA;
-            }
-
-            return currentSort.direction === "asc"
+            if (typeof valA === "number")
+                return dir === "asc" ? valA - valB : valB - valA;
+            return dir === "asc"
                 ? valA.localeCompare(valB)
                 : valB.localeCompare(valA);
         });
@@ -752,17 +715,13 @@ content %}
         rows.forEach((row) => tbody.appendChild(row));
     }
 
-    // Close modal on escape
+    // Close modal on escape / outside click
     document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") {
-            closePaymentModal();
-        }
+        if (e.key === "Escape") closePaymentModal();
     });
 
-    // Close modal on outside click
     document.getElementById("paymentModal")?.addEventListener("click", (e) => {
         if (e.target.id === "paymentModal") closePaymentModal();
     });
 </script>
-
 {% endblock %}
