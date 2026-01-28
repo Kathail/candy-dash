@@ -222,86 +222,72 @@ content %}
 </div>
 
 <script>
-    // View switching + stats
+    // Structured data passed directly from Jinja → most reliable way to calculate stats
+    const scheduledData = {
+        {% for date_str, visits in scheduled_visits.items() %}
+            "{{ date_str }}": [
+                {% for v in visits %}
+                    { "completed": {{ 'true' if v.completed else 'false' }} },
+                {% endfor %}
+            ],
+        {% endfor %}
+    };
+
+    const weekDates = {{ week_dates | map(attribute='isoformat') | list | tojson }};
+    const monthDates = {{ month_dates | map(attribute='isoformat') | list | tojson }};
+
     document.addEventListener("DOMContentLoaded", () => {
-        const weekView = document.getElementById("week-view");
+        const weekView  = document.getElementById("week-view");
         const monthView = document.getElementById("month-view");
-        const buttons = document.querySelectorAll(".view-btn");
+        const buttons   = document.querySelectorAll(".view-btn");
 
         function computeStats() {
-            let total = 0;
+            let total     = 0;
             let completed = 0;
             let daysWithVisits = 0;
 
-            document
-                .querySelectorAll(".cursor-pointer[data-date]")
-                .forEach((card) => {
-                    const countEl = card.querySelector(
-                        "span.text-sm.font-medium, span.text-xs.text-gray-400",
-                    );
-                    const doneEls = card.querySelectorAll(".text-green-400");
+            // Use actual data instead of fragile DOM parsing
+            const allDates = [...new Set([...weekDates, ...monthDates])];
 
-                    let dayTotal = 0;
-                    if (countEl) {
-                        const txt = countEl.textContent.trim();
-                        if (/^\d+$/.test(txt)) dayTotal = parseInt(txt, 10);
-                    }
+            allDates.forEach(dateStr => {
+                const visits = scheduledData[dateStr] || [];
+                const dayTotal     = visits.length;
+                const dayCompleted = visits.filter(v => v.completed).length;
 
-                    const dayCompleted = doneEls.length;
+                total     += dayTotal;
+                completed += dayCompleted;
 
-                    total += dayTotal;
-                    completed += dayCompleted;
+                if (dayTotal > 0) daysWithVisits++;
+            });
 
-                    if (dayTotal > 0) daysWithVisits++;
-                });
-
-            const avg = daysWithVisits
-                ? (total / daysWithVisits).toFixed(1)
-                : "0.0";
+            const avg  = daysWithVisits ? (total / daysWithVisits).toFixed(1) : "0.0";
             const rate = total ? Math.round((completed / total) * 100) : 0;
 
-            document.getElementById("stat-total").textContent = total;
+            document.getElementById("stat-total").textContent     = total;
             document.getElementById("stat-completed").textContent = completed;
-            document.getElementById("stat-rate").textContent = rate + "%";
-            document.getElementById("stat-avg").textContent = avg;
+            document.getElementById("stat-rate").textContent      = rate + "%";
+            document.getElementById("stat-avg").textContent       = avg;
         }
 
-        // Switch views
-        buttons.forEach((btn) => {
+        // View switching
+        buttons.forEach(btn => {
             btn.addEventListener("click", () => {
-                buttons.forEach((b) => {
-                    b.classList.remove(
-                        "bg-blue-600",
-                        "text-white",
-                        "hover:bg-blue-700",
-                    );
-                    b.classList.add(
-                        "bg-gray-800",
-                        "text-gray-300",
-                        "hover:bg-gray-700",
-                    );
+                buttons.forEach(b => {
+                    b.classList.remove("bg-blue-600", "text-white", "hover:bg-blue-700");
+                    b.classList.add("bg-gray-800", "text-gray-300", "hover:bg-gray-700");
                 });
-                btn.classList.remove(
-                    "bg-gray-800",
-                    "text-gray-300",
-                    "hover:bg-gray-700",
-                );
-                btn.classList.add(
-                    "bg-blue-600",
-                    "text-white",
-                    "hover:bg-blue-700",
-                );
+                btn.classList.remove("bg-gray-800", "text-gray-300", "hover:bg-gray-700");
+                btn.classList.add("bg-blue-600", "text-white", "hover:bg-blue-700");
 
                 const isWeek = btn.dataset.view === "week";
                 weekView.classList.toggle("hidden", !isWeek);
                 monthView.classList.toggle("hidden", isWeek);
 
-                // Recalculate stats after view change
-                setTimeout(computeStats, 0);
+                computeStats();  // refresh after view change
             });
         });
 
-        // Initial stats
+        // Initial calculation
         computeStats();
     });
 </script>

@@ -42,21 +42,18 @@ def fetch_visit_analytics(cur, today):
     month_ago = today - timedelta(days=30)
 
     cur.execute(
-        "SELECT COUNT(*) AS count FROM visits WHERE visited_at >= %s",
-        (week_ago,),
+        "SELECT COUNT(*) AS count FROM visits WHERE visited_at >= %s", (week_ago,)
     )
     visits_this_week = cur.fetchone()["count"]
 
     cur.execute(
-        "SELECT COUNT(*) AS count FROM visits WHERE visited_at >= %s",
-        (month_ago,),
+        "SELECT COUNT(*) AS count FROM visits WHERE visited_at >= %s", (month_ago,)
     )
     visits_this_month = cur.fetchone()["count"]
 
-    # ✅ FIX: alias column + dict access
     cur.execute(
         """
-        SELECT COUNT(*)::float / 4 AS avg_per_week
+        SELECT COALESCE(COUNT(*)::float / 4, 0) AS avg_per_week
         FROM visits
         WHERE visited_at >= %s
         """,
@@ -67,8 +64,11 @@ def fetch_visit_analytics(cur, today):
     cur.execute(
         """
         SELECT
-            COUNT(*) FILTER (WHERE rs.completed = true)::float
-            / NULLIF(COUNT(*), 0) * 100 AS rate
+            COALESCE(
+                COUNT(*) FILTER (WHERE rs.completed = true)::float
+                / NULLIF(COUNT(*), 0) * 100,
+                0
+            ) AS rate
         FROM route_stops rs
         JOIN routes r ON rs.route_id = r.id
         WHERE r.route_date >= %s
@@ -89,7 +89,6 @@ def fetch_scheduled_routes(cur, today):
                 json_build_object(
                     'customer_id', c.id,
                     'customer_name', c.name,
-                    'balance_cents', c.balance_cents,
                     'completed', rs.completed
                 )
                 ORDER BY rs.stop_order
@@ -105,7 +104,7 @@ def fetch_scheduled_routes(cur, today):
 
     scheduled = {}
     for row in cur.fetchall():
-        scheduled[row["route_date"].isoformat()] = row["visits"]
+        scheduled[row["route_date"].isoformat()] = row["visits"] or []
 
     return scheduled
 
@@ -141,19 +140,35 @@ def calendar():
 
             scheduled_visits = fetch_scheduled_routes(cur, today)
 
+            # Generate week and month date ranges for template + JS
+            week_start = today - timedelta(days=today.weekday())
+            week_dates = [
+                (week_start + timedelta(days=i)).isoformat() for i in range(7)
+            ]
+
+            month_start = today.replace(day=1)
+            month_dates = []
+            current = month_start
+            while current.month == month_start.month:
+                month_dates.append(current.isoformat())
+                current += timedelta(days=1)
+
     return render_template(
         "calendar.html",
         today=today,
+        week_dates=week_dates,
+        month_dates=month_dates,
+        scheduled_visits=scheduled_visits,
         priority_visits=priority_visits,
         visits_this_week=visits_this_week,
         visits_this_month=visits_this_month,
         avg_per_week=round(avg_per_week, 1),
         completion_rate=round(completion_rate, 1),
         all_customers=all_customers,
-        scheduled_visits=scheduled_visits,
     )
 
 
+# Other endpoints remain unchanged
 @calendar_bp.get("/new_customers")
 def new_customers():
     with get_conn() as conn:
@@ -250,7 +265,6 @@ def customers_by_area():
             rows = cur.fetchall()
 
     grouped = defaultdict(list)
-
     for r in rows:
         area = r["city"] or r["zip_code"] or "Unknown"
         grouped[area].append(
