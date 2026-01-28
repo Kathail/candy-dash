@@ -1,19 +1,17 @@
-{% extends "base.html" %} {% block title %}Today's Route{% endblock %} {% block
-content %}
-<div class="max-w-5xl mx-auto space-y-6">
+{% extends "base.html" %} {% block title %}Route{% endblock %} {% block content
+%}
+<div class="max-w-7xl mx-auto space-y-8">
     <!-- Header -->
-    <header class="flex items-start justify-between">
+    <header class="flex items-start justify-between gap-4 flex-wrap">
         <div>
-            <h1 class="text-2xl font-semibold">Today's Route</h1>
-            <p class="text-sm text-gray-400">
-                {{ today.strftime("%A, %B %d") }}
-            </p>
+            <h1 class="text-3xl font-bold mb-1">Today's Route</h1>
+            <p class="text-gray-400">{{ today.strftime("%A, %B %d") }}</p>
         </div>
 
         <div class="flex gap-2">
             <button
                 onclick="openAddCustomerModal()"
-                class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2"
+                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition flex items-center gap-2"
             >
                 <svg
                     class="w-4 h-4"
@@ -48,13 +46,13 @@ content %}
         class="bg-gray-900 border border-gray-800 rounded-xl text-center p-10"
     >
         <div class="text-4xl mb-3">📍</div>
-        <h2 class="text-lg font-semibold mb-2">No stops yet</h2>
+        <h2 class="text-lg font-semibold mb-2">No stops scheduled</h2>
         <p class="text-gray-400 mb-5 text-sm">
             Add customers to build today’s route.
         </p>
         <button
             onclick="openAddCustomerModal()"
-            class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg text-sm font-medium transition"
         >
             Add Customers
         </button>
@@ -65,23 +63,23 @@ content %}
     stops | length %} {% set done = completed | length %} {% set progress_pct =
     (done / total * 100) if total > 0 else 0 %}
 
-    <!-- Progress (dashboard style) -->
-    <section class="bg-gray-900 border border-gray-800 rounded-xl p-4">
-        <div class="flex items-center justify-between mb-2">
+    <!-- Progress Card (Dashboard style) -->
+    <section class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+        <div class="flex items-center justify-between mb-3">
             <div>
-                <p class="text-xs text-gray-400">Progress</p>
-                <p class="text-lg font-semibold">
-                    {{ done }} / {{ total }} completed
+                <p class="text-xs text-gray-400">Today's Progress</p>
+                <p class="text-xl font-semibold">
+                    {{ done }} / {{ total }} stops completed
                 </p>
             </div>
-            <div class="text-sm text-gray-400">
+            <div class="text-lg font-semibold text-gray-300">
                 {{ progress_pct | round | int }}%
             </div>
         </div>
 
         <div class="bg-gray-800 rounded-full h-2 overflow-hidden">
             <div
-                class="bg-blue-600 h-full transition-all"
+                class="bg-blue-600 h-full transition-all duration-500"
                 style="width: {{ progress_pct | round }}%"
             ></div>
         </div>
@@ -90,7 +88,7 @@ content %}
     <!-- Bulk Actions -->
     <div
         id="bulkActions"
-        class="hidden bg-gray-900 border border-gray-800 rounded-xl p-3 flex items-center justify-between"
+        class="hidden bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-center justify-between"
     >
         <span class="text-sm text-gray-400">
             <span id="selectedCount">0</span> selected
@@ -118,9 +116,9 @@ content %}
     </div>
 
     <!-- Remaining Stops -->
-    <section>
-        <div class="flex items-center justify-between mb-3">
-            <h2 class="text-lg font-semibold">Remaining</h2>
+    <section class="space-y-3">
+        <div class="flex items-center justify-between">
+            <h2 class="text-lg font-semibold">Remaining Stops</h2>
             <span class="text-sm text-gray-400">
                 {{ remaining | length }}
             </span>

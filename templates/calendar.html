@@ -6,8 +6,8 @@
 
     <!-- Header -->
     <section>
-        <h1 class="text-3xl font-bold">Calendar</h1>
-        <p class="text-gray-400 mt-1">
+        <h1 class="text-2xl sm:text-3xl font-bold">Calendar</h1>
+        <p class="text-sm text-gray-400 mt-1">
             Plan routes, optimize daily runs, and review performance.
         </p>
     </section>
@@ -15,18 +15,18 @@
     <!-- Controls -->
     <div class="flex flex-wrap items-center justify-between gap-3">
         <div class="flex gap-2">
-            <button class="view-btn bg-blue-600 text-white px-4 py-2 rounded-lg text-sm" data-view="week">Week</button>
-            <button class="view-btn bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg text-sm" data-view="month">Month</button>
+            <button class="view-btn bg-blue-600 text-white px-4 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-950" data-view="week">Week</button>
+            <button class="view-btn bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-950" data-view="month">Month</button>
         </div>
 
         <div class="flex gap-2">
-            <button id="today-btn" class="bg-gray-800 hover:bg-gray-700 px-3 py-2 rounded-lg text-sm">
+            <button id="today-btn" class="bg-gray-800 hover:bg-gray-700 px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-950">
                 Today
             </button>
         </div>
     </div>
 
-    <!-- Analytics (reflects current stored completion overrides + queued items) -->
+    <!-- Analytics -->
     <section class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
             <div class="text-xs text-gray-500">Total Stops</div>
@@ -52,9 +52,8 @@
             <div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div>
         </div>
 
-        <div class="grid grid-cols-7 gap-2" id="week-grid">
+        <div class="grid grid-cols-1 sm:grid-cols-7 gap-2" id="week-grid">
             {% for date in week_dates %}
-            {% set visits = scheduled_visits.get(date, []) %}
             <div class="day-cell bg-gray-900 border border-gray-800 rounded-xl p-2 min-h-[160px] cursor-pointer"
                  data-date="{{ date }}">
                 <div class="flex justify-between items-center mb-1">
@@ -64,16 +63,16 @@
                         <span class="ml-1 text-xs bg-blue-600 px-1.5 rounded">Today</span>
                         {% endif %}
                     </span>
-                    <span class="text-xs text-gray-500 day-count">0</span>
+                    <span class="text-xs text-gray-500 day-count">—</span>
                 </div>
 
                 <ul class="space-y-1 text-xs day-list"></ul>
 
                 <div class="mt-2 flex gap-2">
-                    <button class="optimize-btn flex-1 text-xs bg-gray-800 hover:bg-gray-700 rounded py-1" data-date="{{ date }}">
+                    <button class="optimize-btn flex-1 text-xs bg-gray-800 hover:bg-gray-700 rounded py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-950" data-date="{{ date }}">
                         Optimize
                     </button>
-                    <button class="export-btn flex-1 text-xs bg-gray-800 hover:bg-gray-700 rounded py-1" data-date="{{ date }}">
+                    <button class="export-btn flex-1 text-xs bg-gray-800 hover:bg-gray-700 rounded py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-950" data-date="{{ date }}">
                         Export
                     </button>
                 </div>
@@ -101,10 +100,10 @@
 
                 <div class="text-xs space-y-1 month-preview"></div>
                 <div class="mt-2 hidden month-actions">
-                    <button class="optimize-btn w-full text-[10px] bg-gray-800 hover:bg-gray-700 rounded py-1" data-date="{{ date }}">
+                    <button class="optimize-btn w-full text-[10px] bg-gray-800 hover:bg-gray-700 rounded py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-950" data-date="{{ date }}">
                         Optimize
                     </button>
-                    <button class="export-btn w-full mt-1 text-[10px] bg-gray-800 hover:bg-gray-700 rounded py-1" data-date="{{ date }}">
+                    <button class="export-btn w-full mt-1 text-[10px] bg-gray-800 hover:bg-gray-700 rounded py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-950" data-date="{{ date }}">
                         Export
                     </button>
                 </div>
@@ -201,20 +200,19 @@
 
 <script>
 /* ===================== Data bootstrap ===================== */
-const TODAY = "{{ today }}";
+const TODAY = "{{ today }}".trim() || null;
 const scheduledVisits = {{ scheduled_visits | tojson }};
 
 /**
  * Customer lookup (for balances auto-queue).
- * Requires all_customers to be passed to calendar route (you already do elsewhere).
- * If it's missing, we still function, but queued IDs will show as "#123".
+ * Requires all_customers to be passed to calendar route.
+ * If missing, we still function, but queued IDs will show as "#123".
  */
 const customerIndex = (() => {
     try {
         const list = {{ (all_customers or []) | tojson }};
         const m = {};
         (list || []).forEach(c => {
-            // handle objects / dicts
             const id = (c.id ?? c["id"]);
             const name = (c.name ?? c["name"]);
             const city = (c.city ?? c["city"] ?? "");
@@ -228,19 +226,22 @@ const customerIndex = (() => {
 
 /* ===================== Local storage keys ===================== */
 const K = {
-    order: (date) => `routeOrder:${date}`,              // array of stop keys (stable ids)
-    done:  (date) => `routeDone:${date}`,               // map of stopKey -> boolean
-    queue: (date) => `routeQueue:${date}`,              // array of customer_ids queued from balances
-    est:   () => `routeEstimateCfg`,                    // user settings
+    order: (date) => `routeOrder:${date}`,   // array of stop keys (stable ids)
+    done:  (date) => `routeDone:${date}`,    // map of stopKey -> boolean
+    queue: (date) => `routeQueue:${date}`,   // array of customer_ids queued from balances
+    est:   () => `routeEstimateCfg`,         // user settings
 };
 
 /* ===================== Helpers ===================== */
 function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
 
 function getStopKey(v) {
-    // Prefer an explicit id, else fall back to name string.
-    // This is for front-end persistence only.
-    return String(v.customer_id ?? v.customerId ?? v.id ?? v.customer_name ?? v.customerName ?? "");
+    // IMPORTANT: stable, collision-resistant key for frontend persistence
+    if (v.customer_id != null && String(v.customer_id).length) return "cid:" + String(v.customer_id);
+    if (v.customerId != null && String(v.customerId).length) return "cid:" + String(v.customerId);
+    if (v.id != null && String(v.id).length) return "id:" + String(v.id);
+    const n = (v.customer_name ?? v.customerName ?? v.name ?? "");
+    return "name:" + String(n);
 }
 
 function normalizeVisit(v) {
@@ -299,10 +300,6 @@ function setOrder(date, orderKeys) {
     localStorage.setItem(K.order(date), JSON.stringify(orderKeys));
 }
 
-/**
- * Combine scheduled stops + queued stops into a single list for a date.
- * Queued are customer_ids (strings) that we turn into pseudo visits.
- */
 function getDayStops(date) {
     const base = (scheduledVisits[date] || []).map(normalizeVisit);
 
@@ -316,7 +313,6 @@ function getDayStops(date) {
         });
     });
 
-    // merge: scheduled first, queued after (but order persistence can reorder)
     const combined = [...base, ...queued];
 
     // apply done overrides
@@ -326,13 +322,12 @@ function getDayStops(date) {
         if (k && done[k] != null) v.completed = !!done[k];
     });
 
-    // apply persisted order (if present)
+    // apply persisted order
     const ord = getOrder(date);
     if (ord && ord.length) {
         const map = new Map(combined.map(v => [getStopKey(v), v]));
         const ordered = [];
         ord.forEach(k => { if (map.has(k)) ordered.push(map.get(k)); });
-        // append anything new not in ord
         combined.forEach(v => {
             const k = getStopKey(v);
             if (!ord.includes(k)) ordered.push(v);
@@ -351,6 +346,12 @@ function intensityClass(count) {
     return "bg-red-900/60";
 }
 
+function applyHeat(cell, cls) {
+    // Ensure only one heat class is present (tailwind-safe)
+    cell.classList.remove("bg-gray-900", "bg-blue-900/40", "bg-orange-900/50", "bg-red-900/60");
+    cell.classList.add(...cls.split(" "));
+}
+
 function renderDayCell(cell) {
     const date = cell.dataset.date;
     if (!date) return;
@@ -358,37 +359,42 @@ function renderDayCell(cell) {
     const stops = getDayStops(date);
     const count = stops.length;
 
-    // Week view: fill list + count + completion marks
+    // WEEK VIEW
     const list = cell.querySelector(".day-list");
     const countEl = cell.querySelector(".day-count");
-    if (list && countEl) {
-        countEl.textContent = String(count);
+    if (countEl) countEl.textContent = String(count);
 
-        // show up to 5 for compactness
-        const preview = stops.slice(0, 5).map(v => {
-            const ok = v.completed ? `<span class="text-green-400">✓</span>` : ``;
-            return `<li class="flex justify-between truncate"><span>${escapeHtml(v.customer_name)}</span>${ok}</li>`;
-        }).join("");
-
-        list.innerHTML = preview || `<li class="text-gray-500">No stops</li>`;
+    if (list) {
+        if (!count) {
+            list.innerHTML = `<li class="text-gray-500">No stops</li>`;
+        } else {
+            const preview = stops.slice(0, 5).map(v => {
+                const ok = v.completed ? `<span class="text-green-400">✓</span>` : ``;
+                return `<li class="flex justify-between truncate"><span>${escapeHtml(v.customer_name)}</span>${ok}</li>`;
+            }).join("");
+            list.innerHTML = preview;
+            if (count > 5) list.innerHTML += `<li class="text-gray-400">+${count - 5} more</li>`;
+        }
     }
 
-    // Month view: heatmap + preview + actions
+    // MONTH VIEW
     if (cell.closest("#month-grid")) {
-        cell.classList.remove("bg-gray-900","bg-blue-900/40","bg-orange-900/50","bg-red-900/60");
-        cell.classList.add(...intensityClass(count).split(" "));
+        applyHeat(cell, intensityClass(count));
 
         const previewWrap = cell.querySelector(".month-preview");
         const actions = cell.querySelector(".month-actions");
-        if (previewWrap) {
-            const lines = stops.slice(0, 3).map(v => {
-                const ok = v.completed ? `<span class="text-green-400">✓</span>` : ``;
-                return `<div class="truncate flex justify-between"><span>${escapeHtml(v.customer_name)}</span>${ok}</div>`;
-            }).join("");
 
-            previewWrap.innerHTML = lines || `<div class="text-gray-500">No stops</div>`;
-            if (count > 3) {
-                previewWrap.innerHTML += `<div class="text-gray-400">+${count - 3} more</div>`;
+        if (previewWrap) {
+            if (!count) {
+                previewWrap.innerHTML = `<div class="text-gray-500">No stops</div>`;
+            } else {
+                const lines = stops.slice(0, 3).map(v => {
+                    const ok = v.completed ? `<span class="text-green-400">✓</span>` : ``;
+                    return `<div class="truncate flex justify-between"><span>${escapeHtml(v.customer_name)}</span>${ok}</div>`;
+                }).join("");
+
+                previewWrap.innerHTML = lines;
+                if (count > 3) previewWrap.innerHTML += `<div class="text-gray-400">+${count - 3} more</div>`;
             }
         }
         if (actions) actions.classList.toggle("hidden", count === 0);
@@ -402,7 +408,6 @@ function renderAll() {
 
 /* ===================== Analytics ===================== */
 function computeStats() {
-    // Only count unique dates that have at least one stop (scheduled or queued)
     const dates = new Set();
     let total = 0;
     let completed = 0;
@@ -443,6 +448,7 @@ const cfgMph = document.getElementById("cfg-mph");
 let activeDate = null;
 
 function openPanel(date) {
+    if (!date) return;
     activeDate = date;
     panelDateEl.textContent = date;
 
@@ -467,13 +473,11 @@ function closePanel() {
 function renderPanel() {
     if (!activeDate) return;
     const stops = getDayStops(activeDate);
-    const done = getDoneMap(activeDate);
 
-    // Estimates (honest rough model)
+    // Estimates (rough model)
     const cfg = getCfg();
     const n = stops.length;
 
-    // distance ~ (n-1)*miBetween, time = n*minPerStop + travelTime
     const miles = n > 1 ? (n - 1) * cfg.miBetween : 0;
     const travelHours = cfg.mph > 0 ? (miles / cfg.mph) : 0;
     const travelMin = travelHours * 60;
@@ -484,6 +488,7 @@ function renderPanel() {
     estTimeEl.textContent = `${Math.round(totalMin)} min`;
 
     const completedCount = stops.filter(s => s.completed).length;
+
     const header = `
         <div class="text-xs text-gray-400 mb-2">
             ${completedCount} / ${n} completed
@@ -525,8 +530,7 @@ function optimizeDay(date) {
     const stops = getDayStops(date);
     if (!stops.length) return;
 
-    // UI-only: "optimize" = stable shuffle.
-    // Later replace with backend / real algorithm.
+    // UI-only: stable shuffle
     const shuffled = [...stops]
         .map(v => ({ v, r: Math.random() }))
         .sort((a, b) => a.r - b.r)
@@ -557,7 +561,7 @@ function exportDay(date) {
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Route ${date}</title>
+  <title>Route ${escapeHtml(date)}</title>
   <style>
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 24px; color: #111; }
     h1 { margin: 0 0 8px; font-size: 20px; }
@@ -605,31 +609,27 @@ function exportDay(date) {
 function autoQueueFromBalances() {
     const params = new URLSearchParams(window.location.search);
     const ids = params.getAll("customers");
-    if (!ids.length) return;
+    if (!ids.length || !TODAY) return;
 
-    // Default: queue onto TODAY
-    const date = TODAY || ids.length ? TODAY : null;
-    if (!date) return;
-
-    const existing = new Set(getQueue(date).map(String));
+    const existing = new Set(getQueue(TODAY).map(String));
     ids.map(String).forEach(id => existing.add(id));
-    setQueue(date, [...existing]);
+    setQueue(TODAY, [...existing]);
 
-    // Remove query params (avoid re-queue on refresh)
     params.delete("customers");
-    const newUrl = window.location.pathname + (params.toString() ? ("?" + params.toString()) : "");
-    window.history.replaceState({}, "", newUrl);
+    window.history.replaceState({}, "", window.location.pathname);
 
-    // Open today's panel so the user sees the result immediately
     renderAll();
-    openPanel(date);
+    openPanel(TODAY);
 }
 
 /* ===================== Wire UI ===================== */
 document.getElementById("panel-close").addEventListener("click", closePanel);
 overlay.addEventListener("click", closePanel);
 
-document.getElementById("today-btn").addEventListener("click", () => openPanel(TODAY));
+document.getElementById("today-btn").addEventListener("click", () => {
+    if (!TODAY) return alert("Today is not available.");
+    openPanel(TODAY);
+});
 
 document.getElementById("panel-optimize").addEventListener("click", () => {
     if (!activeDate) return;
@@ -658,21 +658,21 @@ function saveCfgFromInputs() {
     setCfg(cfg);
     renderPanel();
 }
+
 [cfgMinPerStop, cfgMiBetween, cfgMph].forEach(inp => {
     inp.addEventListener("change", saveCfgFromInputs);
-    inp.addEventListener("keyup", (e) => { if (e.key === "Enter") saveCfgFromInputs(); });
+    inp.addEventListener("input", saveCfgFromInputs);
 });
 
 // Day click open panel (week + month)
 document.querySelectorAll(".day-cell").forEach(cell => {
     cell.addEventListener("click", (e) => {
-        // avoid conflict with buttons inside
         if (e.target.closest("button")) return;
         openPanel(cell.dataset.date);
     });
 });
 
-// Optimize / Export buttons within cells
+// Optimize / Export buttons
 document.querySelectorAll(".optimize-btn").forEach(btn => {
     btn.addEventListener("click", (e) => {
         e.stopPropagation();
