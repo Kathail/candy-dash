@@ -1,6 +1,9 @@
 {% extends "base.html" %} {% block title %}Customers - Candy Dash{% endblock %}
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-10 space-y-10">
+<div
+    class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-10 space-y-10"
+    x-data="customersApp"
+>
     <!-- Header -->
     <header
         class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6"
@@ -13,7 +16,7 @@
         </div>
         <button
             type="button"
-            data-action="scroll-add"
+            @click="addCustomerOpen = true"
             class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl text-sm font-medium transition shadow-md flex items-center gap-2 justify-center w-full sm:w-auto"
         >
             <svg
@@ -82,23 +85,30 @@
     <!-- Bulk Actions -->
     <div
         id="bulk-bar"
-        class="hidden sticky top-4 z-20 bg-gray-900 border border-gray-800 rounded-xl px-6 py-4 shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+        x-show="selectedIds.length > 0"
+        class="sticky top-4 z-20 bg-gray-900 border border-gray-800 rounded-xl px-6 py-4 shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4"
     >
         <span class="text-sm font-medium text-gray-300">
-            <span id="selected-count" class="text-gray-200 font-bold">0</span>
+            <span
+                class="text-gray-200 font-bold"
+                x-text="selectedIds.length"
+            ></span>
             selected
         </span>
         <div class="flex flex-wrap gap-3">
             <button
-                id="bulk-add-to-route"
                 type="button"
+                hx-post="/calendar/add_to_route"
+                hx-vals='{"customers": selectedIds}'
+                hx-swap="none"
+                hx-on::after-request="selectedIds = []; updateSelectUI()"
                 class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg text-sm font-medium transition"
             >
                 Add to Route
             </button>
             <button
-                id="bulk-clear"
                 type="button"
+                @click="clearSelection"
                 class="bg-gray-800 hover:bg-gray-700 text-white px-6 py-2.5 rounded-lg text-sm font-medium transition"
             >
                 Clear
@@ -129,6 +139,12 @@
                         id="customer-search"
                         type="search"
                         placeholder="Search name, phone, email, address, notes…"
+                        hx-get="/customers/table"
+                        hx-trigger="input delay:250ms"
+                        hx-target="#customer-table-body"
+                        hx-swap="innerHTML"
+                        hx-indicator="#loading-indicator"
+                        name="term"
                         class="w-full bg-gray-800 border border-gray-700 rounded-lg pl-11 pr-4 py-3 text-sm text-gray-200 placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
                     />
                     <svg
@@ -147,18 +163,20 @@
                 </div>
                 <div class="flex gap-3 flex-wrap">
                     <button
-                        id="toggle-density"
                         type="button"
+                        @click="compactMode = !compactMode"
                         class="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 px-5 py-3 rounded-lg text-sm font-medium transition"
                     >
-                        Compact
+                        <template x-if="!compactMode">Compact</template>
+                        <template x-if="compactMode">Comfort</template>
                     </button>
                     <button
-                        id="toggle-select"
                         type="button"
+                        @click="selectMode = !selectMode"
                         class="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 px-5 py-3 rounded-lg text-sm font-medium transition"
                     >
-                        Select
+                        <template x-if="!selectMode">Select</template>
+                        <template x-if="selectMode">Done</template>
                     </button>
                 </div>
             </div>
@@ -168,13 +186,18 @@
         <div
             class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 px-6 py-4 border-b border-gray-800 bg-gray-800/50"
         >
-            <div class="text-sm text-gray-400">
-                Showing <span id="showing-count">—</span> of {{ customers |
-                length }}
-            </div>
+            <div
+                class="text-sm text-gray-400"
+                x-text="`Showing ${showingCount} of ${totalCount}`"
+            ></div>
             <div class="flex items-center gap-4 flex-wrap">
                 <select
                     id="page-size"
+                    hx-get="/customers/table"
+                    hx-trigger="change"
+                    hx-target="#customer-table-body"
+                    hx-swap="innerHTML"
+                    name="page_size"
                     class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-gray-200 focus:border-blue-500"
                 >
                     <option value="10">10 per page</option>
@@ -185,16 +208,30 @@
                 <div class="flex items-center gap-3">
                     <button
                         id="prev-page"
+                        hx-get="/customers/table"
+                        hx-trigger="click"
+                        hx-target="#customer-table-body"
+                        hx-swap="innerHTML"
+                        name="page"
+                        :value="currentPage - 1"
+                        :disabled="currentPage <= 1"
                         class="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 px-5 py-2.5 rounded-lg text-sm disabled:opacity-50 transition"
-                        disabled
                     >
                         Prev
                     </button>
-                    <span class="text-sm text-gray-300"
-                        >Page <span id="current-page">1</span></span
-                    >
+                    <span
+                        class="text-sm text-gray-300"
+                        x-text="`Page ${currentPage}`"
+                    ></span>
                     <button
                         id="next-page"
+                        hx-get="/customers/table"
+                        hx-trigger="click"
+                        hx-target="#customer-table-body"
+                        hx-swap="innerHTML"
+                        name="page"
+                        :value="currentPage + 1"
+                        :disabled="currentPage >= totalPages"
                         class="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 px-5 py-2.5 rounded-lg text-sm disabled:opacity-50 transition"
                     >
                         Next
@@ -216,80 +253,116 @@
                         <th class="px-6 py-5 w-12">
                             <input
                                 type="checkbox"
+                                x-show="selectMode"
+                                x-model="selectAll"
                                 id="select-all"
-                                class="hidden h-5 w-5 rounded border-gray-700 text-blue-500 focus:ring-blue-500 bg-gray-800"
+                                class="h-5 w-5 rounded border-gray-700 text-blue-500 focus:ring-blue-500 bg-gray-800"
                             />
                         </th>
                         <th
                             class="sortable px-6 py-5 cursor-pointer hover:text-blue-300 transition"
-                            data-key="name"
+                            hx-get="/customers/table"
+                            hx-trigger="click"
+                            hx-target="#customer-table-body"
+                            hx-swap="innerHTML"
+                            name="sort_key"
+                            value="name"
+                            :name="`sort_dir_${sortKey === 'name' ? -sortDir : 1}`"
                         >
                             Name
                             <span
                                 class="sort-indicator ml-1 opacity-70"
-                                data-for="name"
-                                >—</span
-                            >
+                                :text="sortKey === 'name' ? (sortDir === -1 ? '↓' : '↑') : '—'"
+                            ></span>
                         </th>
                         <th
                             class="sortable px-6 py-5 cursor-pointer hover:text-blue-300 transition hidden lg:table-cell"
-                            data-key="phone"
+                            hx-get="/customers/table"
+                            hx-trigger="click"
+                            hx-target="#customer-table-body"
+                            hx-swap="innerHTML"
+                            name="sort_key"
+                            value="phone"
+                            :name="`sort_dir_${sortKey === 'phone' ? -sortDir : 1}`"
                         >
                             Phone
                             <span
                                 class="sort-indicator ml-1 opacity-70"
-                                data-for="phone"
-                                >—</span
-                            >
+                                :text="sortKey === 'phone' ? (sortDir === -1 ? '↓' : '↑') : '—'"
+                            ></span>
                         </th>
                         <th
                             class="sortable px-6 py-5 cursor-pointer hover:text-blue-300 transition hidden lg:table-cell"
-                            data-key="email"
+                            hx-get="/customers/table"
+                            hx-trigger="click"
+                            hx-target="#customer-table-body"
+                            hx-swap="innerHTML"
+                            name="sort_key"
+                            value="email"
+                            :name="`sort_dir_${sortKey === 'email' ? -sortDir : 1}`"
                         >
                             Email
                             <span
                                 class="sort-indicator ml-1 opacity-70"
-                                data-for="email"
-                                >—</span
-                            >
+                                :text="sortKey === 'email' ? (sortDir === -1 ? '↓' : '↑') : '—'"
+                            ></span>
                         </th>
                         <th class="px-6 py-5 hidden xl:table-cell">Address</th>
                         <th
                             class="sortable px-6 py-5 text-right cursor-pointer hover:text-blue-300 transition"
-                            data-key="balance"
-                            data-sort-default="desc"
+                            hx-get="/customers/table"
+                            hx-trigger="click"
+                            hx-target="#customer-table-body"
+                            hx-swap="innerHTML"
+                            name="sort_key"
+                            value="balance"
+                            :name="`sort_dir_${sortKey === 'balance' ? -sortDir : -1}`"
                         >
+                            <!-- Default desc -->
                             <div class="flex items-center justify-end gap-2">
                                 Balance
                                 <span
                                     class="sort-indicator opacity-70"
-                                    data-for="balance"
-                                    >↓</span
-                                >
+                                    :text="sortKey === 'balance' ? (sortDir === -1 ? '↓' : '↑') : '↓'"
+                                ></span>
                             </div>
                         </th>
                         <th
                             class="sortable px-6 py-5 cursor-pointer hover:text-blue-300 transition hidden md:table-cell"
-                            data-key="lastvisit"
+                            hx-get="/customers/table"
+                            hx-trigger="click"
+                            hx-target="#customer-table-body"
+                            hx-swap="innerHTML"
+                            name="sort_key"
+                            value="lastvisit"
+                            :name="`sort_dir_${sortKey === 'lastvisit' ? -sortDir : 1}`"
                         >
                             Last Visit
                             <span
                                 class="sort-indicator ml-1 opacity-70"
-                                data-for="lastvisit"
-                                >—</span
-                            >
+                                :text="sortKey === 'lastvisit' ? (sortDir === -1 ? '↓' : '↑') : '—'"
+                            ></span>
                         </th>
                         <th class="px-6 py-5 text-right">Notes</th>
                         <th class="px-6 py-5 text-right">Actions</th>
                     </tr>
                 </thead>
-                <tbody id="customer-body" class="divide-y divide-gray-800">
+                <tbody
+                    id="customer-table-body"
+                    class="divide-y divide-gray-800"
+                    hx-get="/customers/table"
+                    hx-trigger="load"
+                    hx-swap="innerHTML"
+                >
+                    <!-- Initial table body will be loaded via HTMX from Flask partial -->
+                    <!-- For initial render, Flask can provide the full body here, but subsequent updates via HTMX -->
                     {% for c in customers %} {% set bal = c.balance_cents /
                     100.0 %} {% set bal_class = 'text-yellow-300' if bal > 0 and
                     bal < 20 else 'text-orange-400' if bal < 100 else
                     'text-red-400' if bal > 0 else 'text-gray-400' %}
                     <tr
                         class="customer-row hover:bg-gray-800/50 transition-colors {{ 'bg-red-950/10' if c.balance_cents > 0 else '' }}"
+                        :class="{'py-2.5': compactMode, 'py-4': !compactMode}"
                         data-id="{{ c.id }}"
                         data-name="{{ c.name | lower }}"
                         data-phone="{{ (c.phone or '') | lower }}"
@@ -303,19 +376,24 @@
                         <td class="px-6 py-5">
                             <input
                                 type="checkbox"
-                                class="row-check hidden h-5 w-5 rounded border-gray-700 text-blue-500 focus:ring-blue-500 bg-gray-800"
+                                x-show="selectMode"
+                                x-model="selectedIds.includes('{{ c.id }}')"
+                                class="row-check h-5 w-5 rounded border-gray-700 text-blue-500 focus:ring-blue-500 bg-gray-800"
                             />
                         </td>
                         <td class="px-6 py-5 font-medium text-gray-200">
                             <button
                                 type="button"
-                                class="btn-edit hover:text-blue-300 hover:underline transition focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
-                                data-id="{{ c.id }}"
-                                data-name="{{ c.name }}"
-                                data-phone="{{ c.phone or '' }}"
-                                data-email="{{ c.email or '' }}"
-                                data-address="{{ c.address or '' }}"
-                                data-balance="{{ bal | round(2) }}"
+                                @click="openEdit({
+                                id: '{{ c.id }}',
+                                name: '{{ c.name | e }}',
+                                phone: '{{ c.phone or '' | e }}',
+                                email: '{{ c.email or '' | e }}',
+                                address: '{{ c.address or '' | e }}',
+                                notes: '{{ c.notes or '' | e }}',
+                                balance: '{{ bal | round(2) }}'
+                            })"
+                                class="hover:text-blue-300 hover:underline transition focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
                             >
                                 {{ c.name }}
                             </button>
@@ -398,28 +476,20 @@
                             %}Never{% endif %}
                         </td>
                         <td class="px-6 py-5 text-right">
-                            {% if c.notes %}
                             <button
                                 type="button"
-                                onclick="toggleNotes(this)"
+                                @click="toggleNotes('{{ c.id }}')"
                                 class="text-blue-400 hover:text-blue-300 text-sm font-medium transition"
+                                x-text="notesOpen['{{ c.id }}'] ? 'Hide' : 'View/Edit'"
+                            ></button>
+                            <div
+                                x-show="notesOpen['{{ c.id }}']"
+                                class="notes-section mt-4"
                             >
-                                View/Edit
-                            </button>
-                            {% else %}
-                            <button
-                                type="button"
-                                onclick="toggleNotes(this)"
-                                class="text-gray-400 hover:text-gray-300 text-sm font-medium transition"
-                            >
-                                Add Notes
-                            </button>
-                            {% endif %}
-                            <div class="notes-section hidden mt-4">
                                 <form
-                                    method="post"
-                                    action="{{ url_for('route.route_update_notes', stop_id=c.id) }}"
-                                    class="space-y-3"
+                                    hx-post="{{ url_for('route.route_update_notes', stop_id=c.id) }}"
+                                    hx-swap="none"
+                                    hx-on::after-request="toggleNotes('{{ c.id }}')"
                                 >
                                     <textarea
                                         name="notes"
@@ -431,7 +501,7 @@
                                     <div class="flex justify-end gap-3">
                                         <button
                                             type="button"
-                                            onclick="toggleNotes(this)"
+                                            @click="toggleNotes('{{ c.id }}')"
                                             class="text-gray-400 hover:text-gray-300 text-xs"
                                         >
                                             Cancel
@@ -450,13 +520,16 @@
                             <div class="flex items-center justify-end gap-3">
                                 <button
                                     type="button"
-                                    class="btn-edit bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 text-sm px-5 py-2.5 rounded-lg transition"
-                                    data-id="{{ c.id }}"
-                                    data-name="{{ c.name }}"
-                                    data-phone="{{ c.phone or '' }}"
-                                    data-email="{{ c.email or '' }}"
-                                    data-address="{{ c.address or '' }}"
-                                    data-balance="{{ bal | round(2) }}"
+                                    @click="openEdit({
+                                    id: '{{ c.id }}',
+                                    name: '{{ c.name | e }}',
+                                    phone: '{{ c.phone or '' | e }}',
+                                    email: '{{ c.email or '' | e }}',
+                                    address: '{{ c.address or '' | e }}',
+                                    notes: '{{ c.notes or '' | e }}',
+                                    balance: '{{ bal | round(2) }}'
+                                })"
+                                    class="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 text-sm px-5 py-2.5 rounded-lg transition"
                                 >
                                     Edit
                                 </button>
@@ -467,7 +540,7 @@
                                 >
                                     <button
                                         type="submit"
-                                        onclick="return confirm('Delete {{ c.name | e }}?');"
+                                        hx-confirm="Delete {{ c.name | e }}?"
                                         class="bg-red-900/50 hover:bg-red-700 text-red-300 hover:text-white text-sm px-5 py-2.5 rounded-lg transition"
                                     >
                                         Delete
@@ -481,7 +554,8 @@
             </table>
             <p
                 id="no-results"
-                class="hidden py-16 text-center text-gray-500 text-sm"
+                x-show="totalCount === 0"
+                class="py-16 text-center text-gray-500 text-sm"
             >
                 No customers match your search.
             </p>
@@ -509,454 +583,255 @@
         {% endif %}
     </div>
 
-    <!-- Add Customer Form -->
+    <!-- Add Customer Modal -->
     <div
-        id="add-form"
-        class="bg-gray-900 border border-gray-800 rounded-xl p-8 shadow-sm"
+        x-show="addCustomerOpen"
+        class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
+        @click.away="addCustomerOpen = false"
+        @keydown.escape="addCustomerOpen = false"
     >
-        <h2 class="text-2xl font-semibold text-gray-200 mb-8">
-            Add New Customer
-        </h2>
-        <form
-            method="post"
-            action="{{ url_for('customers.customer_add') }}"
-            class="grid grid-cols-1 md:grid-cols-2 gap-6"
+        <div
+            class="bg-gray-900 border border-gray-800 rounded-2xl p-8 w-full max-w-lg shadow-2xl"
+            @click.stop
         >
-            <div>
-                <label class="block text-sm text-gray-400 mb-2"
-                    >Name <span class="text-red-400">*</span></label
-                >
-                <input
-                    name="name"
-                    required
-                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-5 py-3 text-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
-                />
-            </div>
-            <div>
-                <label class="block text-sm text-gray-400 mb-2">Phone</label>
-                <input
-                    name="phone"
-                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-5 py-3 text-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
-                />
-            </div>
-            <div>
-                <label class="block text-sm text-gray-400 mb-2">Email</label>
-                <input
-                    name="email"
-                    type="email"
-                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-5 py-3 text-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
-                />
-            </div>
-            <div class="md:col-span-2">
-                <label class="block text-sm text-gray-400 mb-2">Address</label>
-                <input
-                    name="address"
-                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-5 py-3 text-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
-                />
-            </div>
-            <div class="md:col-span-2">
-                <label class="block text-sm text-gray-400 mb-2">Notes</label>
-                <textarea
-                    name="notes"
-                    rows="3"
-                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-5 py-3 text-sm text-gray-200 placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-y"
-                ></textarea>
-            </div>
-            <div>
-                <label class="block text-sm text-gray-400 mb-2"
-                    >Starting Balance ($)</label
-                >
-                <input
-                    name="balance"
-                    type="number"
-                    step="0.01"
-                    value="0.00"
-                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-5 py-3 text-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
-                />
-            </div>
-            <div class="md:col-span-2 flex justify-end">
-                <button
-                    type="submit"
-                    class="bg-blue-600 hover:bg-blue-700 text-white px-10 py-4 rounded-xl font-medium transition shadow-md"
-                >
-                    Add Customer
-                </button>
-            </div>
-        </form>
+            <h2 class="text-2xl font-semibold text-gray-200 mb-8">
+                Add New Customer
+            </h2>
+            <form
+                method="post"
+                action="{{ url_for('customers.customer_add') }}"
+                hx-post="{{ url_for('customers.customer_add') }}"
+                hx-swap="none"
+                hx-on::after-request="addCustomerOpen = false; htmx.ajax('GET', '/customers/table', {target: '#customer-table-body'})"
+                class="grid grid-cols-1 md:grid-cols-2 gap-6"
+            >
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2"
+                        >Name <span class="text-red-400">*</span></label
+                    >
+                    <input
+                        name="name"
+                        required
+                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-5 py-3 text-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                    />
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2"
+                        >Phone</label
+                    >
+                    <input
+                        name="phone"
+                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-5 py-3 text-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                    />
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2"
+                        >Email</label
+                    >
+                    <input
+                        name="email"
+                        type="email"
+                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-5 py-3 text-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                    />
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-sm text-gray-400 mb-2"
+                        >Address</label
+                    >
+                    <input
+                        name="address"
+                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-5 py-3 text-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                    />
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-sm text-gray-400 mb-2"
+                        >Notes</label
+                    >
+                    <textarea
+                        name="notes"
+                        rows="3"
+                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-5 py-3 text-sm text-gray-200 placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-y"
+                    ></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2"
+                        >Starting Balance ($)</label
+                    >
+                    <input
+                        name="balance"
+                        type="number"
+                        step="0.01"
+                        value="0.00"
+                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-5 py-3 text-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                    />
+                </div>
+                <div class="md:col-span-2 flex justify-end gap-4">
+                    <button
+                        type="button"
+                        @click="addCustomerOpen = false"
+                        class="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 py-3.5 rounded-xl font-medium transition"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="submit"
+                        class="bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-medium transition"
+                    >
+                        Add Customer
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
-</div>
 
-<!-- Edit Modal -->
-<div
-    id="edit-modal"
-    class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
->
+    <!-- Edit Customer Modal -->
     <div
-        class="bg-gray-900 border border-gray-800 rounded-2xl p-8 w-full max-w-lg shadow-2xl"
+        x-show="editCustomerOpen"
+        class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
+        @click.away="editCustomerOpen = false"
+        @keydown.escape="editCustomerOpen = false"
     >
-        <h3 class="text-2xl font-semibold text-gray-200 mb-8">Edit Customer</h3>
-        <form id="edit-form" method="post" class="space-y-6">
-            <input type="hidden" name="customer_id" />
-            <div>
-                <label class="block text-sm text-gray-400 mb-2"
-                    >Name <span class="text-red-400">*</span></label
-                >
+        <div
+            class="bg-gray-900 border border-gray-800 rounded-2xl p-8 w-full max-w-lg shadow-2xl"
+            @click.stop
+        >
+            <h3 class="text-2xl font-semibold text-gray-200 mb-8">
+                Edit Customer
+            </h3>
+            <form
+                id="edit-form"
+                method="post"
+                :action="`/customers/edit/${editCustomer.id}`"
+                hx-post=":action"
+                hx-swap="none"
+                hx-on::after-request="editCustomerOpen = false; htmx.ajax('GET', '/customers/table', {target: '#customer-table-body'})"
+                class="space-y-6"
+            >
                 <input
-                    name="name"
-                    required
-                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-5 py-3 text-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                    type="hidden"
+                    name="customer_id"
+                    x-model="editCustomer.id"
                 />
-            </div>
-            <div>
-                <label class="block text-sm text-gray-400 mb-2">Phone</label>
-                <input
-                    name="phone"
-                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-5 py-3 text-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
-                />
-            </div>
-            <div>
-                <label class="block text-sm text-gray-400 mb-2">Email</label>
-                <input
-                    name="email"
-                    type="email"
-                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-5 py-3 text-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
-                />
-            </div>
-            <div>
-                <label class="block text-sm text-gray-400 mb-2">Address</label>
-                <input
-                    name="address"
-                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-5 py-3 text-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
-                />
-            </div>
-            <div>
-                <label class="block text-sm text-gray-400 mb-2">Notes</label>
-                <textarea
-                    name="notes"
-                    rows="4"
-                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-5 py-3 text-sm text-gray-200 placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-y"
-                ></textarea>
-            </div>
-            <div>
-                <label class="block text-sm text-gray-400 mb-2"
-                    >Balance ($)</label
-                >
-                <input
-                    name="balance"
-                    type="number"
-                    step="0.01"
-                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-5 py-3 text-gray-200 font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
-                />
-            </div>
-            <div class="flex gap-4 pt-4">
-                <button
-                    type="button"
-                    data-action="close"
-                    class="flex-1 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 py-3.5 rounded-xl font-medium transition"
-                >
-                    Cancel
-                </button>
-                <button
-                    type="submit"
-                    class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-medium transition"
-                >
-                    Save Changes
-                </button>
-            </div>
-        </form>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2"
+                        >Name <span class="text-red-400">*</span></label
+                    >
+                    <input
+                        name="name"
+                        required
+                        x-model="editCustomer.name"
+                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-5 py-3 text-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                    />
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2"
+                        >Phone</label
+                    >
+                    <input
+                        name="phone"
+                        x-model="editCustomer.phone"
+                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-5 py-3 text-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                    />
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2"
+                        >Email</label
+                    >
+                    <input
+                        name="email"
+                        type="email"
+                        x-model="editCustomer.email"
+                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-5 py-3 text-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                    />
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2"
+                        >Address</label
+                    >
+                    <input
+                        name="address"
+                        x-model="editCustomer.address"
+                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-5 py-3 text-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                    />
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2"
+                        >Notes</label
+                    >
+                    <textarea
+                        name="notes"
+                        rows="4"
+                        x-model="editCustomer.notes"
+                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-5 py-3 text-sm text-gray-200 placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-y"
+                    ></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2"
+                        >Balance ($)</label
+                    >
+                    <input
+                        name="balance"
+                        type="number"
+                        step="0.01"
+                        x-model="editCustomer.balance"
+                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-5 py-3 text-gray-200 font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                    />
+                </div>
+                <div class="flex gap-4 pt-4">
+                    <button
+                        type="button"
+                        @click="editCustomerOpen = false"
+                        class="flex-1 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 py-3.5 rounded-xl font-medium transition"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="submit"
+                        class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-medium transition"
+                    >
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
-<!-- JavaScript -->
 <script>
-    document.addEventListener("DOMContentLoaded", () => {
-        const modal = document.getElementById("edit-modal");
-        const editForm = document.getElementById("edit-form");
-        const searchInput = document.getElementById("customer-search");
-        const selectAllChk = document.getElementById("select-all");
-        const selectedCount = document.getElementById("selected-count");
-        const bulkBar = document.getElementById("bulk-bar");
-        const noResults = document.getElementById("no-results");
-        const rows = Array.from(document.querySelectorAll(".customer-row"));
-        let pageSize = 20;
-        let currentPage = 1;
-        let sortState = { key: "balance", dir: -1 };
-        let selectMode = false;
-        let compactMode = false;
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('customersApp', () => ({
+            addCustomerOpen: false,
+            editCustomerOpen: false,
+            editCustomer: { id: '', name: '', phone: '', email: '', address: '', notes: '', balance: '' },
+            selectMode: false,
+            selectAll: false,
+            selectedIds: [],
+            compactMode: false,
+            notesOpen: {},
+            sortKey: 'balance',
+            sortDir: -1,
+            currentPage: 1,
+            pageSize: 20,
+            totalCount: {{ customers | length }},
+            showingCount: 20,
+            totalPages: Math.ceil({{ customers | length }} / 20),
 
-        // Search
-        function filterRows() {
-            const term = searchInput.value.toLowerCase();
-            rows.forEach((row) => {
-                const match = row.dataset.search?.includes(term) ?? false;
-                row.dataset.filtered = match ? "true" : "false";
-            });
-            paginate();
-        }
-        if (searchInput) {
-            let timeout;
-            searchInput.addEventListener("input", () => {
-                clearTimeout(timeout);
-                timeout = setTimeout(filterRows, 250);
-            });
-        }
-
-        // Sorting
-        function updateSortIndicators() {
-            document
-                .querySelectorAll("[data-for]")
-                .forEach((el) => (el.textContent = "—"));
-            document
-                .querySelectorAll(".sortable")
-                .forEach((th) => th.classList.remove("text-blue-300"));
-
-            const active = document.querySelector(
-                `[data-key="${sortState.key}"]`,
-            );
-            if (active) {
-                active.classList.add("text-blue-300");
-                const ind = active.querySelector(".sort-indicator");
-                if (ind) ind.textContent = sortState.dir === -1 ? "↓" : "↑";
+            openEdit(customer) {
+                this.editCustomer = customer;
+                this.editCustomerOpen = true;
+            },
+            toggleNotes(id) {
+                this.notesOpen[id] = !this.notesOpen[id];
+            },
+            clearSelection() {
+                this.selectedIds = [];
+                this.selectAll = false;
+                this.updateSelectUI();
+            },
+            updateSelectUI() {
+                // Logic to handle indeterminate, etc. can be added if needed, but Alpine x-model handles most
             }
-        }
-
-        function sortRows() {
-            const visibleRows = rows.filter(
-                (r) => r.dataset.filtered !== "false",
-            );
-            visibleRows.sort((a, b) => {
-                let va = a.dataset[sortState.key] ?? "";
-                let vb = b.dataset[sortState.key] ?? "";
-                const na = Number(va),
-                    nb = Number(vb);
-                const num = !isNaN(na) && !isNaN(nb);
-                return sortState.dir * (num ? na - nb : va.localeCompare(vb));
-            });
-            visibleRows.forEach((r) => r.parentElement.appendChild(r));
-            updateSortIndicators();
-        }
-
-        document.querySelectorAll(".sortable").forEach((th) => {
-            th.addEventListener("click", () => {
-                const key = th.dataset.key;
-                sortState.dir =
-                    sortState.key === key
-                        ? -sortState.dir
-                        : th.dataset.sortDefault === "desc"
-                          ? -1
-                          : 1;
-                sortState.key = key;
-                sortRows();
-                paginate();
-            });
-        });
-
-        // Pagination
-        function paginate() {
-            const visibleRows = rows.filter(
-                (r) => r.dataset.filtered !== "false",
-            );
-            const totalVisible = visibleRows.length;
-            const totalPages = Math.ceil(totalVisible / pageSize);
-
-            currentPage = Math.max(1, Math.min(currentPage, totalPages || 1));
-
-            rows.forEach((r) => (r.style.display = "none"));
-            const start = (currentPage - 1) * pageSize;
-            const end = start + pageSize;
-
-            visibleRows
-                .slice(start, end)
-                .forEach((r) => (r.style.display = ""));
-
-            document.getElementById("showing-count").textContent = Math.min(
-                end,
-                totalVisible,
-            );
-            document.getElementById("current-page").textContent = currentPage;
-            document.getElementById("prev-page").disabled = currentPage <= 1;
-            document.getElementById("next-page").disabled =
-                currentPage >= totalPages;
-
-            noResults?.classList.toggle("hidden", totalVisible > 0);
-        }
-
-        document
-            .getElementById("page-size")
-            ?.addEventListener("change", (e) => {
-                pageSize = parseInt(e.target.value, 10);
-                currentPage = 1;
-                paginate();
-            });
-
-        document.getElementById("prev-page")?.addEventListener("click", () => {
-            if (currentPage > 1) {
-                currentPage--;
-                paginate();
-            }
-        });
-
-        document.getElementById("next-page")?.addEventListener("click", () => {
-            const visible = rows.filter(
-                (r) => r.dataset.filtered !== "false",
-            ).length;
-            if (currentPage * pageSize < visible) {
-                currentPage++;
-                paginate();
-            }
-        });
-
-        // Notes toggle
-        window.toggleNotes = function (btn) {
-            const row = btn.closest("tr");
-            const section = row.querySelector(".notes-section");
-            if (section) section.classList.toggle("hidden");
-        };
-
-        document.addEventListener("click", (e) => {
-            if (
-                !e.target.closest('button[onclick*="toggleNotes"]') &&
-                !e.target.closest(".notes-section")
-            ) {
-                document
-                    .querySelectorAll(".notes-section:not(.hidden)")
-                    .forEach((s) => s.classList.add("hidden"));
-            }
-        });
-
-        // Edit Modal
-        document.querySelectorAll(".btn-edit").forEach((btn) => {
-            btn.addEventListener("click", () => {
-                editForm.action =
-                    "{{ url_for('customers.customer_edit', customer_id=0) }}".replace(
-                        "0",
-                        btn.dataset.id,
-                    );
-                editForm.querySelector('[name="customer_id"]').value =
-                    btn.dataset.id;
-                editForm.querySelector('[name="name"]').value =
-                    btn.dataset.name;
-                editForm.querySelector('[name="phone"]').value =
-                    btn.dataset.phone;
-                editForm.querySelector('[name="email"]').value =
-                    btn.dataset.email;
-                editForm.querySelector('[name="address"]').value =
-                    btn.dataset.address;
-                editForm.querySelector('[name="notes"]').value =
-                    btn.dataset.notes || "";
-                editForm.querySelector('[name="balance"]').value =
-                    btn.dataset.balance;
-                modal.classList.remove("hidden");
-            });
-        });
-
-        function closeModal() {
-            modal.classList.add("hidden");
-        }
-        modal?.addEventListener("click", (e) => {
-            if (e.target === modal) closeModal();
-        });
-        document
-            .querySelectorAll('[data-action="close"]')
-            .forEach((b) => b.addEventListener("click", closeModal));
-        document.addEventListener("keydown", (e) => {
-            if (e.key === "Escape") closeModal();
-        });
-
-        // Select / Bulk
-        function getRowCheckboxes() {
-            return [...document.querySelectorAll(".row-check")];
-        }
-
-        function updateBulkUI() {
-            const checked = getRowCheckboxes().filter((c) => c.checked).length;
-            selectedCount.textContent = checked;
-            bulkBar.classList.toggle("hidden", checked === 0);
-
-            if (selectAllChk) {
-                const visibleChecks = getRowCheckboxes().filter(
-                    (c) => c.closest("tr").style.display !== "none",
-                );
-                const allChecked =
-                    visibleChecks.length > 0 &&
-                    visibleChecks.every((c) => c.checked);
-                const someChecked = visibleChecks.some((c) => c.checked);
-                selectAllChk.checked = allChecked;
-                selectAllChk.indeterminate = someChecked && !allChecked;
-            }
-        }
-
-        function toggleSelectMode(enable) {
-            selectMode = enable;
-            getRowCheckboxes().forEach((c) =>
-                c.classList.toggle("hidden", !enable),
-            );
-            selectAllChk?.classList.toggle("hidden", !enable);
-            document.getElementById("toggle-select").textContent = enable
-                ? "Done"
-                : "Select";
-
-            if (!enable) {
-                getRowCheckboxes().forEach((c) => (c.checked = false));
-                updateBulkUI();
-            }
-        }
-
-        document
-            .getElementById("toggle-select")
-            ?.addEventListener("click", () => toggleSelectMode(!selectMode));
-        selectAllChk?.addEventListener("change", (e) => {
-            getRowCheckboxes().forEach((c) => {
-                if (c.closest("tr").style.display !== "none")
-                    c.checked = e.target.checked;
-            });
-            updateBulkUI();
-        });
-        document.addEventListener("change", (e) => {
-            if (e.target.classList.contains("row-check")) updateBulkUI();
-        });
-
-        document.getElementById("bulk-clear")?.addEventListener("click", () => {
-            getRowCheckboxes().forEach((c) => (c.checked = false));
-            updateBulkUI();
-        });
-
-        document
-            .getElementById("bulk-add-to-route")
-            ?.addEventListener("click", () => {
-                const ids = getRowCheckboxes()
-                    .filter((c) => c.checked)
-                    .map((c) => c.closest("tr")?.dataset.id)
-                    .filter(Boolean);
-
-                if (ids.length === 0) return;
-
-                const params = new URLSearchParams();
-                ids.forEach((id) => params.append("customers", id));
-                window.location.href = `/calendar?${params}`;
-            });
-
-        // Compact Mode
-        document
-            .getElementById("toggle-density")
-            ?.addEventListener("click", () => {
-                compactMode = !compactMode;
-                document.getElementById("toggle-density").textContent =
-                    compactMode ? "Comfort" : "Compact";
-
-                rows.forEach((row) => {
-                    row.querySelectorAll("td").forEach((td) => {
-                        td.classList.toggle("py-4", !compactMode);
-                        td.classList.toggle("py-2.5", compactMode);
-                    });
-                });
-            });
-
-        // Initial Setup
-        toggleSelectMode(false);
-        filterRows();
-        sortRows();
-        paginate();
+        }));
     });
 </script>
 {% endblock %}

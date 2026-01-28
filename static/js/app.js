@@ -1,9 +1,9 @@
 // static/js/app.js
-// Candy Flask – Shared frontend utilities & behaviors
-// Vanilla JS + Tailwind – no build step yet
+// Candy Dash – Shared frontend utilities
+// Used with HTMX + Alpine.js
 
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("Candy Flask frontend loaded");
+  console.log("Candy Dash frontend loaded");
 
   // ── State ────────────────────────────────────────────────────────────────
   const appState = {
@@ -15,74 +15,38 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // ── Utilities ────────────────────────────────────────────────────────────
-  function formatCurrency(cents) {
+  window.formatCurrency = (cents) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(cents / 100);
-  }
+  };
 
-  function escapeHTML(str = "") {
-    return str.replace(/[&<>"']/g, (m) => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;",
-    }[m]));
-  }
-
-  function debounce(fn, delay = 250) {
-    let timer;
-    return (...args) => {
-      clearTimeout(timer);
-      timer = setTimeout(() => fn(...args), delay);
-    };
-  }
-
-  function openModal(modalEl) {
-    modalEl?.classList.remove("hidden");
-  }
-
-  function closeModal(modalEl) {
-    modalEl?.classList.add("hidden");
-  }
-
-  // ── Modal Helpers ────────────────────────────────────────────────────────
-  function setupModal(modalId, closeSelector = ".close-modal, [data-close]") {
-    const modal = document.getElementById(modalId);
-    if (!modal) return null;
-
-    const closeBtn = modal.querySelector(closeSelector);
-    if (closeBtn) {
-      closeBtn.addEventListener("click", () => closeModal(modal));
-    }
-
-    modal.addEventListener("click", (e) => {
-      if (e.target === modal) closeModal(modal);
-    });
-
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && !modal.classList.contains("hidden")) {
-        closeModal(modal);
-      }
-    });
-
-    return modal;
-  }
+  window.escapeHTML = (str = "") => {
+    return str.replace(
+      /[&<>"']/g,
+      (m) =>
+        ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;",
+        })[m],
+    );
+  };
 
   // ── Area Optimizer Modal ─────────────────────────────────────────────────
-  const areaModal = setupModal("area-optimizer-modal", ".close-area-modal, button[data-close]");
-
   window.openAreaOptimizer = async () => {
+    const areaModal = document.getElementById("area-optimizer-modal");
     if (!areaModal) {
       console.warn("Area optimizer modal not found");
       return;
     }
 
-    openModal(areaModal);
+    areaModal.showModal(); // Assuming <dialog> or Alpine handles open
 
     const container = areaModal.querySelector(".flex-1, .overflow-y-auto");
     if (!container) return;
@@ -115,7 +79,9 @@ document.addEventListener("DOMContentLoaded", () => {
               <h4 class="text-xl font-semibold">${escapeHTML(area)} <span class="ml-2 text-sm text-gray-500">(${customers.length})</span></h4>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              ${customers.map(c => `
+              ${customers
+                .map(
+                  (c) => `
                 <div class="bg-gray-800 rounded-xl p-5 border border-gray-700 hover:border-blue-500 transition">
                   <div class="font-medium text-lg mb-2">${escapeHTML(c.name)}</div>
                   <div class="text-sm text-gray-400 mb-3">${escapeHTML(c.address || "No address")}</div>
@@ -123,11 +89,13 @@ document.addEventListener("DOMContentLoaded", () => {
                     ${c.balance_cents > 0 ? `<span class="text-xs bg-red-500/30 text-red-400 px-2.5 py-1 rounded-full">Owes ${formatCurrency(c.balance_cents)}</span>` : ""}
                     ${c.days_since > 14 ? `<span class="text-xs bg-amber-500/30 text-amber-400 px-2.5 py-1 rounded-full">${c.days_since}+ days</span>` : ""}
                   </div>
-                  <button onclick="quickAddFromArea(${c.id})" class="w-full bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-lg font-medium transition">
+                  <button hx-post="/quick_add_from_area" hx-vals='{"customer_id": ${c.id}}' hx-swap="none" class="w-full bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-lg font-medium transition">
                     + Add to ${appState.selectedDate ? "selected day" : "Today"}
                   </button>
                 </div>
-              `).join("")}
+              `,
+                )
+                .join("")}
             </div>
           </div>`;
       });
@@ -139,36 +107,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  // ── Quick Add from Area ──────────────────────────────────────────────────
-  window.quickAddFromArea = (customerId) => {
-    const modal = document.getElementById("quickAddModal");
-    if (!modal) {
-      console.warn("Quick add modal not found");
-      return;
-    }
-
-    openModal(modal);
-
-    const form = modal.querySelector("form");
-    if (!form) return;
-
-    const customerSelect = form.querySelector('select[name="customer_id"]');
-    if (customerSelect) customerSelect.value = customerId;
-
-    const dateInput = form.querySelector('input[name="date"]');
-    if (dateInput) {
-      dateInput.value = appState.selectedDate || new Date().toISOString().split("T")[0];
-    }
-
-    const notes = form.querySelector('textarea[name="notes"]');
-    if (notes) notes.value = "Added from Area Optimizer";
-  };
-
   // ── Route Complete Confirmation ──────────────────────────────────────────
-  document.querySelectorAll(".route-complete-btn").forEach(btn => {
-    btn.addEventListener("click", e => {
+  htmx.on("htmx:beforeRequest", (e) => {
+    if (e.detail.elt.classList.contains("route-complete-btn")) {
       if (!confirm("Mark this stop as completed?")) {
         e.preventDefault();
       }
-    });
+    }
   });
+});
