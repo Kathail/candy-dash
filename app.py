@@ -1,3 +1,5 @@
+# app.py
+import os
 from datetime import date, datetime
 
 from flask import Flask
@@ -5,7 +7,7 @@ from flask import Flask
 
 def create_app():
     app = Flask(__name__)
-    app.secret_key = "dev-secret-change-me"
+    app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-me")
 
     # Register routes
     from routes.balances import balances_bp
@@ -48,7 +50,7 @@ def create_app():
         <div style="font-family: system-ui; max-width: 600px; margin: 100px auto; text-align: center;">
             <h1 style="font-size: 72px; margin: 0; color: #ef4444;">500</h1>
             <p style="font-size: 24px; color: #6b7280; margin: 20px 0;">Internal Server Error</p>
-            <p style="color: #9ca3af;">Something went wrong on our end. Please try again.</p>
+            <p style="color: #9ca3af;">Something went wrong. Please try again.</p>
             <a href="/" style="display: inline-block; background: #3b82f6; color: white; padding: 12px 24px;
                border-radius: 8px; text-decoration: none; margin-top: 20px;">
                 Go to Dashboard
@@ -64,7 +66,7 @@ def create_app():
 if __name__ == "__main__":
     app = create_app()
     print("\n" + "=" * 50)
-    print("🍬 Candy Route Planner")
+    print("🍬 Candy Dash - Route Planner")
     print("=" * 50)
     print("Running on: http://127.0.0.1:5000")
     print("Press CTRL+C to quit")
