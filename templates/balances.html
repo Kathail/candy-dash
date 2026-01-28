@@ -10,6 +10,6 @@
         <p class="text-gray-400">Outstanding customer balances</p>
     </header>
 
-    {% include "partials/customer_table.html" with mode="balances" %}
+    {% set mode = "balances" %} {% include "partials/customer_table.html" %}
 </div>
 {% endblock %}

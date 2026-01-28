@@ -19,6 +19,6 @@
         </a>
     </header>
 
-    {% include "partials/customer_table.html" with mode="customers" %}
+    {% set mode = "customers" %} {% include "partials/customer_table.html" %}
 </div>
 {% endblock %}
