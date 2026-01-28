@@ -1,4 +1,3 @@
-# app.py
 import os
 from datetime import date, datetime
 
@@ -19,7 +18,9 @@ def create_app():
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(customers_bp)
     app.register_blueprint(route_bp)
-    app.register_blueprint(calendar_bp)
+    app.register_blueprint(
+        calendar_bp, url_prefix="/calendar"
+    )  # ← FIXED HERE: added url_prefix
     app.register_blueprint(balances_bp)
 
     @app.context_processor
@@ -68,17 +69,14 @@ if __name__ == "__main__":
     print("\n" + "=" * 50)
     print("🍬 Candy Dash - Route Planner")
     print("=" * 50)
-
     # Get port from environment (Render sets PORT; fallback to 5000 for local)
     port = int(os.environ.get("PORT", 5000))
     print(f"Running on: http://0.0.0.0:{port}")
     print("Press CTRL+C to quit")
     print("=" * 50 + "\n")
-
     # Bind to 0.0.0.0 and dynamic port; debug off in prod
     app.run(
         host="0.0.0.0",
         port=port,
-        debug=os.environ.get("FLASK_DEBUG", "False").lower()
-        == "true",  # Optional: control via env var
+        debug=os.environ.get("FLASK_DEBUG", "False").lower() == "true",
     )
