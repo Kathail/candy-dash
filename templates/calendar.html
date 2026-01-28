@@ -5,7 +5,7 @@ content %}
     <section>
         <h1 class="text-3xl font-bold">Calendar</h1>
         <p class="text-gray-400 mt-1">
-            Plan routes, review upcoming visits, and add stops.
+            Plan routes, optimize daily runs, and review performance.
         </p>
     </section>
 
@@ -25,57 +25,37 @@ content %}
         </button>
     </div>
 
-    <!-- Quick Add -->
-    <section class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
-        <h2 class="text-xl font-semibold mb-3">Add Customer to Route</h2>
-
-        <form
-            method="post"
-            action="{{ url_for('route.route_add') }}"
-            class="grid grid-cols-1 md:grid-cols-3 gap-4"
-        >
-            <input
-                type="text"
-                list="customer-list"
-                name="customer_id"
-                required
-                placeholder="Search by name or city…"
-                class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2"
-            />
-
-            <datalist id="customer-list">
-                {% for c in all_customers %}
-                <option
-                    value="{{ c.id }}"
-                    label="{{ c.name }}{% if c.city %} — {{ c.city }}{% endif %}"
-                ></option>
-                {% endfor %}
-            </datalist>
-
-            <input
-                type="date"
-                name="date"
-                value="{{ today }}"
-                class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2"
-            />
-
-            <button
-                type="submit"
-                class="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 font-medium"
-            >
-                Add
-            </button>
-        </form>
+    <!-- Analytics -->
+    <section class="grid grid-cols-2 md:grid-cols-4 gap-4" id="analytics">
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+            <div class="text-xs text-gray-500">Total Visits</div>
+            <div class="text-2xl font-bold" id="stat-total">—</div>
+        </div>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+            <div class="text-xs text-gray-500">Completed</div>
+            <div class="text-2xl font-bold text-green-400" id="stat-completed">
+                —
+            </div>
+        </div>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+            <div class="text-xs text-gray-500">Completion %</div>
+            <div class="text-2xl font-bold" id="stat-rate">—%</div>
+        </div>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+            <div class="text-xs text-gray-500">Avg / Day</div>
+            <div class="text-2xl font-bold" id="stat-avg">—</div>
+        </div>
     </section>
 
     <!-- WEEK VIEW -->
     <section id="week-view" class="space-y-4">
-        <h2 class="text-xl font-semibold">This Week</h2>
+        <h2 class="text-xl font-semibold">Week View</h2>
 
         <div class="grid grid-cols-1 md:grid-cols-7 gap-3">
             {% for date, visits in scheduled_visits.items() %}
             <div
-                class="bg-gray-900 border border-gray-800 rounded-xl p-3 min-h-[140px]"
+                class="day-card bg-gray-900 border border-gray-800 rounded-xl p-3 min-h-[160px]"
+                data-date="{{ date }}"
             >
                 <div class="flex justify-between items-center mb-2">
                     <div class="font-semibold text-sm">
@@ -92,7 +72,7 @@ content %}
                     </span>
                 </div>
 
-                <ul class="space-y-1">
+                <ul class="space-y-1 mb-3">
                     {% for v in visits %}
                     <li class="text-xs flex justify-between">
                         <span class="truncate">{{ v.customer_name }}</span>
@@ -102,6 +82,14 @@ content %}
                     </li>
                     {% endfor %}
                 </ul>
+
+                <!-- Optimize -->
+                <button
+                    class="optimize-btn w-full text-xs bg-gray-800 hover:bg-gray-700 rounded-lg py-1.5"
+                    data-date="{{ date }}"
+                >
+                    Optimize Route
+                </button>
             </div>
             {% endfor %}
         </div>
@@ -109,14 +97,23 @@ content %}
 
     <!-- MONTH VIEW -->
     <section id="month-view" class="hidden space-y-4">
-        <h2 class="text-xl font-semibold">This Month</h2>
+        <h2 class="text-xl font-semibold">Month View</h2>
 
         <div
             class="grid grid-cols-7 gap-px bg-gray-800 rounded-xl overflow-hidden"
         >
             {% for i in range(1, 36) %} {% set date = (month_dates[i-1] if
             month_dates is defined else None) %}
-            <div class="bg-gray-900 min-h-[120px] p-2 text-xs">
+            <div
+                class="day-card bg-gray-900 min-h-[120px] p-2 text-xs"
+                {%
+                if
+                date
+                %}data-date="{{ date }}"
+                {%
+                endif
+                %}
+            >
                 {% if date %}
                 <div class="font-semibold mb-1">
                     {{ date }} {% if date == today %}
@@ -127,21 +124,28 @@ content %}
                 </div>
 
                 {% for v in scheduled_visits.get(date, []) %}
-                <div class="truncate text-gray-300 flex justify-between">
+                <div class="truncate flex justify-between">
                     <span>{{ v.customer_name }}</span>
                     {% if v.completed %}
                     <span class="text-green-400">✓</span>
                     {% endif %}
                 </div>
-                {% endfor %} {% endif %}
+                {% endfor %} {% if scheduled_visits.get(date) %}
+                <button
+                    class="optimize-btn mt-2 w-full text-[10px] bg-gray-800 hover:bg-gray-700 rounded py-1"
+                    data-date="{{ date }}"
+                >
+                    Optimize
+                </button>
+                {% endif %} {% endif %}
             </div>
             {% endfor %}
         </div>
     </section>
 </div>
 
-<!-- View Toggle Script -->
 <script>
+    /* ---------------- View Toggle ---------------- */
     const buttons = document.querySelectorAll(".view-btn");
     const week = document.getElementById("week-view");
     const month = document.getElementById("month-view");
@@ -160,8 +164,56 @@ content %}
                 month.classList.remove("hidden");
                 week.classList.add("hidden");
             }
+            computeStats();
         });
     });
+
+    /* ---------------- Analytics ---------------- */
+    function computeStats() {
+        let total = 0;
+        let completed = 0;
+        let days = new Set();
+
+        document.querySelectorAll(".day-card").forEach((card) => {
+            const date = card.dataset.date;
+            if (!date) return;
+
+            const items = card.querySelectorAll("li");
+            if (items.length === 0) return;
+
+            days.add(date);
+            total += items.length;
+
+            items.forEach((i) => {
+                if (i.querySelector(".text-green-400")) completed++;
+            });
+        });
+
+        const avg = days.size ? (total / days.size).toFixed(1) : 0;
+        const rate = total ? Math.round((completed / total) * 100) : 0;
+
+        document.getElementById("stat-total").textContent = total;
+        document.getElementById("stat-completed").textContent = completed;
+        document.getElementById("stat-rate").textContent = rate + "%";
+        document.getElementById("stat-avg").textContent = avg;
+    }
+
+    /* ---------------- Optimization (UI-only) ---------------- */
+    document.querySelectorAll(".optimize-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+            const date = btn.dataset.date;
+            btn.textContent = "Optimizing…";
+            btn.disabled = true;
+
+            // Placeholder for backend call
+            setTimeout(() => {
+                btn.textContent = "Optimized ✓";
+                btn.classList.add("bg-green-600");
+            }, 800);
+        });
+    });
+
+    computeStats();
 </script>
 
 {% endblock %}
