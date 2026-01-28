@@ -1,7 +1,14 @@
 {% extends "base.html" %} {% block title %}Customers - Candy Dash{% endblock %}
-{% block content %}
+{% block content %} {% set owing = customers | selectattr('balance_cents', 'gt',
+0) | list %} {% set owing_count = owing | length %} {% set total_owed = (owing |
+sum(attribute='balance_cents') / 100) | round(2) %}
+
+<script>
+    const customers = {{ customers | tojson }};
+</script>
+
 <div class="max-w-7xl mx-auto space-y-10" x-data="customersApp">
-    <!-- Header – exact dashboard welcome style -->
+    <!-- Header -->
     <header class="flex items-center justify-between">
         <div>
             <h1 class="text-3xl font-bold text-gray-200 mb-1">Customers</h1>
@@ -10,559 +17,154 @@
         <button
             type="button"
             @click="addCustomerOpen = true"
-            class="theme-btn-primary flex items-center gap-2 justify-center"
+            class="theme-btn-primary flex items-center gap-2"
         >
-            <svg
-                class="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                stroke-width="2"
-            >
-                <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M12 4v16m8-8H4"
-                />
-            </svg>
-            Add Customer
+            + Add Customer
         </button>
     </header>
 
-    <!-- Stats Cards – exact dashboard KPI style -->
-    {% set owing = customers | selectattr('balance_cents', 'gt', 0) | list %} {%
-    set total_owed = (owing | sum(attribute='balance_cents') / 100) | round(2)
-    %}
-
+    <!-- Stats -->
     <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div
-            class="theme-card p-6 hover:border-app-accent transition-colors group"
-        >
+        <div class="theme-card p-6">
             <p class="text-sm text-gray-400 mb-2">Total Customers</p>
-            <p class="text-3xl font-bold text-gray-200 mb-1">
-                {{ customers | length }}
-            </p>
+            <p class="text-3xl font-bold">{{ customers | length }}</p>
             <p class="text-xs text-gray-500">In system</p>
         </div>
-        <div
-            class="theme-card p-6 hover:border-app-danger transition-colors group"
-        >
+
+        <div class="theme-card p-6">
             <p class="text-sm text-gray-400 mb-2">Total Owed</p>
             <p
-                class="text-3xl font-bold mb-1 {{ 'theme-text-danger' if total_owed > 0 else 'text-gray-300' }}"
+                class="text-3xl font-bold {{ 'theme-text-danger' if total_owed > 0 else 'text-gray-300' }}"
             >
                 ${{ total_owed }}
             </p>
             <p class="text-xs text-gray-500">
-                {{ owing | length }} customer{{ 's' if owing != 1 else '' }}
+                {{ owing_count }} customer{{ 's' if owing_count != 1 else '' }}
             </p>
         </div>
-        <div
-            class="theme-card p-6 hover:border-app-warning transition-colors group"
-        >
+
+        <div class="theme-card p-6">
             <p class="text-sm text-gray-400 mb-2">Customers Owing</p>
-            <p class="text-3xl font-bold mb-1 text-amber-400">
-                {{ owing | length }}
-            </p>
+            <p class="text-3xl font-bold text-amber-400">{{ owing_count }}</p>
             <p class="text-xs text-gray-500">Active balances</p>
         </div>
-        <div
-            class="theme-card p-6 hover:border-app-success transition-colors group"
-        >
+
+        <div class="theme-card p-6">
             <p class="text-sm text-gray-400 mb-2">Avg Balance</p>
-            <p class="text-3xl font-bold mb-1 text-app-accent">
-                {% if owing > 0 %}${{ (total_owed / owing) | round(2) }}{% else
-                %}$0.00{% endif %}
+            <p class="text-3xl font-bold text-app-accent">
+                {% if owing_count > 0 %} ${{ (total_owed / owing_count) |
+                round(2) }} {% else %} $0.00 {% endif %}
             </p>
             <p class="text-xs text-gray-500">Per owing customer</p>
         </div>
     </section>
 
-    <!-- Bulk Actions – dashboard card feel -->
+    <!-- Bulk Bar -->
     <div
-        id="bulk-bar"
         x-show="selectedIds.length > 0"
-        class="sticky top-4 z-20 theme-card px-6 py-4 shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+        class="sticky top-4 z-20 theme-card px-6 py-4 flex justify-between items-center"
     >
-        <span class="text-sm font-medium text-gray-300">
-            <span
-                class="text-gray-200 font-bold"
-                x-text="selectedIds.length"
-            ></span>
-            selected
+        <span class="text-sm">
+            <strong x-text="selectedIds.length"></strong> selected
         </span>
-        <div class="flex flex-wrap gap-3">
-            <button
-                type="button"
-                hx-post="/calendar/add_to_route"
-                hx-vals='{"customers": selectedIds}'
-                hx-swap="none"
-                hx-on::after-request="selectedIds = []; selectAll = false"
-                class="theme-btn-primary px-6 py-2.5"
-            >
-                Add to Route
-            </button>
-            <button
-                type="button"
-                @click="selectedIds = []; selectAll = false"
-                class="theme-btn-secondary px-6 py-2.5"
-            >
-                Clear
-            </button>
-        </div>
+        <button
+            type="button"
+            hx-post="/calendar/add_to_route"
+            hx-vals='{"customers": selectedIds}'
+            hx-swap="none"
+            @click="clearSelection()"
+            class="theme-btn-primary"
+        >
+            Add to Route
+        </button>
     </div>
 
-    <!-- Customer List Card -->
+    <!-- Table -->
     <section class="theme-card overflow-hidden">
-        <!-- Controls -->
-        <div
-            class="p-6 border-b border-gray-800 flex flex-col lg:flex-row lg:items-center justify-between gap-6"
-        >
-            <div class="flex items-baseline gap-4">
-                <h2 class="text-xl font-semibold text-gray-200">
-                    Customer List
-                </h2>
-                <span class="text-sm text-gray-500"
-                    >({{ customers | length }})</span
-                >
-            </div>
-
-            <div class="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
-                <div class="relative flex-1 min-w-[300px]">
-                    <input
-                        type="search"
-                        placeholder="Search name, phone, email, address, notes…"
-                        @input.debounce.250ms="filterRows"
-                        class="theme-input pl-11"
-                        x-model="searchTerm"
-                    />
-                    <svg
-                        class="w-5 h-5 text-gray-500 absolute left-4 top-1/2 -translate-y-1/2"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        stroke-width="2"
-                    >
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
-                        />
-                    </svg>
-                </div>
-                <div class="flex gap-3 flex-wrap">
-                    <button
-                        @click="compactMode = !compactMode"
-                        class="theme-btn-secondary px-5 py-3"
-                    >
-                        <template x-if="!compactMode">Compact</template>
-                        <template x-if="compactMode">Comfort</template>
-                    </button>
-                    <button
-                        @click="selectMode = !selectMode"
-                        class="theme-btn-secondary px-5 py-3"
-                    >
-                        <template x-if="!selectMode">Select</template>
-                        <template x-if="selectMode">Done</template>
-                    </button>
-                </div>
-            </div>
+        <div class="p-6 border-b border-gray-800 flex justify-between">
+            <h2 class="text-xl font-semibold">Customer List</h2>
+            <input
+                type="search"
+                placeholder="Search customers…"
+                class="theme-input max-w-sm"
+                x-model="searchTerm"
+            />
         </div>
 
-        <!-- Table -->
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-800 text-sm">
-                <thead class="bg-gray-900/70 sticky top-0 z-10">
+                <thead class="bg-gray-900/70">
                     <tr>
-                        <th class="theme-table-th w-12">
-                            <input
-                                type="checkbox"
-                                x-show="selectMode"
-                                x-model="selectAll"
-                                class="h-5 w-5 rounded border-gray-700 text-app-accent focus:ring-app-accent bg-gray-800"
-                            />
+                        <th class="theme-table-th w-10">
+                            <input type="checkbox" x-model="selectAll" />
                         </th>
-                        <th
-                            class="theme-table-th cursor-pointer"
-                            @click="sort('name')"
-                        >
-                            Name
-                        </th>
-                        <th
-                            class="theme-table-th cursor-pointer hidden lg:table-cell"
-                            @click="sort('phone')"
-                        >
+                        <th class="theme-table-th">Name</th>
+                        <th class="theme-table-th hidden md:table-cell">
                             Phone
                         </th>
-                        <th
-                            class="theme-table-th cursor-pointer hidden lg:table-cell"
-                            @click="sort('email')"
-                        >
+                        <th class="theme-table-th hidden md:table-cell">
                             Email
                         </th>
-                        <th class="theme-table-th hidden xl:table-cell">
-                            Address
-                        </th>
-                        <th
-                            class="theme-table-th text-right cursor-pointer"
-                            @click="sort('balance')"
-                        >
-                            Balance
-                        </th>
-                        <th
-                            class="theme-table-th hidden md:table-cell cursor-pointer"
-                            @click="sort('lastvisit')"
-                        >
-                            Last Visit
-                        </th>
-                        <th class="theme-table-th text-right">Notes</th>
+                        <th class="theme-table-th text-right">Balance</th>
                         <th class="theme-table-th text-right">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-800">
-                    <template
-                        x-for="customer in filteredCustomers"
-                        :key="customer.id"
-                    >
-                        <tr
-                            class="theme-table-row"
-                            :class="{ 'density-compact': compactMode }"
-                        >
+                    <template x-for="c in filteredCustomers" :key="c.id">
+                        <tr>
                             <td class="theme-table-td">
                                 <input
                                     type="checkbox"
-                                    x-show="selectMode"
-                                    :value="customer.id"
+                                    :value="c.id"
                                     x-model="selectedIds"
-                                    class="h-5 w-5 rounded border-gray-700 text-app-accent focus:ring-app-accent bg-gray-800"
                                 />
                             </td>
                             <td class="theme-table-td font-medium">
                                 <button
-                                    @click="openEdit(customer)"
                                     class="text-app-accent hover:underline"
-                                >
-                                    <span x-text="customer.name"></span>
-                                </button>
-                            </td>
-                            <td class="theme-table-td hidden lg:table-cell">
-                                <template x-if="customer.phone">
-                                    <a
-                                        :href="'tel:' + customer.phone"
-                                        class="text-app-accent hover:underline"
-                                        x-text="customer.phone"
-                                    ></a>
-                                </template>
-                                <template x-if="!customer.phone">-</template>
-                            </td>
-                            <td class="theme-table-td hidden lg:table-cell">
-                                <template x-if="customer.email">
-                                    <a
-                                        :href="'mailto:' + customer.email"
-                                        class="text-app-accent hover:underline"
-                                        x-text="customer.email"
-                                    ></a>
-                                </template>
-                                <template x-if="!customer.email">-</template>
-                            </td>
-                            <td class="theme-table-td hidden xl:table-cell">
-                                <template x-if="customer.address">
-                                    <a
-                                        :href="'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(customer.address)"
-                                        target="_blank"
-                                        rel="noopener"
-                                        class="text-app-accent hover:underline"
-                                        x-text="customer.address"
-                                    ></a>
-                                </template>
-                                <template x-if="!customer.address">-</template>
+                                    @click="openEdit(c)"
+                                    x-text="c.name"
+                                ></button>
                             </td>
                             <td
+                                class="theme-table-td hidden md:table-cell"
+                                x-text="c.phone || '-'"
+                            ></td>
+                            <td
+                                class="theme-table-td hidden md:table-cell"
+                                x-text="c.email || '-'"
+                            ></td>
+                            <td
                                 class="theme-table-td text-right font-semibold"
-                                :class="balanceClass(customer.balance)"
-                            >
-                                <span
-                                    x-text="'$' + customer.balance.toFixed(2)"
-                                ></span>
-                            </td>
-                            <td class="theme-table-td hidden md:table-cell">
-                                <span
-                                    x-text="customer.lastVisit || 'Never'"
-                                ></span>
-                            </td>
+                                :class="balanceClass(c.balance)"
+                                x-text="'$' + c.balance.toFixed(2)"
+                            ></td>
                             <td class="theme-table-td text-right">
-                                <button
-                                    @click="toggleNotes(customer.id)"
-                                    class="text-app-accent hover:text-blue-300 text-sm font-medium"
-                                >
-                                    <template x-if="!notesOpen[customer.id]"
-                                        >View / Edit</template
-                                    >
-                                    <template x-if="notesOpen[customer.id]"
-                                        >Hide</template
-                                    >
-                                </button>
-                                <div
-                                    x-show="notesOpen[customer.id]"
-                                    class="mt-3"
-                                >
-                                    <form
-                                        hx-post="{{ url_for('customers.update_notes', customer_id=customer.id) }}"
-                                        hx-swap="none"
-                                        hx-on::after-request="toggleNotes(customer.id)"
-                                    >
-                                        <textarea
-                                            name="notes"
-                                            rows="3"
-                                            class="theme-input resize-y"
-                                            x-model="customer.notes"
-                                        ></textarea>
-                                        <div
-                                            class="flex justify-end gap-3 mt-2"
-                                        >
-                                            <button
-                                                type="button"
-                                                @click="toggleNotes(customer.id)"
-                                                class="theme-btn-secondary text-xs px-4 py-2"
-                                            >
-                                                Cancel
-                                            </button>
-                                            <button
-                                                type="submit"
-                                                class="theme-btn-primary text-xs px-4 py-2"
-                                            >
-                                                Save
-                                            </button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </td>
-                            <td class="theme-table-td text-right">
-                                <div
-                                    class="flex items-center justify-end gap-3"
+                                <form
+                                    method="post"
+                                    :action="`/customers/delete/${c.id}`"
+                                    data-confirm="Delete this customer?"
                                 >
                                     <button
-                                        @click="openEdit(customer)"
-                                        class="theme-btn-secondary text-sm px-4 py-2"
+                                        class="theme-btn-danger text-xs px-4 py-2"
                                     >
-                                        Edit
+                                        Delete
                                     </button>
-                                    <form
-                                        method="post"
-                                        action="{{ url_for('customers.customer_delete', customer_id=customer.id) }}"
-                                        class="inline"
-                                    >
-                                        <button
-                                            type="submit"
-                                            onclick="
-                                                return confirm(
-                                                    'Delete ' +
-                                                        customer.name +
-                                                        '?',
-                                                );
-                                            "
-                                            class="theme-btn-danger text-sm px-4 py-2"
-                                        >
-                                            Delete
-                                        </button>
-                                    </form>
-                                </div>
+                                </form>
                             </td>
                         </tr>
                     </template>
                 </tbody>
             </table>
+
             <p
                 x-show="filteredCustomers.length === 0"
-                class="py-16 text-center text-gray-500 text-sm"
+                class="py-16 text-center text-gray-500"
             >
                 No customers match your search.
             </p>
         </div>
     </section>
-
-    <!-- Add Customer Modal -->
-    <div
-        x-show="addCustomerOpen"
-        class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
-        @click.away="addCustomerOpen = false"
-        @keydown.escape="addCustomerOpen = false"
-    >
-        <div class="theme-modal" @click.stop>
-            <h2 class="text-2xl font-semibold text-gray-200 mb-6">
-                Add New Customer
-            </h2>
-            <form
-                method="post"
-                action="{{ url_for('customers.customer_add') }}"
-                class="grid grid-cols-1 md:grid-cols-2 gap-6"
-            >
-                <div>
-                    <label class="block text-sm text-gray-400 mb-2"
-                        >Name <span class="text-red-400">*</span></label
-                    >
-                    <input name="name" required class="theme-input" />
-                </div>
-                <div>
-                    <label class="block text-sm text-gray-400 mb-2"
-                        >Phone</label
-                    >
-                    <input name="phone" class="theme-input" />
-                </div>
-                <div>
-                    <label class="block text-sm text-gray-400 mb-2"
-                        >Email</label
-                    >
-                    <input name="email" type="email" class="theme-input" />
-                </div>
-                <div class="md:col-span-2">
-                    <label class="block text-sm text-gray-400 mb-2"
-                        >Address</label
-                    >
-                    <input name="address" class="theme-input" />
-                </div>
-                <div class="md:col-span-2">
-                    <label class="block text-sm text-gray-400 mb-2"
-                        >Notes</label
-                    >
-                    <textarea
-                        name="notes"
-                        rows="3"
-                        class="theme-input resize-y"
-                    ></textarea>
-                </div>
-                <div>
-                    <label class="block text-sm text-gray-400 mb-2"
-                        >Starting Balance ($)</label
-                    >
-                    <input
-                        name="balance"
-                        type="number"
-                        step="0.01"
-                        value="0.00"
-                        class="theme-input"
-                    />
-                </div>
-                <div class="md:col-span-2 flex justify-end gap-4">
-                    <button
-                        type="button"
-                        @click="addCustomerOpen = false"
-                        class="theme-btn-secondary px-6 py-3"
-                    >
-                        Cancel
-                    </button>
-                    <button type="submit" class="theme-btn-primary px-6 py-3">
-                        Add Customer
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Edit Customer Modal -->
-    <div
-        x-show="editCustomerOpen"
-        class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
-        @click.away="editCustomerOpen = false"
-        @keydown.escape="editCustomerOpen = false"
-    >
-        <div class="theme-modal" @click.stop>
-            <h3 class="text-2xl font-semibold text-gray-200 mb-6">
-                Edit Customer
-            </h3>
-            <form
-                method="post"
-                :action="`/customers/edit/${editCustomer.id}`"
-                class="space-y-6"
-            >
-                <input
-                    type="hidden"
-                    name="customer_id"
-                    x-model="editCustomer.id"
-                />
-                <div>
-                    <label class="block text-sm text-gray-400 mb-2"
-                        >Name <span class="text-red-400">*</span></label
-                    >
-                    <input
-                        name="name"
-                        required
-                        x-model="editCustomer.name"
-                        class="theme-input"
-                    />
-                </div>
-                <div>
-                    <label class="block text-sm text-gray-400 mb-2"
-                        >Phone</label
-                    >
-                    <input
-                        name="phone"
-                        x-model="editCustomer.phone"
-                        class="theme-input"
-                    />
-                </div>
-                <div>
-                    <label class="block text-sm text-gray-400 mb-2"
-                        >Email</label
-                    >
-                    <input
-                        name="email"
-                        type="email"
-                        x-model="editCustomer.email"
-                        class="theme-input"
-                    />
-                </div>
-                <div>
-                    <label class="block text-sm text-gray-400 mb-2"
-                        >Address</label
-                    >
-                    <input
-                        name="address"
-                        x-model="editCustomer.address"
-                        class="theme-input"
-                    />
-                </div>
-                <div>
-                    <label class="block text-sm text-gray-400 mb-2"
-                        >Notes</label
-                    >
-                    <textarea
-                        name="notes"
-                        rows="4"
-                        x-model="editCustomer.notes"
-                        class="theme-input resize-y"
-                    ></textarea>
-                </div>
-                <div>
-                    <label class="block text-sm text-gray-400 mb-2"
-                        >Balance ($)</label
-                    >
-                    <input
-                        name="balance"
-                        type="number"
-                        step="0.01"
-                        x-model="editCustomer.balance"
-                        class="theme-input font-medium"
-                    />
-                </div>
-                <div class="flex gap-4 pt-4">
-                    <button
-                        type="button"
-                        @click="editCustomerOpen = false"
-                        class="theme-btn-secondary flex-1 py-3.5"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="submit"
-                        class="theme-btn-primary flex-1 py-3.5"
-                    >
-                        Save Changes
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
 </div>
 
 <script>
@@ -570,49 +172,44 @@
         Alpine.data("customersApp", () => ({
             addCustomerOpen: false,
             editCustomerOpen: false,
-            editCustomer: {
-                id: "",
-                name: "",
-                phone: "",
-                email: "",
-                address: "",
-                notes: "",
-                balance: "",
-            },
-            selectMode: false,
-            selectAll: false,
-            selectedIds: [],
-            compactMode: false,
-            notesOpen: {},
             searchTerm: "",
+            selectedIds: [],
+            selectAll: false,
+            editCustomer: {},
 
             get filteredCustomers() {
-                if (!this.searchTerm) return customers; // customers array from Jinja
-                const term = this.searchTerm.toLowerCase();
-                return customers.filter(
-                    (c) =>
-                        c.name.toLowerCase().includes(term) ||
-                        (c.phone && c.phone.toLowerCase().includes(term)) ||
-                        (c.email && c.email.toLowerCase().includes(term)) ||
-                        (c.address && c.address.toLowerCase().includes(term)) ||
-                        (c.notes && c.notes.toLowerCase().includes(term)),
+                const t = this.searchTerm.toLowerCase();
+                if (!t) return customers;
+                return customers.filter((c) =>
+                    [c.name, c.phone, c.email, c.address, c.notes]
+                        .filter(Boolean)
+                        .some((v) => v.toLowerCase().includes(t)),
                 );
             },
 
-            openEdit(customer) {
-                this.editCustomer = { ...customer };
+            $watch: {
+                selectAll(val) {
+                    this.selectedIds = val
+                        ? this.filteredCustomers.map((c) => c.id)
+                        : [];
+                },
+            },
+
+            clearSelection() {
+                this.selectAll = false;
+                this.selectedIds = [];
+            },
+
+            openEdit(c) {
+                this.editCustomer = { ...c };
                 this.editCustomerOpen = true;
             },
 
-            toggleNotes(id) {
-                this.$set(this.notesOpen, id, !this.notesOpen[id]);
-            },
-
             balanceClass(balance) {
-                if (balance > 0 && balance < 20) return "text-yellow-300";
+                if (balance <= 0) return "text-gray-400";
+                if (balance < 20) return "text-yellow-300";
                 if (balance < 100) return "text-orange-400";
-                if (balance > 0) return "theme-text-danger";
-                return "text-gray-400";
+                return "theme-text-danger";
             },
         }));
     });
