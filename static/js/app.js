@@ -58,7 +58,7 @@
   }
 
   // ---------------------------------------------------------------------------
-  // Alpine component registration (NO EVENTS)
+  // Alpine component registration (NO alpine:init event)
   // ---------------------------------------------------------------------------
   if (!window.Alpine) {
     console.error("Alpine not loaded before app.js");
@@ -66,20 +66,16 @@
   }
 
   Alpine.data("customerTable", ({ mode }) => ({
-    // -----------------------------------------------------------------------
-    // State
-    // -----------------------------------------------------------------------
     mode, // 'customers' | 'balances'
 
+    // Data source: templates must set window.CUSTOMERS = {{ customers|tojson }}
     rows: Array.isArray(window.CUSTOMERS) ? window.CUSTOMERS : [],
 
     searchTerm: "",
     sortKey: mode === "balances" ? "balance" : "name",
     sortDir: mode === "balances" ? "desc" : "asc",
 
-    // -----------------------------------------------------------------------
-    // Actions
-    // -----------------------------------------------------------------------
+    // ---------------- Actions ----------------
     sortBy(key) {
       if (this.sortKey === key) {
         this.sortDir = this.sortDir === "asc" ? "desc" : "asc";
@@ -94,19 +90,19 @@
       return this.sortDir === "asc" ? "▲" : "▼";
     },
 
-    // -----------------------------------------------------------------------
-    // Computed
-    // -----------------------------------------------------------------------
+    // ---------------- Computed ----------------
     get filteredRows() {
       const t = this.searchTerm.toLowerCase();
 
       let rows = !t
         ? this.rows
-        : this.rows.filter((c) =>
-            [c.name, c.phone, c.email, c.address, c.notes]
+        : this.rows.filter((c) => {
+            const haystack = [c.name, c.phone, c.email, c.address, c.notes]
               .filter(Boolean)
-              .some((v) => v.toLowerCase().includes(t))
-          );
+              .map((v) => String(v).toLowerCase());
+
+            return haystack.some((v) => v.includes(t));
+          });
 
       if (this.mode === "balances") {
         rows = rows.filter((c) => Number(c.balance) > 0);
@@ -125,9 +121,7 @@
       });
     },
 
-    // -----------------------------------------------------------------------
-    // Helpers
-    // -----------------------------------------------------------------------
+    // ---------------- Helpers ----------------
     balanceClass(balance) {
       const n = Number(balance);
       if (!Number.isFinite(n) || n <= 0) return "text-gray-400";
@@ -135,7 +129,7 @@
       if (n < 100) return "text-orange-400";
       return "theme-text-danger";
     },
-  });
+  }));
 
   // ---------------------------------------------------------------------------
   // Boot
