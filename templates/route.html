@@ -1,0 +1,661 @@
+{% extends "base.html" %}
+{% block title %}Today's Route{% endblock %}
+{% block content %}
+
+<div class="max-w-4xl mx-auto">
+    <!-- Header -->
+    <section class="mb-8">
+    <section class="mb-8">
+        <div class="flex items-center justify-between mb-2">
+            <h2 class="text-3xl font-bold">Today's Route</h2>
+            <div class="flex gap-3">
+                <button
+                    onclick="openAddCustomerModal()"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2"
+                >
+                    <svg
+                        class="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M12 4v16m8-8H4"
+                        />
+                    </svg>
+                    Add Stop
+                </button>
+                {% if stops %}
+                <button
+                    onclick="toggleSelectMode()"
+                    class="text-sm text-gray-400 hover:text-blue-400 transition px-4 py-2"
+                >
+                    <span id="selectModeText">Select Multiple</span>
+                </button>
+                {% endif %}
+            </div>
+        </div>
+        <p class="text-gray-400">{{ today.strftime("%A, %B %d") }}</p>
+    </section>
+
+    {% if not stops %}
+    <!-- Empty State -->
+    <section
+        class="bg-gray-900 border border-gray-800 rounded-2xl p-12 text-center shadow-lg"
+    >
+        <div class="max-w-md mx-auto">
+            <div class="text-5xl mb-4">📍</div>
+            <h3 class="text-2xl font-semibold mb-3">No route yet</h3>
+            <p class="text-gray-400 mb-6">
+                Your route for today is empty. Start by adding customers to
+                build your plan.
+            </p>
+            <button
+                onclick="openAddCustomerModal()"
+                class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition"
+            >
+                + Add Customers
+            </button>
+            <p class="text-sm text-gray-500 mt-6">
+                Search and select customers to add to your route.
+            </p>
+        </div>
+    </section>
+
+    {% else %} {% set completed = stops | selectattr("completed") | list %} {%
+    set remaining = stops | rejectattr("completed") | list %}
+
+    <!-- Progress Card -->
+    <section class="mb-8">
+        <div
+            class="bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl p-6 shadow-lg"
+        >
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-white/80 text-sm font-medium mb-1">
+                        Progress
+                    </h3>
+                    <p class="text-4xl font-bold text-white">
+                        {{ completed | length }} / {{ stops | length }}
+                    </p>
+                    <p class="text-white/70 text-sm mt-1">stops completed</p>
+                </div>
+                <div class="text-right">
+                    <div class="text-5xl font-bold text-white/20">
+                        {{ ((completed | length / stops | length) * 100) | round
+                        | int }}%
+                    </div>
+                </div>
+            </div>
+            <!-- Progress Bar -->
+            <div class="mt-4 bg-white/20 rounded-full h-2 overflow-hidden">
+                <div
+                    class="bg-white h-full rounded-full transition-all duration-500"
+                    style="width: {{ ((completed | length / stops | length) * 100) | round }}%"
+                ></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Bulk Actions (hidden by default) -->
+    <div
+        id="bulkActions"
+        class="hidden mb-6 bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-center justify-between"
+    >
+        <span class="text-sm text-gray-400">
+            <span id="selectedCount">0</span> selected
+        </span>
+        <div class="flex gap-2">
+            <button
+                onclick="bulkComplete()"
+                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition"
+            >
+                Complete Selected
+            </button>
+            <button
+                onclick="bulkRemove()"
+                class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition"
+            >
+                Remove Selected
+            </button>
+            <button
+                onclick="cancelSelect()"
+                class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm transition"
+            >
+                Cancel
+            </button>
+        </div>
+    </div>
+
+    <!-- Remaining Stops -->
+    <section class="mb-10">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-semibold">Remaining Stops</h3>
+            {% if remaining %}
+            <span class="text-sm text-gray-400"
+                >{{ remaining | length }} stop{{ 's' if remaining | length != 1
+                }}</span
+            >
+            {% endif %}
+        </div>
+
+        {% if remaining %}
+        <ul class="space-y-3" id="stopsList">
+            {% for stop in remaining %}
+            <li
+                class="bg-gray-900 border border-gray-800 rounded-xl p-5 hover:border-blue-500/50 transition group relative"
+                data-stop-id="{{ stop.stop_id }}"
+            >
+                <!-- Owes Money Badge -->
+                {% if stop.customer_balance and stop.customer_balance > 0 %}
+                <div class="absolute -top-2 -right-2 z-10">
+                    <div
+                        class="bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg flex items-center gap-1 animate-pulse"
+                    >
+                        <svg
+                            class="w-3 h-3"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                        >
+                            <path
+                                d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"
+                            />
+                            <path
+                                fill-rule="evenodd"
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z"
+                                clip-rule="evenodd"
+                            />
+                        </svg>
+                        ${{ (stop.customer_balance / 100) | round(2) }}
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="flex items-start gap-4">
+                    <!-- Drag Handle -->
+                    <button
+                        class="drag-handle text-gray-600 hover:text-gray-400 cursor-move pt-1 opacity-0 group-hover:opacity-100 transition"
+                    >
+                        <svg
+                            class="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M4 8h16M4 16h16"
+                            />
+                        </svg>
+                    </button>
+
+                    <!-- Checkbox (hidden by default) -->
+                    <input
+                        type="checkbox"
+                        class="stop-checkbox hidden w-5 h-5 rounded border-gray-700 bg-gray-800 text-blue-600 focus:ring-2 focus:ring-blue-500 mt-1"
+                    />
+
+                    <!-- Stop Content -->
+                    <div class="flex-1">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <h4 class="font-medium text-lg">
+                                        {{ stop.name }}
+                                    </h4>
+                                    {% if stop.customer_balance and
+                                    stop.customer_balance > 0 %}
+                                    <span
+                                        class="text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full font-medium"
+                                    >
+                                        Owes ${{ (stop.customer_balance / 100) |
+                                        round(2) }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                {% if stop.customer_address %}
+                                <a
+                                    href="https://www.google.com/maps/search/?api=1&query={{ stop.customer_address | urlencode }}"
+                                    target="_blank"
+                                    rel="noopener"
+                                    class="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1 mt-1"
+                                >
+                                    <svg
+                                        class="w-4 h-4"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                                        />
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                                        />
+                                    </svg>
+                                    {{ stop.customer_address }}
+                                </a>
+                                {% endif %} {% if stop.customer_phone %}
+                                <a
+                                    href="tel:{{ stop.customer_phone }}"
+                                    class="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1 mt-1"
+                                >
+                                    <svg
+                                        class="w-4 h-4"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                                        />
+                                    </svg>
+                                    {{ stop.customer_phone }}
+                                </a>
+                                {% endif %}
+                            </div>
+
+                            <!-- Quick Actions -->
+                            <div class="flex gap-2 stop-actions">
+                                <form
+                                    method="post"
+                                    action="{{ url_for('route.route_complete', stop_id=stop.stop_id) }}"
+                                >
+                                    <button
+                                        type="submit"
+                                        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1"
+                                    >
+                                        <svg
+                                            class="w-4 h-4"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                                stroke-width="2"
+                                                d="M5 13l4 4L19 7"
+                                            />
+                                        </svg>
+                                        Complete
+                                    </button>
+                                </form>
+                                <button
+                                    onclick="toggleNotes(this)"
+                                    class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm transition"
+                                >
+                                    Notes
+                                </button>
+                                <form
+                                    method="post"
+                                    action="{{ url_for('route.route_remove', stop_id=stop.stop_id) }}"
+                                >
+                                    <button
+                                        type="submit"
+                                        class="text-gray-400 hover:text-red-400 px-3 py-2 rounded-lg transition"
+                                        onclick="
+                                            return confirm('Remove this stop?');
+                                        "
+                                    >
+                                        <svg
+                                            class="w-5 h-5"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                                stroke-width="2"
+                                                d="M6 18L18 6M6 6l12 12"
+                                            />
+                                        </svg>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Notes Section (collapsible) -->
+                        <div
+                            class="notes-section hidden mt-4 pt-4 border-t border-gray-800"
+                        >
+                            <form
+                                method="post"
+                                action="{{ url_for('route.route_update_notes', stop_id=stop.stop_id) }}"
+                            >
+                                <textarea
+                                    name="notes"
+                                    placeholder="Add notes for this stop…"
+                                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                                    rows="3"
+                                >
+{{ stop.notes or "" }}</textarea
+                                >
+                                <div class="flex gap-2 mt-2">
+                                    <button
+                                        type="submit"
+                                        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition"
+                                    >
+                                        Save Notes
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <div
+            class="bg-gray-900 border border-gray-800 rounded-xl p-8 text-center"
+        >
+            <div class="text-4xl mb-3">🎉</div>
+            <p class="text-gray-400">
+                No remaining stops. You're done for today!
+            </p>
+        </div>
+        {% endif %}
+    </section>
+
+    <!-- Completed Stops -->
+    {% if completed %}
+    <section>
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-semibold">Completed</h3>
+            <span class="text-sm text-gray-400"
+                >{{ completed | length }} stop{{ 's' if completed | length != 1
+                }}</span
+            >
+        </div>
+        <ul class="space-y-2">
+            {% for stop in completed %}
+            <li
+                class="bg-gray-900/50 border border-gray-800/50 rounded-lg p-4 flex items-center gap-3 opacity-60"
+            >
+                <svg
+                    class="w-5 h-5 text-green-500 flex-shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                </svg>
+                <div class="flex-1">
+                    <span class="line-through text-gray-500"
+                        >{{ stop.name }}</span
+                    >
+                    {% if stop.notes %}
+                    <p class="text-xs text-gray-600 mt-1">{{ stop.notes }}</p>
+                    {% endif %}
+                </div>
+                {% if stop.completed_at %}
+                <span class="ml-auto text-xs text-gray-600"
+                    >{{ stop.completed_at.strftime("%I:%M %p") }}</span
+                >
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+    </section>
+    {% endif %} {% endif %}
+</div>
+
+<!-- Add Customer Modal -->
+<div
+    id="addCustomerModal"
+    class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 hidden"
+>
+    <div
+        class="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col"
+    >
+        <!-- Modal Header -->
+        <div
+            class="p-6 border-b border-gray-800 flex items-center justify-between"
+        >
+            <h3 class="text-xl font-semibold">Add Customer to Route</h3>
+            <button
+                onclick="closeAddCustomerModal()"
+                class="text-gray-400 hover:text-white transition"
+            >
+                <svg
+                    class="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12"
+                    />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="p-6 border-b border-gray-800">
+            <input
+                type="text"
+                id="customerSearch"
+                placeholder="Search customers by name, phone, or address..."
+                class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                oninput="searchCustomers()"
+            />
+        </div>
+
+        <!-- Customer List -->
+        <div class="flex-1 overflow-y-auto p-6" id="customerList">
+            <div class="text-center text-gray-500 py-8">
+                Loading customers...
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let selectMode = false;
+    let allCustomers = [];
+
+    // Load customers on page load
+    document.addEventListener("DOMContentLoaded", () => {
+        fetchCustomers();
+    });
+
+    async function fetchCustomers() {
+        try {
+            const response = await fetch(
+                '{{ url_for("customers.get_customers_json") }}',
+            );
+            allCustomers = await response.json();
+        } catch (error) {
+            console.error("Error fetching customers:", error);
+        }
+    }
+
+    function openAddCustomerModal() {
+        document.getElementById("addCustomerModal").classList.remove("hidden");
+        renderCustomers(allCustomers);
+        document.getElementById("customerSearch").focus();
+    }
+
+    function closeAddCustomerModal() {
+        document.getElementById("addCustomerModal").classList.add("hidden");
+        document.getElementById("customerSearch").value = "";
+    }
+
+    function searchCustomers() {
+        const query = document
+            .getElementById("customerSearch")
+            .value.toLowerCase();
+        const filtered = allCustomers.filter(
+            (c) =>
+                c.name.toLowerCase().includes(query) ||
+                (c.phone && c.phone.toLowerCase().includes(query)) ||
+                (c.address && c.address.toLowerCase().includes(query)),
+        );
+        renderCustomers(filtered);
+    }
+
+    function renderCustomers(customers) {
+        const listEl = document.getElementById("customerList");
+
+        if (customers.length === 0) {
+            listEl.innerHTML =
+                '<div class="text-center text-gray-500 py-8">No customers found</div>';
+            return;
+        }
+
+        listEl.innerHTML = customers
+            .map((c) => {
+                const balance = c.balance_cents / 100;
+                const hasBalance = balance > 0;
+
+                return `
+            <div class="bg-gray-800 border border-gray-700 rounded-lg p-4 hover:border-blue-500 transition mb-3 ${hasBalance ? "border-amber-500/30" : ""}">
+                <div class="flex items-start justify-between">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-2">
+                            <h4 class="font-medium text-lg">${c.name}</h4>
+                            ${
+                                hasBalance
+                                    ? `
+                                <span class="text-xs bg-amber-500/20 text-amber-400 px-2 py-1 rounded-full font-bold flex items-center gap-1">
+                                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"/>
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clip-rule="evenodd"/>
+                                    </svg>
+                                    Owes $${balance.toFixed(2)}
+                                </span>
+                            `
+                                    : ""
+                            }
+                        </div>
+                        ${c.phone ? `<p class="text-sm text-gray-400">${c.phone}</p>` : ""}
+                        ${c.address ? `<p class="text-sm text-gray-400">${c.address}</p>` : ""}
+                        ${c.last_visit_at ? `<p class="text-xs text-gray-500 mt-1">Last visit: ${c.last_visit_at}</p>` : ""}
+                    </div>
+                    <form method="post" action="{{ url_for('route.route_add') }}" class="ml-4">
+                        <input type="hidden" name="customer_id" value="${c.id}">
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+                            Add to Route
+                        </button>
+                    </form>
+                </div>
+            </div>
+        `;
+            })
+            .join("");
+    }
+
+    function toggleSelectMode() {
+        selectMode = !selectMode;
+        const checkboxes = document.querySelectorAll(".stop-checkbox");
+        const bulkActions = document.getElementById("bulkActions");
+        const selectModeText = document.getElementById("selectModeText");
+        const stopActions = document.querySelectorAll(".stop-actions");
+
+        if (selectMode) {
+            checkboxes.forEach((cb) => cb.classList.remove("hidden"));
+            stopActions.forEach((sa) => sa.classList.add("hidden"));
+            bulkActions.classList.remove("hidden");
+            selectModeText.textContent = "Cancel";
+        } else {
+            checkboxes.forEach((cb) => {
+                cb.classList.add("hidden");
+                cb.checked = false;
+            });
+            stopActions.forEach((sa) => sa.classList.remove("hidden"));
+            bulkActions.classList.add("hidden");
+            selectModeText.textContent = "Select Multiple";
+            updateSelectedCount();
+        }
+    }
+
+    function cancelSelect() {
+        toggleSelectMode();
+    }
+
+    function updateSelectedCount() {
+        const checked = document.querySelectorAll(
+            ".stop-checkbox:checked",
+        ).length;
+        document.getElementById("selectedCount").textContent = checked;
+    }
+
+    document.addEventListener("change", (e) => {
+        if (e.target.classList.contains("stop-checkbox")) {
+            updateSelectedCount();
+        }
+    });
+
+    function bulkComplete() {
+        const selected = Array.from(
+            document.querySelectorAll(".stop-checkbox:checked"),
+        ).map((cb) => cb.closest("li").dataset.stopId);
+
+        if (selected.length === 0) return;
+        alert(
+            `Would complete ${selected.length} stops. Backend batch endpoint needed.`,
+        );
+    }
+
+    function bulkRemove() {
+        const selected = Array.from(
+            document.querySelectorAll(".stop-checkbox:checked"),
+        ).map((cb) => cb.closest("li").dataset.stopId);
+
+        if (selected.length === 0) return;
+
+        if (confirm(`Remove ${selected.length} stops?`)) {
+            alert(
+                `Would remove ${selected.length} stops. Backend batch endpoint needed.`,
+            );
+        }
+    }
+
+    function toggleNotes(button) {
+        const li = button.closest("li");
+        const notesSection = li.querySelector(".notes-section");
+        notesSection.classList.toggle("hidden");
+    }
+
+    // Close modal on escape
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+            closeAddCustomerModal();
+        }
+    });
+
+    // Close modal when clicking outside
+    document
+        .getElementById("addCustomerModal")
+        ?.addEventListener("click", (e) => {
+            if (e.target.id === "addCustomerModal") {
+                closeAddCustomerModal();
+            }
+        });
+</script>
+
+{% endblock %}

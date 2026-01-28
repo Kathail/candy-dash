@@ -1,0 +1,596 @@
+{% extends "base.html" %} {% block title %}Customers{% endblock %} {% block
+content %}
+
+<div class="max-w-7xl mx-auto">
+    <!-- Header -->
+    <div class="mb-8">
+        <div class="flex items-center justify-between mb-2">
+            <div>
+                <h2 class="text-3xl font-bold">Customers</h2>
+                <p class="text-gray-400 mt-1">
+                    Manage your customer list and balances
+                </p>
+            </div>
+            <button
+                onclick="
+                    document
+                        .getElementById('addForm')
+                        .scrollIntoView({ behavior: 'smooth' })
+                "
+                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2"
+            >
+                <svg
+                    class="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M12 4v16m8-8H4"
+                    />
+                </svg>
+                Add Customer
+            </button>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div
+            class="bg-gray-900 border border-gray-800 rounded-xl p-6 shadow-lg"
+        >
+            <div class="flex items-center justify-between mb-2">
+                <p
+                    class="text-sm text-gray-400 uppercase tracking-wide font-medium"
+                >
+                    Total Customers
+                </p>
+                <svg
+                    class="w-5 h-5 text-blue-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                    />
+                </svg>
+            </div>
+            <p class="text-4xl font-bold">{{ customers|length }}</p>
+        </div>
+
+        <div
+            class="bg-gray-900 border border-gray-800 rounded-xl p-6 shadow-lg"
+        >
+            <div class="flex items-center justify-between mb-2">
+                <p
+                    class="text-sm text-gray-400 uppercase tracking-wide font-medium"
+                >
+                    Total Owed
+                </p>
+                <svg
+                    class="w-5 h-5 text-red-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                </svg>
+            </div>
+            <p class="text-4xl font-bold text-red-400">
+                ${{ (customers | sum(attribute='balance_cents') / 100) |
+                round(2) }}
+            </p>
+        </div>
+
+        <div
+            class="bg-gray-900 border border-gray-800 rounded-xl p-6 shadow-lg"
+        >
+            <div class="flex items-center justify-between mb-2">
+                <p
+                    class="text-sm text-gray-400 uppercase tracking-wide font-medium"
+                >
+                    Customers Owing
+                </p>
+                <svg
+                    class="w-5 h-5 text-amber-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
+                </svg>
+            </div>
+            <p class="text-4xl font-bold text-amber-400">
+                {{ customers | selectattr('balance_cents', 'gt', 0) | list |
+                length }}
+            </p>
+        </div>
+    </div>
+
+    <!-- Customer List -->
+    <div
+        class="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden shadow-lg mb-8"
+    >
+        <div
+            class="p-6 border-b border-gray-800 flex items-center justify-between flex-wrap gap-4"
+        >
+            <h3 class="text-xl font-semibold">
+                Customer List ({{ customers|length }})
+            </h3>
+            <input
+                type="text"
+                id="searchInput"
+                placeholder="Search customers..."
+                class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
+            />
+        </div>
+
+        {% if customers %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-left" id="customerTable">
+                <thead class="bg-gray-950">
+                    <tr>
+                        <th
+                            class="px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-blue-400 sortable"
+                            data-sort="name"
+                        >
+                            Name <span class="sort-indicator">⇅</span>
+                        </th>
+                        <th
+                            class="px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-blue-400 sortable"
+                            data-sort="phone"
+                        >
+                            Phone <span class="sort-indicator">⇅</span>
+                        </th>
+                        <th
+                            class="px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider"
+                        >
+                            Address
+                        </th>
+                        <th
+                            class="px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-blue-400 sortable"
+                            data-sort="balance"
+                        >
+                            Balance <span class="sort-indicator">⇅</span>
+                        </th>
+                        <th
+                            class="px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-blue-400 sortable"
+                            data-sort="last_visit"
+                        >
+                            Last Visit <span class="sort-indicator">⇅</span>
+                        </th>
+                        <th
+                            class="px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider text-right"
+                        >
+                            Actions
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-800">
+                    {% for c in customers %}
+                    <tr
+                        class="hover:bg-gray-800 transition"
+                        data-name="{{ c.name }}"
+                        data-phone="{{ c.phone or '' }}"
+                        data-balance="{{ c.balance_cents / 100 }}"
+                        data-last-visit="{{ c.last_visit_at or '' }}"
+                    >
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div
+                                    class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold"
+                                >
+                                    {{ c.name[0].upper() }}
+                                </div>
+                                <div class="font-medium">{{ c.name }}</div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if c.phone %}
+                            <a
+                                href="tel:{{ c.phone }}"
+                                class="text-blue-400 hover:text-blue-300 flex items-center gap-1"
+                            >
+                                <svg
+                                    class="w-4 h-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                                    />
+                                </svg>
+                                {{ c.phone }}
+                            </a>
+                            {% else %}
+                            <span class="text-gray-600">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if c.address %}
+                            <a
+                                href="https://www.google.com/maps/search/?api=1&query={{ c.address | urlencode }}"
+                                target="_blank"
+                                rel="noopener"
+                                class="text-blue-400 hover:text-blue-300 flex items-center gap-1 max-w-xs"
+                            >
+                                <svg
+                                    class="w-4 h-4 flex-shrink-0"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                                    />
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                                    />
+                                </svg>
+                                <span class="truncate">{{ c.address }}</span>
+                            </a>
+                            {% else %}
+                            <span class="text-gray-600">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4">
+                            <span
+                                class="{% if c.balance_cents > 0 %}text-red-400 font-bold{% elif c.balance_cents < 0 %}text-green-400{% else %}text-gray-400{% endif %}"
+                            >
+                                ${{ (c.balance_cents / 100) | round(2) }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-gray-400 text-sm">
+                            {{ c.last_visit_at.strftime('%b %d, %Y') if
+                            c.last_visit_at else "—" }}
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex items-center justify-end gap-2">
+                                <button
+                                    class="edit-button bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm transition"
+                                    data-id="{{ c.id }}"
+                                    data-name="{{ c.name }}"
+                                    data-phone="{{ c.phone or '' }}"
+                                    data-address="{{ c.address or '' }}"
+                                    data-balance="{{ (c.balance_cents / 100) | round(2) }}"
+                                >
+                                    Edit
+                                </button>
+                                <form
+                                    method="post"
+                                    action="{{ url_for('customers.customer_delete', customer_id=c.id) }}"
+                                    class="inline"
+                                    onsubmit="return confirm('Delete {{ c.name }}?');"
+                                >
+                                    <button
+                                        type="submit"
+                                        class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm transition"
+                                    >
+                                        Delete
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="p-12 text-center">
+            <svg
+                class="w-16 h-16 mx-auto mb-4 text-gray-700"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+            >
+                <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                />
+            </svg>
+            <p class="text-gray-400 mb-6">
+                No customers yet. Add your first customer below!
+            </p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Add Form -->
+    <div
+        id="addForm"
+        class="bg-gray-900 border border-gray-800 rounded-2xl p-8 shadow-lg"
+    >
+        <h3 class="text-xl font-semibold mb-6">Add New Customer</h3>
+        <form
+            method="post"
+            action="{{ url_for('customers.customer_add') }}"
+            class="grid grid-cols-1 md:grid-cols-2 gap-6"
+        >
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2"
+                    >Name *</label
+                >
+                <input
+                    type="text"
+                    name="name"
+                    required
+                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="John Doe"
+                />
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2"
+                    >Phone</label
+                >
+                <input
+                    type="tel"
+                    name="phone"
+                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="(555) 123-4567"
+                />
+            </div>
+
+            <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-300 mb-2"
+                    >Address</label
+                >
+                <input
+                    type="text"
+                    name="address"
+                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="123 Main St, Chicago, IL 60601"
+                />
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2"
+                    >Starting Balance ($)</label
+                >
+                <input
+                    type="number"
+                    name="balance"
+                    step="0.01"
+                    min="0"
+                    value="0.00"
+                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <p class="text-xs text-gray-500 mt-1">
+                    Enter as dollars (e.g. 45.50)
+                </p>
+            </div>
+
+            <div class="md:col-span-2 flex justify-end">
+                <button
+                    type="submit"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium transition"
+                >
+                    Add Customer
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div
+    id="editModal"
+    class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 hidden"
+>
+    <div
+        class="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-md p-6 relative"
+    >
+        <button
+            class="close-modal absolute top-4 right-4 text-gray-400 hover:text-white text-2xl transition"
+        >
+            &times;
+        </button>
+        <h3 class="text-xl font-semibold mb-6">Edit Customer</h3>
+        <form id="editForm" method="post">
+            <input type="hidden" id="editId" name="customer_id" />
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1"
+                        >Name</label
+                    >
+                    <input
+                        type="text"
+                        id="editName"
+                        name="name"
+                        required
+                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1"
+                        >Phone</label
+                    >
+                    <input
+                        type="tel"
+                        id="editPhone"
+                        name="phone"
+                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1"
+                        >Address</label
+                    >
+                    <input
+                        type="text"
+                        id="editAddress"
+                        name="address"
+                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1"
+                        >Balance ($)</label
+                    >
+                    <input
+                        type="number"
+                        id="editBalance"
+                        name="balance"
+                        step="0.01"
+                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold text-lg"
+                    />
+                </div>
+                <button
+                    type="submit"
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium transition"
+                >
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .sort-indicator {
+        opacity: 0.3;
+        font-size: 0.8em;
+        margin-left: 0.25rem;
+    }
+    .sortable.asc .sort-indicator::before {
+        content: "↑";
+        opacity: 1;
+    }
+    .sortable.desc .sort-indicator::before {
+        content: "↓";
+        opacity: 1;
+    }
+    .sortable.asc .sort-indicator,
+    .sortable.desc .sort-indicator {
+        opacity: 1;
+    }
+</style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const modal = document.getElementById("editModal");
+        const editForm = document.getElementById("editForm");
+        const searchInput = document.getElementById("searchInput");
+        const table = document.getElementById("customerTable");
+
+        // Edit modal
+        document.querySelectorAll(".edit-button").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                const id = btn.dataset.id;
+                editForm.action =
+                    "{{ url_for('customers.customer_edit', customer_id=0) }}".replace(
+                        "0",
+                        id,
+                    );
+                document.getElementById("editId").value = id;
+                document.getElementById("editName").value = btn.dataset.name;
+                document.getElementById("editPhone").value = btn.dataset.phone;
+                document.getElementById("editAddress").value =
+                    btn.dataset.address;
+                document.getElementById("editBalance").value =
+                    btn.dataset.balance || "0.00";
+                modal.classList.remove("hidden");
+            });
+        });
+
+        document
+            .querySelector(".close-modal")
+            .addEventListener("click", () => modal.classList.add("hidden"));
+        window.addEventListener("click", (e) => {
+            if (e.target === modal) modal.classList.add("hidden");
+        });
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") modal.classList.add("hidden");
+        });
+
+        // Search
+        searchInput?.addEventListener("input", () => {
+            const filter = searchInput.value.toLowerCase();
+            table?.querySelectorAll("tbody tr").forEach((row) => {
+                row.style.display = row.textContent
+                    .toLowerCase()
+                    .includes(filter)
+                    ? ""
+                    : "none";
+            });
+        });
+
+        // Sorting
+        document.querySelectorAll(".sortable").forEach((header) => {
+            header.addEventListener("click", () => {
+                const sortKey = header.dataset.sort;
+                const isAsc = header.classList.contains("asc");
+                const dir = isAsc ? "desc" : "asc";
+
+                document
+                    .querySelectorAll(".sortable")
+                    .forEach((h) => h.classList.remove("asc", "desc"));
+                header.classList.add(dir);
+
+                const tbody = table.querySelector("tbody");
+                const rows = Array.from(tbody.rows);
+
+                rows.sort((a, b) => {
+                    let valA, valB;
+                    switch (sortKey) {
+                        case "name":
+                            valA = a.dataset.name.toLowerCase();
+                            valB = b.dataset.name.toLowerCase();
+                            break;
+                        case "phone":
+                            valA = a.dataset.phone.toLowerCase();
+                            valB = b.dataset.phone.toLowerCase();
+                            break;
+                        case "balance":
+                            valA = parseFloat(a.dataset.balance) || 0;
+                            valB = parseFloat(b.dataset.balance) || 0;
+                            break;
+                        case "last_visit":
+                            valA = a.dataset.lastVisit || "9999";
+                            valB = b.dataset.lastVisit || "9999";
+                            break;
+                    }
+                    if (typeof valA === "number")
+                        return dir === "asc" ? valA - valB : valB - valA;
+                    return dir === "asc"
+                        ? valA.localeCompare(valB)
+                        : valB.localeCompare(valA);
+                });
+
+                rows.forEach((row) => tbody.appendChild(row));
+            });
+        });
+    });
+</script>
+
+{% endblock %}

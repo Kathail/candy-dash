@@ -1,0 +1,493 @@
+{% extends "base.html" %} {% block title %}Dashboard{% endblock %} {% block
+content %}
+
+<div class="max-w-7xl mx-auto">
+    <!-- Header -->
+    <section class="mb-8">
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="text-3xl font-bold mb-2">Welcome Back 👋</h2>
+                <p class="text-gray-400 text-base">
+                    Here's what's happening with your routes today
+                </p>
+            </div>
+            <div class="text-right">
+                <div class="text-sm text-gray-400">
+                    {{ now.strftime('%A') }}
+                </div>
+                <div class="text-lg font-semibold">
+                    {{ now.strftime('%B %d, %Y') }}
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Primary focus card -->
+    <section class="mb-10">
+        <a
+            href="{{ url_for('route.route') }}"
+            class="block bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all relative overflow-hidden group"
+        >
+            <div
+                class="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"
+            ></div>
+            <div class="relative">
+                <div class="flex items-start justify-between mb-4">
+                    <div>
+                        <h3 class="text-white/80 text-sm font-medium mb-2">
+                            Today's Progress
+                        </h3>
+                        <div class="text-6xl font-bold text-white mb-2">
+                            {{ completed_today }} / {{ total_stops_today }}
+                        </div>
+                        <p class="text-white/70 text-lg">stops completed</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-5xl font-bold text-white/20">
+                            {% if total_stops_today > 0 %} {{ ((completed_today
+                            / total_stops_today) * 100) | round | int }}% {%
+                            else %} 0% {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress Bar -->
+                {% if total_stops_today > 0 %}
+                <div class="mb-4 bg-white/20 rounded-full h-3 overflow-hidden">
+                    <div
+                        class="bg-white h-full rounded-full transition-all duration-500"
+                        style="width: {{ ((completed_today / total_stops_today) * 100) | round }}%"
+                    ></div>
+                </div>
+                {% endif %}
+
+                <span class="text-white font-medium flex items-center gap-2">
+                    View full route
+                    <svg
+                        class="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M17 8l4 4m0 0l-4 4m4-4H3"
+                        />
+                    </svg>
+                </span>
+            </div>
+        </a>
+    </section>
+
+    <!-- KPI cards -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+        <a
+            href="{{ url_for('customers.customers') }}"
+            class="bg-gray-900 border border-gray-800 rounded-xl p-5 hover:border-blue-500 transition group"
+        >
+            <div class="flex items-center justify-between mb-3">
+                <h4
+                    class="text-xs font-medium text-gray-400 uppercase tracking-wide"
+                >
+                    Customers
+                </h4>
+                <svg
+                    class="w-5 h-5 text-gray-600 group-hover:text-blue-500 transition"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                    />
+                </svg>
+            </div>
+            <p class="text-3xl font-bold">{{ total_customers }}</p>
+            <p class="text-xs text-gray-500 mt-1">Total in system</p>
+        </a>
+
+        <a
+            href="{{ url_for('balances.balances') }}"
+            class="bg-gray-900 border border-gray-800 rounded-xl p-5 hover:border-red-500 transition group"
+        >
+            <div class="flex items-center justify-between mb-3">
+                <h4
+                    class="text-xs font-medium text-gray-400 uppercase tracking-wide"
+                >
+                    Total Owed
+                </h4>
+                <svg
+                    class="w-5 h-5 text-gray-600 group-hover:text-red-500 transition"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                </svg>
+            </div>
+            <p class="text-3xl font-bold text-red-400">
+                ${{ (total_owed_cents / 100) | round(2) }}
+            </p>
+            <p class="text-xs text-gray-500 mt-1">
+                {{ customers_owing }} customer{{ 's' if customers_owing != 1 }}
+            </p>
+        </a>
+
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+            <div class="flex items-center justify-between mb-3">
+                <h4
+                    class="text-xs font-medium text-gray-400 uppercase tracking-wide"
+                >
+                    Collected Today
+                </h4>
+                <svg
+                    class="w-5 h-5 text-green-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                </svg>
+            </div>
+            <p class="text-3xl font-bold text-green-400">
+                ${{ (collected_today_cents / 100) | round(2) }}
+            </p>
+            <p class="text-xs text-gray-500 mt-1">
+                {{ payments_today }} payment{{ 's' if payments_today != 1 }}
+                recorded
+            </p>
+        </div>
+
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+            <div class="flex items-center justify-between mb-3">
+                <h4
+                    class="text-xs font-medium text-gray-400 uppercase tracking-wide"
+                >
+                    Avg Balance
+                </h4>
+                <svg
+                    class="w-5 h-5 text-blue-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                    />
+                </svg>
+            </div>
+            {% if customers_owing > 0 %}
+            <p class="text-3xl font-bold text-blue-400">
+                ${{ (total_owed_cents / customers_owing / 100) | round(2) }}
+            </p>
+            {% else %}
+            <p class="text-3xl font-bold text-blue-400">$0.00</p>
+            {% endif %}
+            <p class="text-xs text-gray-500 mt-1">Per owing customer</p>
+        </div>
+    </section>
+
+    <!-- Two Column Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
+        <!-- Weekly Summary - 2/3 width -->
+        <section
+            class="lg:col-span-2 bg-gray-900 border border-gray-800 rounded-2xl p-7 shadow-lg"
+        >
+            <h3 class="text-xl font-semibold mb-5">This Week at a Glance</h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-gray-800 rounded-lg p-4 text-center">
+                    <p class="text-xs text-gray-400 mb-2">Stops</p>
+                    <p class="text-3xl font-bold">{{ weekly_stops }}</p>
+                </div>
+                <div class="bg-gray-800 rounded-lg p-4 text-center">
+                    <p class="text-xs text-gray-400 mb-2">Collected</p>
+                    <p class="text-3xl font-bold text-green-400">
+                        ${{ (weekly_collected_cents / 100) | round(0) | int }}
+                    </p>
+                </div>
+                <div class="bg-gray-800 rounded-lg p-4 text-center">
+                    <p class="text-xs text-gray-400 mb-2">New Customers</p>
+                    <p class="text-3xl font-bold text-blue-400">
+                        {{ new_customers_week }}
+                    </p>
+                </div>
+                <div class="bg-gray-800 rounded-lg p-4 text-center">
+                    <p class="text-xs text-gray-400 mb-2">Avg/Day</p>
+                    <p class="text-3xl font-bold">
+                        {{ (weekly_stops / 7) | round(1) }}
+                    </p>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 pt-4">
+                <div class="flex items-center justify-between text-sm mb-2">
+                    <span class="text-gray-400">Weekly Goal Progress</span>
+                    <span class="font-medium"
+                        >{{ weekly_stops }} / 50 stops</span
+                    >
+                </div>
+                <div class="w-full bg-gray-800 rounded-full h-2">
+                    <div
+                        class="bg-blue-500 h-2 rounded-full transition-all duration-500"
+                        style="width: {{ ((weekly_stops / 50) * 100) | round }}%"
+                    ></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Quick Actions - 1/3 width -->
+        <section
+            class="bg-gray-900 border border-gray-800 rounded-2xl p-7 shadow-lg"
+        >
+            <h3 class="text-xl font-semibold mb-5">Quick Actions</h3>
+            <div class="space-y-3">
+                <a
+                    href="{{ url_for('route.route') }}"
+                    class="flex items-center gap-3 bg-gray-800 hover:bg-gray-750 rounded-lg p-3 transition group"
+                >
+                    <div
+                        class="bg-blue-500/20 p-2 rounded-lg group-hover:bg-blue-500/30 transition"
+                    >
+                        <svg
+                            class="w-5 h-5 text-blue-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+                            />
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <div class="font-medium text-sm">View Route</div>
+                        <div class="text-xs text-gray-400">
+                            {{ total_stops_today - completed_today }} remaining
+                        </div>
+                    </div>
+                </a>
+
+                <a
+                    href="{{ url_for('customers.customers') }}"
+                    class="flex items-center gap-3 bg-gray-800 hover:bg-gray-750 rounded-lg p-3 transition group"
+                >
+                    <div
+                        class="bg-green-500/20 p-2 rounded-lg group-hover:bg-green-500/30 transition"
+                    >
+                        <svg
+                            class="w-5 h-5 text-green-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
+                            />
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <div class="font-medium text-sm">Add Customer</div>
+                        <div class="text-xs text-gray-400">
+                            Expand your routes
+                        </div>
+                    </div>
+                </a>
+
+                <a
+                    href="{{ url_for('balances.balances') }}"
+                    class="flex items-center gap-3 bg-gray-800 hover:bg-gray-750 rounded-lg p-3 transition group"
+                >
+                    <div
+                        class="bg-red-500/20 p-2 rounded-lg group-hover:bg-red-500/30 transition"
+                    >
+                        <svg
+                            class="w-5 h-5 text-red-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <div class="font-medium text-sm">Record Payment</div>
+                        <div class="text-xs text-gray-400">Update balances</div>
+                    </div>
+                </a>
+
+                <a
+                    href="{{ url_for('calendar.calendar') }}"
+                    class="flex items-center gap-3 bg-gray-800 hover:bg-gray-750 rounded-lg p-3 transition group"
+                >
+                    <div
+                        class="bg-purple-500/20 p-2 rounded-lg group-hover:bg-purple-500/30 transition"
+                    >
+                        <svg
+                            class="w-5 h-5 text-purple-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                            />
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <div class="font-medium text-sm">Plan Week</div>
+                        <div class="text-xs text-gray-400">Schedule visits</div>
+                    </div>
+                </a>
+            </div>
+        </section>
+    </div>
+
+    <!-- Recent Activity -->
+    <section
+        class="bg-gray-900 border border-gray-800 rounded-2xl p-7 shadow-lg"
+    >
+        <div class="flex items-center justify-between mb-5">
+            <h3 class="text-xl font-semibold">Recent Activity</h3>
+            {% if recent_activity %}
+            <span class="text-sm text-gray-400">Last 24 hours</span>
+            {% endif %}
+        </div>
+
+        {% if recent_activity %}
+        <div class="space-y-3">
+            {% for activity in recent_activity %}
+            <div
+                class="flex items-center gap-4 bg-gray-800 rounded-lg p-4 hover:bg-gray-750 transition"
+            >
+                {% if activity.type == 'completed' %}
+                <div
+                    class="flex-shrink-0 w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center"
+                >
+                    <svg
+                        class="w-5 h-5 text-green-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M5 13l4 4L19 7"
+                        />
+                    </svg>
+                </div>
+                <div class="flex-1">
+                    <p class="font-medium">
+                        Completed visit to
+                        <span class="text-blue-400"
+                            >{{ activity.customer_name }}</span
+                        >
+                    </p>
+                    <p class="text-sm text-gray-400">{{ activity.time_ago }}</p>
+                </div>
+                {% elif activity.type == 'payment' %}
+                <div
+                    class="flex-shrink-0 w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center"
+                >
+                    <svg
+                        class="w-5 h-5 text-green-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                    </svg>
+                </div>
+                <div class="flex-1">
+                    <p class="font-medium">
+                        Payment received from
+                        <span class="text-blue-400"
+                            >{{ activity.customer_name }}</span
+                        >
+                    </p>
+                    <p class="text-sm text-gray-400">
+                        {{ activity.time_ago }} •
+                        <span class="text-green-400 font-medium"
+                            >${{ activity.amount }}</span
+                        >
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-12">
+            <svg
+                class="w-16 h-16 mx-auto mb-4 text-gray-700"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+            >
+                <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+                />
+            </svg>
+            <p class="text-gray-400 mb-6">
+                Complete your first stop to see activity here
+            </p>
+            <a
+                href="{{ url_for('route.route') }}"
+                class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition"
+            >
+                + Start Your Route
+            </a>
+        </div>
+        {% endif %}
+    </section>
+
+    <!-- Motivational Quote -->
+    <div class="mt-6 text-center">
+        <p class="text-sm text-gray-500 italic">
+            "Progress doesn't need to be perfect — it just needs to continue."
+            💪
+        </p>
+    </div>
+</div>
+
+{% endblock %}

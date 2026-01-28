@@ -1,0 +1,39 @@
+/* Design tokens as CSS variables for custom values */
+:root {
+    --bg-app: #0e1117;
+    --bg-sidebar: #0b0f16;
+    --bg-card: #1b1f2a;
+    --bg-card-muted: #161a23;
+    --border-default: #242a38;
+    --border-subtle: #1f2937;
+}
+
+/* Active sidebar nav item */
+.sidebar-nav a.active {
+    background: rgba(96, 165, 250, 0.08);
+    color: #60a5fa;
+}
+
+/* Sort indicators for tables */
+.sort-indicator {
+    opacity: 0.3;
+    font-size: 0.8em;
+    margin-left: 0.25rem;
+}
+
+.sortable.asc .sort-indicator::before {
+    content: "↑";
+    opacity: 1;
+}
+
+.sortable.desc .sort-indicator::before {
+    content: "↓";
+    opacity: 1;
+}
+
+.sortable.asc .sort-indicator,
+.sortable.desc .sort-indicator {
+    opacity: 1;
+}
+
+/* Optional: Any other non-Tailwind overrides you want to keep */

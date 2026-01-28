@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>{% block title %}Candy Route Planner{% endblock %}</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <script src="https://cdn.tailwindcss.com"></script>
+    </head>
+    <body class="bg-gray-950 text-gray-100 font-sans antialiased">
+        <div class="flex min-h-screen">
+            <!-- Sidebar -->
+            <aside
+                class="w-64 bg-gray-900 border-r border-gray-800 flex flex-col"
+            >
+                <!-- Logo/Header -->
+                <div class="p-6 border-b border-gray-800">
+                    <div class="flex items-center gap-3 mb-1">
+                        <div
+                            class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center"
+                        >
+                            <svg
+                                class="w-6 h-6 text-white"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+                                />
+                            </svg>
+                        </div>
+                        <div>
+                            <h1 class="text-lg font-bold">Candy Routes</h1>
+                            <p class="text-xs text-gray-400">
+                                Sales Management
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <nav class="flex-1 p-4">
+                    <div class="space-y-1">
+                        {% set active_page = request.endpoint %}
+
+                        <a
+                            href="{{ url_for('dashboard.dashboard') }}"
+                            class="nav-link group flex items-center gap-3 px-4 py-3 rounded-lg transition-all {% if active_page in ['dashboard.dashboard'] %}bg-blue-500/10 text-blue-400 border-l-2 border-blue-500{% else %}text-gray-400 hover:bg-gray-800 hover:text-gray-200{% endif %}"
+                        >
+                            <svg
+                                class="w-5 h-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                                />
+                            </svg>
+                            <span class="font-medium text-sm">Dashboard</span>
+                        </a>
+
+                        <a
+                            href="{{ url_for('route.route') }}"
+                            class="nav-link group flex items-center gap-3 px-4 py-3 rounded-lg transition-all {% if active_page in ['route.route', 'route.route_add', 'route.route_complete', 'route.route_remove', 'route.route_update_notes'] %}bg-blue-500/10 text-blue-400 border-l-2 border-blue-500{% else %}text-gray-400 hover:bg-gray-800 hover:text-gray-200{% endif %}"
+                        >
+                            <svg
+                                class="w-5 h-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+                                />
+                            </svg>
+                            <span class="font-medium text-sm"
+                                >Today's Route</span
+                            >
+                        </a>
+
+                        <a
+                            href="{{ url_for('calendar.calendar') }}"
+                            class="nav-link group flex items-center gap-3 px-4 py-3 rounded-lg transition-all {% if active_page in ['calendar.calendar', 'calendar.add_visit'] %}bg-blue-500/10 text-blue-400 border-l-2 border-blue-500{% else %}text-gray-400 hover:bg-gray-800 hover:text-gray-200{% endif %}"
+                        >
+                            <svg
+                                class="w-5 h-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                />
+                            </svg>
+                            <span class="font-medium text-sm">Calendar</span>
+                        </a>
+
+                        <a
+                            href="{{ url_for('customers.customers') }}"
+                            class="nav-link group flex items-center gap-3 px-4 py-3 rounded-lg transition-all {% if active_page in ['customers.customers', 'customers.customer_add', 'customers.customer_edit', 'customers.customer_delete'] %}bg-blue-500/10 text-blue-400 border-l-2 border-blue-500{% else %}text-gray-400 hover:bg-gray-800 hover:text-gray-200{% endif %}"
+                        >
+                            <svg
+                                class="w-5 h-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                                />
+                            </svg>
+                            <span class="font-medium text-sm">Customers</span>
+                        </a>
+
+                        <a
+                            href="{{ url_for('balances.balances') }}"
+                            class="nav-link group flex items-center gap-3 px-4 py-3 rounded-lg transition-all {% if active_page in ['balances.balances', 'balances.record_payment'] %}bg-blue-500/10 text-blue-400 border-l-2 border-blue-500{% else %}text-gray-400 hover:bg-gray-800 hover:text-gray-200{% endif %}"
+                        >
+                            <svg
+                                class="w-5 h-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                />
+                            </svg>
+                            <span class="font-medium text-sm">Balances</span>
+                        </a>
+                    </div>
+                </nav>
+
+                <!-- Footer Stats -->
+                <div class="p-4 border-t border-gray-800">
+                    <div class="bg-gray-800 rounded-lg p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs text-gray-400"
+                                >Quick Stats</span
+                            >
+                            <svg
+                                class="w-4 h-4 text-gray-500"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+                                />
+                            </svg>
+                        </div>
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-xs">
+                                <span class="text-gray-400">Today</span>
+                                <span class="text-white font-medium"
+                                    >0/0 stops</span
+                                >
+                            </div>
+                            <div class="flex justify-between text-xs">
+                                <span class="text-gray-400">Total Owed</span>
+                                <span class="text-red-400 font-medium"
+                                    >$0.00</span
+                                >
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main content -->
+            <main class="flex-1 p-10 overflow-y-auto">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+        <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    </body>
+</html>
