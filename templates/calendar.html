@@ -1,6 +1,6 @@
 {% extends "base.html" %} {% block title %}Calendar{% endblock %} {% block
 content %}
-<div class="max-w-6xl mx-auto space-y-10">
+<div class="max-w-6xl mx-auto space-y-8">
     <!-- Header -->
     <section>
         <h1 class="text-3xl font-bold">Calendar</h1>
@@ -9,55 +9,48 @@ content %}
         </p>
     </section>
 
-    <!-- Stats -->
-    <section class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
-            <div class="text-xs text-gray-500">Visits this week</div>
-            <div class="text-2xl font-bold">{{ visits_this_week }}</div>
-        </div>
-        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
-            <div class="text-xs text-gray-500">Visits this month</div>
-            <div class="text-2xl font-bold">{{ visits_this_month }}</div>
-        </div>
-        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
-            <div class="text-xs text-gray-500">Avg / week</div>
-            <div class="text-2xl font-bold">{{ avg_per_week }}</div>
-        </div>
-        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
-            <div class="text-xs text-gray-500">Completion rate</div>
-            <div class="text-2xl font-bold">{{ completion_rate }}%</div>
-        </div>
-    </section>
+    <!-- View Toggle -->
+    <div class="flex items-center gap-2">
+        <button
+            class="view-btn bg-blue-600 text-white px-4 py-2 rounded-lg text-sm"
+            data-view="week"
+        >
+            Week
+        </button>
+        <button
+            class="view-btn bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg text-sm"
+            data-view="month"
+        >
+            Month
+        </button>
+    </div>
 
     <!-- Quick Add -->
     <section class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
-        <h2 class="text-xl font-semibold mb-4">Add Customer to Route</h2>
+        <h2 class="text-xl font-semibold mb-3">Add Customer to Route</h2>
 
         <form
             method="post"
             action="{{ url_for('route.route_add') }}"
             class="grid grid-cols-1 md:grid-cols-3 gap-4"
         >
-            <!-- Searchable customer input -->
-            <div>
-                <input
-                    type="text"
-                    list="customer-list"
-                    name="customer_id"
-                    required
-                    placeholder="Search by name or city…"
-                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2"
-                />
+            <input
+                type="text"
+                list="customer-list"
+                name="customer_id"
+                required
+                placeholder="Search by name or city…"
+                class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2"
+            />
 
-                <datalist id="customer-list">
-                    {% for c in all_customers %}
-                    <option
-                        value="{{ c.id }}"
-                        label="{{ c.name }}{% if c.city %} — {{ c.city }}{% endif %}{% if c.balance_cents > 0 %} (owes ${{ (c.balance_cents / 100) | round(2) }}){% endif %}"
-                    ></option>
-                    {% endfor %}
-                </datalist>
-            </div>
+            <datalist id="customer-list">
+                {% for c in all_customers %}
+                <option
+                    value="{{ c.id }}"
+                    label="{{ c.name }}{% if c.city %} — {{ c.city }}{% endif %}"
+                ></option>
+                {% endfor %}
+            </datalist>
 
             <input
                 type="date"
@@ -70,27 +63,41 @@ content %}
                 type="submit"
                 class="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 font-medium"
             >
-                Add to Route
+                Add
             </button>
         </form>
     </section>
 
-    <!-- Scheduled Routes -->
-    <section>
-        <h2 class="text-xl font-semibold mb-4">Scheduled Routes</h2>
+    <!-- WEEK VIEW -->
+    <section id="week-view" class="space-y-4">
+        <h2 class="text-xl font-semibold">This Week</h2>
 
-        {% if scheduled_visits %}
-        <div class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-7 gap-3">
             {% for date, visits in scheduled_visits.items() %}
-            <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
-                <div class="font-semibold mb-3 text-gray-200">{{ date }}</div>
+            <div
+                class="bg-gray-900 border border-gray-800 rounded-xl p-3 min-h-[140px]"
+            >
+                <div class="flex justify-between items-center mb-2">
+                    <div class="font-semibold text-sm">
+                        {{ date }} {% if date == today %}
+                        <span
+                            class="ml-1 text-xs bg-blue-600 px-2 py-0.5 rounded-full"
+                        >
+                            Today
+                        </span>
+                        {% endif %}
+                    </div>
+                    <span class="text-xs text-gray-500">
+                        {{ visits | length }}
+                    </span>
+                </div>
 
-                <ul class="space-y-2">
+                <ul class="space-y-1">
                     {% for v in visits %}
-                    <li class="flex justify-between items-center text-sm">
-                        <span>{{ v.customer_name }}</span>
+                    <li class="text-xs flex justify-between">
+                        <span class="truncate">{{ v.customer_name }}</span>
                         {% if v.completed %}
-                        <span class="text-green-400 font-semibold">✓</span>
+                        <span class="text-green-400">✓</span>
                         {% endif %}
                     </li>
                     {% endfor %}
@@ -98,9 +105,63 @@ content %}
             </div>
             {% endfor %}
         </div>
-        {% else %}
-        <p class="text-gray-500">No scheduled routes yet.</p>
-        {% endif %}
+    </section>
+
+    <!-- MONTH VIEW -->
+    <section id="month-view" class="hidden space-y-4">
+        <h2 class="text-xl font-semibold">This Month</h2>
+
+        <div
+            class="grid grid-cols-7 gap-px bg-gray-800 rounded-xl overflow-hidden"
+        >
+            {% for i in range(1, 36) %} {% set date = (month_dates[i-1] if
+            month_dates is defined else None) %}
+            <div class="bg-gray-900 min-h-[120px] p-2 text-xs">
+                {% if date %}
+                <div class="font-semibold mb-1">
+                    {{ date }} {% if date == today %}
+                    <span class="ml-1 text-[10px] bg-blue-600 px-1.5 rounded">
+                        Today
+                    </span>
+                    {% endif %}
+                </div>
+
+                {% for v in scheduled_visits.get(date, []) %}
+                <div class="truncate text-gray-300 flex justify-between">
+                    <span>{{ v.customer_name }}</span>
+                    {% if v.completed %}
+                    <span class="text-green-400">✓</span>
+                    {% endif %}
+                </div>
+                {% endfor %} {% endif %}
+            </div>
+            {% endfor %}
+        </div>
     </section>
 </div>
+
+<!-- View Toggle Script -->
+<script>
+    const buttons = document.querySelectorAll(".view-btn");
+    const week = document.getElementById("week-view");
+    const month = document.getElementById("month-view");
+
+    buttons.forEach((btn) => {
+        btn.addEventListener("click", () => {
+            buttons.forEach((b) =>
+                b.classList.remove("bg-blue-600", "text-white"),
+            );
+            btn.classList.add("bg-blue-600", "text-white");
+
+            if (btn.dataset.view === "week") {
+                week.classList.remove("hidden");
+                month.classList.add("hidden");
+            } else {
+                month.classList.remove("hidden");
+                week.classList.add("hidden");
+            }
+        });
+    });
+</script>
+
 {% endblock %}
