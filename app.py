@@ -68,7 +68,17 @@ if __name__ == "__main__":
     print("\n" + "=" * 50)
     print("🍬 Candy Dash - Route Planner")
     print("=" * 50)
-    print("Running on: http://127.0.0.1:5000")
+
+    # Get port from environment (Render sets PORT; fallback to 5000 for local)
+    port = int(os.environ.get("PORT", 5000))
+    print(f"Running on: http://0.0.0.0:{port}")
     print("Press CTRL+C to quit")
     print("=" * 50 + "\n")
-    app.run(debug=True, port=5000)
+
+    # Bind to 0.0.0.0 and dynamic port; debug off in prod
+    app.run(
+        host="0.0.0.0",
+        port=port,
+        debug=os.environ.get("FLASK_DEBUG", "False").lower()
+        == "true",  # Optional: control via env var
+    )
