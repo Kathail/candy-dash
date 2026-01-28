@@ -1,10 +1,10 @@
 # routes/route.py
-from datetime import datetime
+from datetime import date, datetime
 
 from flask import Blueprint, redirect, render_template, request, url_for
 
 from .store import (
-    add_customer_to_today_route,
+    add_customer_to_route,
     complete_stop,
     get_customer,
     get_today_route_stops,
@@ -24,10 +24,23 @@ def route():
 
 @route_bp.post("/route/add")
 def route_add():
-    """Add a customer to today's route from the search modal"""
+    """Add a customer to a route (supports any date from form, falls back to today)"""
     customer_id = request.form.get("customer_id")
-    if customer_id:
-        add_customer_to_today_route(int(customer_id))
+    date_str = request.form.get("date")
+
+    if not customer_id:
+        flash("No customer selected", "error")
+        return redirect(url_for("route.route"))
+
+    try:
+        target_date = date.fromisoformat(date_str) if date_str else date.today()
+    except ValueError:
+        target_date = date.today()
+
+    add_customer_to_route(target_date, int(customer_id))
+    flash("Customer added to route", "success")
+
+    # Redirect to today's route (or change to calendar if preferred)
     return redirect(url_for("route.route"))
 
 

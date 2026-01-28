@@ -118,26 +118,22 @@ def get_today_route_stops() -> List[Dict[str, Any]]:
                     rs.notes,
                     rs.stop_order
                 FROM route_stops rs
+                JOIN routes r ON rs.route_id = r.id
                 JOIN customers c ON rs.customer_id = c.id
-                JOIN routes r    ON rs.route_id = r.id
                 WHERE r.route_date = %s
                 ORDER BY rs.stop_order
-                """,
+            """,
                 (today,),
             )
             return cur.fetchall()
 
 
-def add_customer_to_today_route(customer_id: int) -> None:
+def add_customer_to_today_route(customer_id: int):
     route_id = get_or_create_today_route()
     with get_conn() as conn:
         with conn.cursor() as cur:
-            # Check if customer is already on today's route
             cur.execute(
-                """
-                SELECT id FROM route_stops
-                WHERE route_id = %s AND customer_id = %s
-                """,
+                "SELECT 1 FROM route_stops WHERE route_id = %s AND customer_id = %s",
                 (route_id, customer_id),
             )
             if cur.fetchone():
@@ -245,3 +241,47 @@ def get_dashboard_stats() -> Dict[str, Any]:
                 "completed_today": completed_today,
                 "total_stops_today": total_stops_today,
             }
+
+
+def get_or_create_route(route_date: date) -> int:
+    """Get or create a route for the given date"""
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO routes (route_date)
+                VALUES (%s)
+                ON CONFLICT (route_date) DO UPDATE
+                SET route_date = %s
+                RETURNING id
+                """,
+                (route_date, route_date),
+            )
+            route_id = cur.fetchone()["id"]
+            conn.commit()
+            return route_id
+
+
+def add_customer_to_route(route_date: date, customer_id: int):
+    """Add a customer to a route on the specified date (generalized from today-only)"""
+    route_id = get_or_create_route(route_date)
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT 1 FROM route_stops WHERE route_id = %s AND customer_id = %s",
+                (route_id, customer_id),
+            )
+            if cur.fetchone():
+                return  # Already on route
+
+            cur.execute(
+                "SELECT COALESCE(MAX(stop_order), -1) + 1 AS next_order FROM route_stops WHERE route_id = %s",
+                (route_id,),
+            )
+            next_order = cur.fetchone()["next_order"]
+
+            cur.execute(
+                "INSERT INTO route_stops (route_id, customer_id, stop_order) VALUES (%s, %s, %s)",
+                (route_id, customer_id, next_order),
+            )
+            conn.commit()

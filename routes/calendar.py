@@ -9,7 +9,7 @@ from .db import get_conn
 calendar_bp = Blueprint("calendar", __name__)
 
 
-@calendar_bp.route("/calendar")
+@calendar_bp.route("/")  # ← Fixed: removed /calendar
 def calendar():
     """Calendar view with visit planning"""
     today = date.today()
@@ -103,141 +103,22 @@ def calendar():
 
             scheduled_visits = {}
             for row in cur.fetchall():
-                date_str = row["route_date"].isoformat()
-                scheduled_visits[date_str] = row["visits"]
+                scheduled_visits[row["route_date"].isoformat()] = row["visits"]
 
     return render_template(
         "calendar.html",
+        today=today,
         priority_visits=priority_visits,
         visits_this_week=visits_this_week,
         visits_this_month=visits_this_month,
         avg_per_week=round(avg_per_week, 1),
-        completion_rate=round(completion_rate),
+        completion_rate=round(completion_rate, 1),
         all_customers=all_customers,
         scheduled_visits=scheduled_visits,
-        today=today,
     )
 
 
-@calendar_bp.route("/api/calendar/visits/<date_str>")
-def get_visits_for_date(date_str):
-    """API endpoint to get visits for a specific date"""
-    try:
-        visit_date = datetime.strptime(date_str, "%Y-%m-%d").date()
-    except ValueError:
-        return jsonify({"error": "Invalid date format"}), 400
-
-    with get_conn() as conn:
-        with conn.cursor() as cur:
-            cur.execute(
-                """
-                SELECT
-                    c.id,
-                    c.name,
-                    c.address,
-                    c.balance_cents,
-                    c.last_visit_at,
-                    rs.completed,
-                    rs.notes
-                FROM routes r
-                JOIN route_stops rs ON r.id = rs.route_id
-                JOIN customers c ON rs.customer_id = c.id
-                WHERE r.route_date = %s
-                ORDER BY rs.stop_order
-            """,
-                (visit_date,),
-            )
-
-            visits = cur.fetchall()
-
-            return jsonify(
-                [
-                    {
-                        "id": v["id"],
-                        "name": v["name"],
-                        "address": v["address"],
-                        "balance_cents": v["balance_cents"],
-                        "last_visit_at": v["last_visit_at"].isoformat()
-                        if v["last_visit_at"]
-                        else None,
-                        "completed": v["completed"],
-                        "notes": v["notes"],
-                    }
-                    for v in visits
-                ]
-            )
-
-
-@calendar_bp.post("/calendar/add_visit")
-def add_visit():
-    """Add a single visit to a specific date"""
-    customer_id = request.form.get("customer_id")
-    visit_date_str = request.form.get("date")
-    notes = request.form.get("notes", "").strip()
-
-    if not customer_id or not visit_date_str:
-        flash("Customer and date are required", "error")
-        return redirect(url_for("calendar.calendar"))
-
-    try:
-        visit_date = datetime.strptime(visit_date_str, "%Y-%m-%d").date()
-    except ValueError:
-        flash("Invalid date format", "error")
-        return redirect(url_for("calendar.calendar"))
-
-    with get_conn() as conn:
-        with conn.cursor() as cur:
-            # Get or create route
-            cur.execute(
-                """
-                INSERT INTO routes (route_date)
-                VALUES (%s)
-                ON CONFLICT (route_date) DO UPDATE
-                SET route_date = %s
-                RETURNING id
-            """,
-                (visit_date, visit_date),
-            )
-            route_id = cur.fetchone()["id"]
-
-            # Prevent duplicates
-            cur.execute(
-                """
-                SELECT id FROM route_stops
-                WHERE route_id = %s AND customer_id = %s
-            """,
-                (route_id, customer_id),
-            )
-            if cur.fetchone():
-                flash("Customer is already scheduled for that day", "warning")
-                return redirect(url_for("calendar.calendar"))
-
-            # Next stop order
-            cur.execute(
-                """
-                SELECT COALESCE(MAX(stop_order), -1) + 1 as next_order
-                FROM route_stops
-                WHERE route_id = %s
-            """,
-                (route_id,),
-            )
-            next_order = cur.fetchone()["next_order"]
-
-            cur.execute(
-                """
-                INSERT INTO route_stops (route_id, customer_id, stop_order, notes)
-                VALUES (%s, %s, %s, %s)
-            """,
-                (route_id, customer_id, next_order, notes or None),
-            )
-
-            conn.commit()
-
-    flash("Visit scheduled successfully", "success")
-    return redirect(url_for("calendar.calendar"))
-
-
-@calendar_bp.get("/calendar/new_customers")
+@calendar_bp.get("/new_customers")  # ← Fixed: removed /calendar
 def new_customers():
     """Customers who have never been visited"""
     with get_conn() as conn:
@@ -265,7 +146,7 @@ def new_customers():
     )
 
 
-@calendar_bp.get("/calendar/overdue")
+@calendar_bp.get("/overdue")  # ← Fixed: removed /calendar
 def overdue_customers():
     """Customers not visited in 14+ days"""
     cutoff_date = date.today() - timedelta(days=14)
@@ -302,7 +183,7 @@ def overdue_customers():
     )
 
 
-@calendar_bp.get("/calendar/customers_by_area")
+@calendar_bp.get("/customers_by_area")  # ← Fixed: removed /calendar
 def customers_by_area():
     """
     Returns customers grouped by area (city → zip → Unknown)
