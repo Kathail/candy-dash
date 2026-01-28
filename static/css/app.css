@@ -18,6 +18,46 @@
 }
 
 /* ==========================================================================
+   Legacy utility class compatibility (DO NOT REMOVE)
+   ========================================================================== */
+
+.bg-app-bg {
+    background-color: var(--bg);
+}
+
+.text-app-text {
+    color: var(--text);
+}
+
+.text-app-accent {
+    color: var(--accent);
+}
+
+.border-app-accent {
+    border-color: var(--accent);
+}
+
+.hover\:border-app-accent:hover {
+    border-color: var(--accent);
+}
+
+.text-app-danger {
+    color: var(--danger);
+}
+
+.border-app-danger {
+    border-color: var(--danger);
+}
+
+.text-app-warning {
+    color: var(--warning);
+}
+
+.border-app-warning {
+    border-color: var(--warning);
+}
+
+/* ==========================================================================
    Global
    ========================================================================== */
 
