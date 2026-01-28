@@ -1,0 +1,52 @@
+<nav class="app-nav">
+    <div class="nav-header">
+        <h1 class="nav-title">Candy Dash</h1>
+    </div>
+
+    <ul class="nav-links">
+        <li>
+            <a
+                href="{{ url_for('dashboard.dashboard') }}"
+                class="nav-link {% if request.endpoint == 'dashboard.dashboard' %}active{% endif %}"
+            >
+                Dashboard
+            </a>
+        </li>
+
+        <li>
+            <a
+                href="{{ url_for('customers.customers') }}"
+                class="nav-link {% if request.endpoint == 'customers.customers' %}active{% endif %}"
+            >
+                Customers
+            </a>
+        </li>
+
+        <li>
+            <a
+                href="{{ url_for('balances.balances') }}"
+                class="nav-link {% if request.endpoint == 'balances.balances' %}active{% endif %}"
+            >
+                Balances
+            </a>
+        </li>
+
+        <li>
+            <a
+                href="{{ url_for('calendar.calendar') }}"
+                class="nav-link {% if request.endpoint == 'calendar.calendar' %}active{% endif %}"
+            >
+                Calendar
+            </a>
+        </li>
+
+        <li>
+            <a
+                href="{{ url_for('route.route') }}"
+                class="nav-link {% if request.endpoint == 'route.route' %}active{% endif %}"
+            >
+                Route
+            </a>
+        </li>
+    </ul>
+</nav>

@@ -1,0 +1,208 @@
+/* ==========================================================================
+   Root / Theme
+   ========================================================================== */
+
+:root {
+    --bg: #0b1220;
+    --bg-panel: #111827;
+    --bg-panel-hover: #1f2937;
+
+    --border: #1f2937;
+
+    --text: #e5e7eb;
+    --text-muted: #9ca3af;
+
+    --accent: #3b82f6;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+}
+
+/* ==========================================================================
+   Global
+   ========================================================================== */
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    height: 100%;
+}
+
+body {
+    font-family:
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        Ubuntu,
+        "Helvetica Neue",
+        Arial,
+        sans-serif;
+    background: var(--bg);
+    color: var(--text);
+}
+
+/* ==========================================================================
+   Layout
+   ========================================================================== */
+
+.app-shell {
+    display: flex;
+    min-height: 100vh;
+}
+
+.app-nav {
+    width: 220px;
+    background: var(--bg-panel);
+    border-right: 1px solid var(--border);
+    padding: 1.25rem 1rem;
+}
+
+.app-main {
+    flex: 1;
+    padding: 2rem;
+}
+
+/* ==========================================================================
+   Nav
+   ========================================================================== */
+
+.nav-header {
+    margin-bottom: 1.5rem;
+}
+
+.nav-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.nav-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.nav-link {
+    display: block;
+    padding: 0.6rem 0.75rem;
+    margin-bottom: 0.25rem;
+    border-radius: 0.375rem;
+    color: var(--text-muted);
+    text-decoration: none;
+}
+
+.nav-link:hover {
+    background: var(--bg-panel-hover);
+    color: var(--text);
+}
+
+.nav-link.active {
+    background: rgba(59, 130, 246, 0.15);
+    color: var(--accent);
+}
+
+/* ==========================================================================
+   Cards
+   ========================================================================== */
+
+.theme-card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+}
+
+/* ==========================================================================
+   Tables
+   ========================================================================== */
+
+.theme-table-th {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+}
+
+.theme-table-td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.theme-table-row:hover {
+    background: var(--bg-panel-hover);
+}
+
+/* ==========================================================================
+   Inputs
+   ========================================================================== */
+
+.theme-input {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    background: #020617;
+    border: 1px solid var(--border);
+    color: var(--text);
+}
+
+.theme-input::placeholder {
+    color: var(--text-muted);
+}
+
+/* ==========================================================================
+   Buttons
+   ========================================================================== */
+
+.theme-btn-primary,
+.theme-btn-secondary,
+.theme-btn-danger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+}
+
+.theme-btn-primary {
+    background: var(--accent);
+    color: white;
+}
+
+.theme-btn-secondary {
+    background: var(--bg-panel-hover);
+    color: var(--text);
+}
+
+.theme-btn-danger {
+    background: var(--danger);
+    color: white;
+}
+
+/* ==========================================================================
+   Balance colors
+   ========================================================================== */
+
+.theme-text-danger {
+    color: var(--danger);
+}
+
+.text-yellow-300 {
+    color: #fde047;
+}
+
+.text-orange-400 {
+    color: #fb923c;
+}
+
+.text-gray-400 {
+    color: var(--text-muted);
+}
