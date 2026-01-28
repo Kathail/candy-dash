@@ -1,59 +1,100 @@
 {% extends "base.html" %} {% block title %}Calendar{% endblock %} {% block
 content %}
-<div class="max-w-6xl mx-auto space-y-6">
+<div
+    class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8 space-y-6 lg:space-y-8"
+>
     <!-- Header -->
-    <header>
-        <h1 class="text-2xl sm:text-3xl font-bold">Calendar</h1>
-        <p class="text-sm text-gray-400 mt-1">
-            Plan routes and review scheduled visits.
-        </p>
-    </header>
-
-    <!-- View Controls -->
-    <div class="flex items-center justify-between gap-3">
-        <div class="flex gap-2">
-            <button
-                class="view-btn bg-blue-600 text-white px-4 py-2 rounded-lg text-sm"
-                data-view="week"
-            >
-                Week
-            </button>
-            <button
-                class="view-btn bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg text-sm"
-                data-view="month"
-            >
-                Month
-            </button>
+    <div
+        class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+    >
+        <div>
+            <h1 class="text-2xl sm:text-3xl font-bold text-white">Calendar</h1>
+            <p class="mt-1 text-sm text-gray-400">
+                Plan routes and review scheduled visits
+            </p>
         </div>
-
-        <div class="text-sm text-gray-400">{{ today }}</div>
-    </div>
-
-    <!-- Analytics -->
-    <section class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
-            <div class="text-xs text-gray-500">Total Stops</div>
-            <div class="text-2xl font-bold" id="stat-total">—</div>
-        </div>
-        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
-            <div class="text-xs text-gray-500">Completed</div>
-            <div class="text-2xl font-bold text-green-400" id="stat-completed">
-                —
+        <div class="flex items-center gap-3">
+            <div class="flex rounded-md shadow-sm" role="group">
+                <button
+                    type="button"
+                    class="view-btn px-4 py-2 text-sm font-medium rounded-l-lg border border-gray-700 bg-blue-600 text-white hover:bg-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-500"
+                    data-view="week"
+                >
+                    Week
+                </button>
+                <button
+                    type="button"
+                    class="view-btn px-4 py-2 text-sm font-medium rounded-r-lg border border-gray-700 bg-gray-800 text-gray-300 hover:bg-gray-700 focus:z-10 focus:ring-2 focus:ring-blue-500"
+                    data-view="month"
+                >
+                    Month
+                </button>
             </div>
         </div>
-        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
-            <div class="text-xs text-gray-500">Completion %</div>
-            <div class="text-2xl font-bold" id="stat-rate">—%</div>
+    </div>
+
+    <!-- Period info -->
+    <div class="text-sm text-gray-400">
+        {% if week_dates %} Week of {{ week_dates[0] }} – {{ week_dates[-1] }}
+        {% else %} {{ today }} {% endif %}
+        <span class="ml-2 text-gray-500">({{ today }})</span>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div
+            class="bg-gray-800 border border-gray-700 rounded-xl p-4 shadow-sm"
+        >
+            <p
+                class="text-xs font-medium text-gray-400 uppercase tracking-wide"
+            >
+                Total Stops
+            </p>
+            <p id="stat-total" class="text-3xl font-bold text-white mt-1">—</p>
         </div>
-        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
-            <div class="text-xs text-gray-500">Avg / Day</div>
-            <div class="text-2xl font-bold" id="stat-avg">—</div>
+        <div
+            class="bg-gray-800 border border-gray-700 rounded-xl p-4 shadow-sm"
+        >
+            <p
+                class="text-xs font-medium text-gray-400 uppercase tracking-wide"
+            >
+                Completed
+            </p>
+            <p
+                id="stat-completed"
+                class="text-3xl font-bold text-green-400 mt-1"
+            >
+                —
+            </p>
         </div>
-    </section>
+        <div
+            class="bg-gray-800 border border-gray-700 rounded-xl p-4 shadow-sm"
+        >
+            <p
+                class="text-xs font-medium text-gray-400 uppercase tracking-wide"
+            >
+                Completion %
+            </p>
+            <p id="stat-rate" class="text-3xl font-bold text-white mt-1">—%</p>
+        </div>
+        <div
+            class="bg-gray-800 border border-gray-700 rounded-xl p-4 shadow-sm"
+        >
+            <p
+                class="text-xs font-medium text-gray-400 uppercase tracking-wide"
+            >
+                Avg / Day
+            </p>
+            <p id="stat-avg" class="text-3xl font-bold text-white mt-1">—</p>
+        </div>
+    </div>
 
     <!-- WEEK VIEW -->
-    <section id="week-view" class="space-y-2">
-        <div class="grid grid-cols-7 text-xs text-gray-400 uppercase">
+    <section id="week-view">
+        <!-- Weekday headers -->
+        <div
+            class="hidden sm:grid sm:grid-cols-7 gap-3 text-xs font-medium text-gray-400 uppercase tracking-wider text-center"
+        >
             <div>Mon</div>
             <div>Tue</div>
             <div>Wed</div>
@@ -63,35 +104,53 @@ content %}
             <div>Sun</div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-7 gap-2">
+        <div class="grid grid-cols-1 sm:grid-cols-7 gap-3 lg:gap-4">
             {% for date in week_dates %} {% set visits =
             scheduled_visits.get(date, []) %}
             <div
-                class="bg-gray-900 border border-gray-800 rounded-xl p-3 min-h-[140px]"
+                class="bg-gray-800 border border-gray-700 rounded-xl p-4 min-h-[180px] transition-all hover:border-blue-600/60 hover:shadow-lg hover:shadow-blue-950/30 cursor-pointer group"
+                data-date="{{ date }}"
             >
-                <div class="flex justify-between items-center mb-2">
-                    <span class="font-semibold text-sm">
-                        {{ date[-2:] }} {% if date == today %}
-                        <span class="ml-1 text-xs bg-blue-600 px-1.5 rounded">
+                <!-- Date + count -->
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-2">
+                        <span class="text-lg font-semibold text-white"
+                            >{{ date[-2:] | int }}</span
+                        >
+                        {% if date == today %}
+                        <span
+                            class="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-blue-600 text-white rounded-full"
+                        >
                             Today
                         </span>
                         {% endif %}
-                    </span>
-                    <span class="text-xs text-gray-500">
+                    </div>
+                    <span
+                        class="text-sm font-medium text-gray-400 group-hover:text-blue-300 transition-colors"
+                    >
                         {{ visits|length }}
                     </span>
                 </div>
 
-                <ul class="space-y-1 text-xs">
+                <!-- Visits list -->
+                <ul class="space-y-1.5 text-sm">
                     {% if visits %} {% for v in visits %}
-                    <li class="flex justify-between gap-2 truncate">
-                        <span class="truncate">{{ v.customer_name }}</span>
+                    <li
+                        class="flex items-center justify-between gap-2 truncate"
+                    >
+                        <span
+                            class="truncate {{ 'text-green-300 font-medium' if v.completed else 'text-gray-200' }}"
+                        >
+                            {{ v.customer_name }}
+                        </span>
                         {% if v.completed %}
-                        <span class="text-green-400">✓</span>
+                        <span class="text-green-400 text-lg">✓</span>
                         {% endif %}
                     </li>
                     {% endfor %} {% else %}
-                    <li class="text-gray-500">No visits</li>
+                    <li class="text-center text-gray-500 italic py-4">
+                        No visits
+                    </li>
                     {% endif %}
                 </ul>
             </div>
@@ -100,8 +159,11 @@ content %}
     </section>
 
     <!-- MONTH VIEW -->
-    <section id="month-view" class="hidden space-y-2">
-        <div class="grid grid-cols-7 text-xs text-gray-400 uppercase">
+    <section id="month-view" class="hidden">
+        <!-- Weekday headers -->
+        <div
+            class="grid grid-cols-7 gap-2 text-xs font-medium text-gray-400 uppercase tracking-wider text-center"
+        >
             <div>Mon</div>
             <div>Tue</div>
             <div>Wed</div>
@@ -111,31 +173,48 @@ content %}
             <div>Sun</div>
         </div>
 
-        <div class="grid grid-cols-7 gap-2">
+        <div class="grid grid-cols-7 gap-2 mt-3">
             {% for date in month_dates %} {% set visits =
-            scheduled_visits.get(date, []) %}
+            scheduled_visits.get(date, []) %} {% set bg_class = 'bg-gray-800' if
+            visits|length == 0 else 'bg-blue-950/40 hover:bg-blue-950/60' if
+            visits|length <= 2 else 'bg-amber-950/50 hover:bg-amber-950/70' if
+            visits|length <= 5 else 'bg-red-950/60 hover:bg-red-950/80' %}
             <div
-                class="border border-gray-800 rounded-xl p-2 min-h-[110px] {% if visits|length == 0 %}bg-gray-900{% elif visits|length < 3 %}bg-blue-900/30{% elif visits|length < 6 %}bg-orange-900/40{% else %}bg-red-900/50{% endif %}"
+                class="border border-gray-700 rounded-lg p-2 min-h-[100px] transition-all cursor-pointer group {{ bg_class }} {% if date == today %} border-blue-500 bg-blue-950/70{% endif %}"
+                data-date="{{ date }}"
             >
-                <div class="text-xs font-semibold mb-1">
-                    {{ date[-2:] }} {% if date == today %}
-                    <span class="ml-1 text-[10px] bg-blue-600 px-1 rounded">
-                        Today
+                <!-- Header -->
+                <div class="flex justify-between items-center mb-1.5">
+                    <span class="text-sm font-semibold text-gray-200">
+                        {{ date[-2:] | int }}
+                    </span>
+                    {% if visits %}
+                    <span
+                        class="text-xs text-gray-400 group-hover:text-gray-200"
+                    >
+                        {{ visits|length }}
                     </span>
                     {% endif %}
                 </div>
 
-                {% if visits %} {% for v in visits[:3] %}
-                <div class="truncate text-xs">
-                    {{ v.customer_name }} {% if v.completed %}
-                    <span class="text-green-400">✓</span>
-                    {% endif %}
+                <!-- Preview (max 3) -->
+                <div class="space-y-1 text-xs">
+                    {% if visits %} {% for v in visits[:3] %}
+                    <div class="truncate flex items-center gap-1">
+                        <span
+                            class="{{ 'text-green-300' if v.completed else 'text-gray-300' }}"
+                        >
+                            {{ v.customer_name }}
+                        </span>
+                        {% if v.completed %}<span class="text-green-400">✓</span
+                        >{% endif %}
+                    </div>
+                    {% endfor %} {% if visits|length > 3 %}
+                    <div class="text-gray-500 mt-1">
+                        +{{ visits|length - 3 }} more
+                    </div>
+                    {% endif %} {% endif %}
                 </div>
-                {% endfor %} {% if visits|length > 3 %}
-                <div class="text-xs text-gray-400">
-                    +{{ visits|length - 3 }} more
-                </div>
-                {% endif %} {% endif %}
             </div>
             {% endfor %}
         </div>
@@ -143,7 +222,8 @@ content %}
 </div>
 
 <script>
-    (() => {
+    // View switching + stats
+    document.addEventListener("DOMContentLoaded", () => {
         const weekView = document.getElementById("week-view");
         const monthView = document.getElementById("month-view");
         const buttons = document.querySelectorAll(".view-btn");
@@ -151,17 +231,33 @@ content %}
         function computeStats() {
             let total = 0;
             let completed = 0;
-            let days = new Set();
+            let daysWithVisits = 0;
 
-            document.querySelectorAll("[data-date], .bg-gray-900").forEach(() => {});
+            document
+                .querySelectorAll(".cursor-pointer[data-date]")
+                .forEach((card) => {
+                    const countEl = card.querySelector(
+                        "span.text-sm.font-medium, span.text-xs.text-gray-400",
+                    );
+                    const doneEls = card.querySelectorAll(".text-green-400");
 
-            {% for date, visits in scheduled_visits.items() %}
-                total += {{ visits|length }};
-                completed += {{ visits | selectattr("completed") | list | length }};
-                if ({{ visits|length }} > 0) days.add("{{ date }}");
-            {% endfor %}
+                    let dayTotal = 0;
+                    if (countEl) {
+                        const txt = countEl.textContent.trim();
+                        if (/^\d+$/.test(txt)) dayTotal = parseInt(txt, 10);
+                    }
 
-            const avg = days.size ? (total / days.size).toFixed(1) : 0;
+                    const dayCompleted = doneEls.length;
+
+                    total += dayTotal;
+                    completed += dayCompleted;
+
+                    if (dayTotal > 0) daysWithVisits++;
+                });
+
+            const avg = daysWithVisits
+                ? (total / daysWithVisits).toFixed(1)
+                : "0.0";
             const rate = total ? Math.round((completed / total) * 100) : 0;
 
             document.getElementById("stat-total").textContent = total;
@@ -170,19 +266,43 @@ content %}
             document.getElementById("stat-avg").textContent = avg;
         }
 
-        buttons.forEach(btn => {
+        // Switch views
+        buttons.forEach((btn) => {
             btn.addEventListener("click", () => {
-                buttons.forEach(b => b.classList.remove("bg-blue-600","text-white"));
-                btn.classList.add("bg-blue-600","text-white");
+                buttons.forEach((b) => {
+                    b.classList.remove(
+                        "bg-blue-600",
+                        "text-white",
+                        "hover:bg-blue-700",
+                    );
+                    b.classList.add(
+                        "bg-gray-800",
+                        "text-gray-300",
+                        "hover:bg-gray-700",
+                    );
+                });
+                btn.classList.remove(
+                    "bg-gray-800",
+                    "text-gray-300",
+                    "hover:bg-gray-700",
+                );
+                btn.classList.add(
+                    "bg-blue-600",
+                    "text-white",
+                    "hover:bg-blue-700",
+                );
 
                 const isWeek = btn.dataset.view === "week";
                 weekView.classList.toggle("hidden", !isWeek);
                 monthView.classList.toggle("hidden", isWeek);
+
+                // Recalculate stats after view change
+                setTimeout(computeStats, 0);
             });
         });
 
+        // Initial stats
         computeStats();
-    })();
+    });
 </script>
-
 {% endblock %}
