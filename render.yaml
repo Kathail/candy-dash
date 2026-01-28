@@ -2,7 +2,7 @@ services:
   - type: web
     name: candy-dash
     runtime: python
-    region: virginia # ← Add this!
+    region: virginia
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 4 'app:create_app()'
     envVars:
