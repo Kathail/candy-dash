@@ -4,6 +4,26 @@ from typing import Any, Dict, List, Optional
 from .db import get_conn
 
 # ============================================================================
+# Helpers
+# ============================================================================
+
+
+def _with_balance(row: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Normalize customer balance fields.
+    Adds:
+      - balance (float, dollars)
+    Keeps:
+      - balance_cents (int)
+    """
+    if "balance_cents" in row and row["balance_cents"] is not None:
+        row["balance"] = row["balance_cents"] / 100
+    else:
+        row["balance"] = 0.0
+    return row
+
+
+# ============================================================================
 # Customers
 # ============================================================================
 
@@ -18,7 +38,8 @@ def get_customers() -> List[Dict[str, Any]]:
                 ORDER BY name
                 """
             )
-            return cur.fetchall()
+            rows = cur.fetchall()
+            return [_with_balance(dict(r)) for r in rows]
 
 
 def get_customer(customer_id: int) -> Optional[Dict[str, Any]]:
@@ -32,7 +53,8 @@ def get_customer(customer_id: int) -> Optional[Dict[str, Any]]:
                 """,
                 (customer_id,),
             )
-            return cur.fetchone()
+            row = cur.fetchone()
+            return _with_balance(dict(row)) if row else None
 
 
 def create_customer(
@@ -171,7 +193,7 @@ def get_today_route_stops() -> List[Dict[str, Any]]:
                     c.name,
                     c.phone            AS customer_phone,
                     c.address          AS customer_address,
-                    c.balance_cents    AS customer_balance,
+                    c.balance_cents    AS customer_balance_cents,
                     c.notes            AS customer_notes,
                     rs.completed,
                     rs.completed_at,
@@ -185,7 +207,16 @@ def get_today_route_stops() -> List[Dict[str, Any]]:
                 """,
                 (today,),
             )
-            return cur.fetchall()
+            rows = cur.fetchall()
+
+            for r in rows:
+                r["customer_balance"] = (
+                    r["customer_balance_cents"] / 100
+                    if r["customer_balance_cents"] is not None
+                    else 0.0
+                )
+
+            return rows
 
 
 def add_customer_to_route(route_date: date, customer_id: int) -> None:
@@ -240,7 +271,6 @@ def complete_stop(stop_id: int) -> None:
                 (stop_id,),
             )
             result = cur.fetchone()
-
             if not result:
                 return
 

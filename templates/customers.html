@@ -1,217 +1,24 @@
 {% extends "base.html" %} {% block title %}Customers - Candy Dash{% endblock %}
-{% block content %} {% set owing = customers | selectattr('balance_cents', 'gt',
-0) | list %} {% set owing_count = owing | length %} {% set total_owed = (owing |
-sum(attribute='balance_cents') / 100) | round(2) %}
-
+{% block content %}
 <script>
     const customers = {{ customers | tojson }};
 </script>
 
-<div class="max-w-7xl mx-auto space-y-10" x-data="customersApp">
-    <!-- Header -->
+<div class="max-w-7xl mx-auto space-y-10">
     <header class="flex items-center justify-between">
         <div>
-            <h1 class="text-3xl font-bold text-gray-200 mb-1">Customers</h1>
-            <p class="text-gray-400">Manage contacts, addresses & balances</p>
-        </div>
-        <button
-            type="button"
-            @click="addCustomerOpen = true"
-            class="theme-btn-primary flex items-center gap-2"
-        >
-            + Add Customer
-        </button>
-    </header>
-
-    <!-- Stats -->
-    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="theme-card p-6">
-            <p class="text-sm text-gray-400 mb-2">Total Customers</p>
-            <p class="text-3xl font-bold">{{ customers | length }}</p>
-            <p class="text-xs text-gray-500">In system</p>
+            <h1 class="text-3xl font-bold mb-1">Customers</h1>
+            <p class="text-gray-400">Manage contacts & balances</p>
         </div>
 
-        <div class="theme-card p-6">
-            <p class="text-sm text-gray-400 mb-2">Total Owed</p>
-            <p
-                class="text-3xl font-bold {{ 'theme-text-danger' if total_owed > 0 else 'text-gray-300' }}"
-            >
-                ${{ total_owed }}
-            </p>
-            <p class="text-xs text-gray-500">
-                {{ owing_count }} customer{{ 's' if owing_count != 1 else '' }}
-            </p>
-        </div>
-
-        <div class="theme-card p-6">
-            <p class="text-sm text-gray-400 mb-2">Customers Owing</p>
-            <p class="text-3xl font-bold text-amber-400">{{ owing_count }}</p>
-            <p class="text-xs text-gray-500">Active balances</p>
-        </div>
-
-        <div class="theme-card p-6">
-            <p class="text-sm text-gray-400 mb-2">Avg Balance</p>
-            <p class="text-3xl font-bold text-app-accent">
-                {% if owing_count > 0 %} ${{ (total_owed / owing_count) |
-                round(2) }} {% else %} $0.00 {% endif %}
-            </p>
-            <p class="text-xs text-gray-500">Per owing customer</p>
-        </div>
-    </section>
-
-    <!-- Bulk Bar -->
-    <div
-        x-show="selectedIds.length > 0"
-        class="sticky top-4 z-20 theme-card px-6 py-4 flex justify-between items-center"
-    >
-        <span class="text-sm">
-            <strong x-text="selectedIds.length"></strong> selected
-        </span>
-        <button
-            type="button"
-            hx-post="/calendar/add_to_route"
-            hx-vals='{"customers": selectedIds}'
-            hx-swap="none"
-            @click="clearSelection()"
+        <a
+            href="{{ url_for('customers.customer_add') }}"
             class="theme-btn-primary"
         >
-            Add to Route
-        </button>
-    </div>
+            + Add Customer
+        </a>
+    </header>
 
-    <!-- Table -->
-    <section class="theme-card overflow-hidden">
-        <div class="p-6 border-b border-gray-800 flex justify-between">
-            <h2 class="text-xl font-semibold">Customer List</h2>
-            <input
-                type="search"
-                placeholder="Search customers…"
-                class="theme-input max-w-sm"
-                x-model="searchTerm"
-            />
-        </div>
-
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-800 text-sm">
-                <thead class="bg-gray-900/70">
-                    <tr>
-                        <th class="theme-table-th w-10">
-                            <input type="checkbox" x-model="selectAll" />
-                        </th>
-                        <th class="theme-table-th">Name</th>
-                        <th class="theme-table-th hidden md:table-cell">
-                            Phone
-                        </th>
-                        <th class="theme-table-th hidden md:table-cell">
-                            Email
-                        </th>
-                        <th class="theme-table-th text-right">Balance</th>
-                        <th class="theme-table-th text-right">Actions</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-800">
-                    <template x-for="c in filteredCustomers" :key="c.id">
-                        <tr>
-                            <td class="theme-table-td">
-                                <input
-                                    type="checkbox"
-                                    :value="c.id"
-                                    x-model="selectedIds"
-                                />
-                            </td>
-                            <td class="theme-table-td font-medium">
-                                <button
-                                    class="text-app-accent hover:underline"
-                                    @click="openEdit(c)"
-                                    x-text="c.name"
-                                ></button>
-                            </td>
-                            <td
-                                class="theme-table-td hidden md:table-cell"
-                                x-text="c.phone || '-'"
-                            ></td>
-                            <td
-                                class="theme-table-td hidden md:table-cell"
-                                x-text="c.email || '-'"
-                            ></td>
-                            <td
-                                class="theme-table-td text-right font-semibold"
-                                :class="balanceClass(c.balance)"
-                                x-text="'$' + c.balance.toFixed(2)"
-                            ></td>
-                            <td class="theme-table-td text-right">
-                                <form
-                                    method="post"
-                                    :action="`/customers/delete/${c.id}`"
-                                    data-confirm="Delete this customer?"
-                                >
-                                    <button
-                                        class="theme-btn-danger text-xs px-4 py-2"
-                                    >
-                                        Delete
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                    </template>
-                </tbody>
-            </table>
-
-            <p
-                x-show="filteredCustomers.length === 0"
-                class="py-16 text-center text-gray-500"
-            >
-                No customers match your search.
-            </p>
-        </div>
-    </section>
+    {% include "partials/customer_table.html" with mode="customers" %}
 </div>
-
-<script>
-    document.addEventListener("alpine:init", () => {
-        Alpine.data("customersApp", () => ({
-            addCustomerOpen: false,
-            editCustomerOpen: false,
-            searchTerm: "",
-            selectedIds: [],
-            selectAll: false,
-            editCustomer: {},
-
-            get filteredCustomers() {
-                const t = this.searchTerm.toLowerCase();
-                if (!t) return customers;
-                return customers.filter((c) =>
-                    [c.name, c.phone, c.email, c.address, c.notes]
-                        .filter(Boolean)
-                        .some((v) => v.toLowerCase().includes(t)),
-                );
-            },
-
-            $watch: {
-                selectAll(val) {
-                    this.selectedIds = val
-                        ? this.filteredCustomers.map((c) => c.id)
-                        : [];
-                },
-            },
-
-            clearSelection() {
-                this.selectAll = false;
-                this.selectedIds = [];
-            },
-
-            openEdit(c) {
-                this.editCustomer = { ...c };
-                this.editCustomerOpen = true;
-            },
-
-            balanceClass(balance) {
-                if (balance <= 0) return "text-gray-400";
-                if (balance < 20) return "text-yellow-300";
-                if (balance < 100) return "text-orange-400";
-                return "theme-text-danger";
-            },
-        }));
-    });
-</script>
 {% endblock %}
