@@ -5,7 +5,7 @@
         <title>{% block title %}Candy Dash{% endblock %}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-        <!-- Tailwind CSS (COMPILED, PROD) -->
+        <!-- Tailwind CSS (compiled, production) -->
         <link
             rel="stylesheet"
             href="{{ url_for('static', filename='css/tailwind.css') }}"
@@ -17,14 +17,24 @@
             href="{{ url_for('static', filename='css/app.css') }}"
         />
 
-        <!-- Alpine.js -->
+        <!-- Prevent Alpine FOUC -->
+        <style>
+            [x-cloak] {
+                display: none !important;
+            }
+        </style>
+
+        <!-- Alpine.js (local, production) -->
         <script
             defer
-            src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"
+            src="{{ url_for('static', filename='vendor/alpine.min.js') }}"
         ></script>
 
-        <!-- HTMX -->
-        <script defer src="https://unpkg.com/htmx.org@1.9.12"></script>
+        <!-- HTMX (local, production) -->
+        <script
+            defer
+            src="{{ url_for('static', filename='vendor/htmx.min.js') }}"
+        ></script>
 
         <!-- App JS -->
         <script
@@ -34,7 +44,7 @@
     </head>
 
     <body class="bg-app-bg text-app-text">
-        <div class="app-shell">
+        <div class="app-shell" x-cloak>
             {% include "partials/nav.html" %}
             <main class="app-main">{% block content %}{% endblock %}</main>
         </div>
