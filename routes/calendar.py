@@ -1,4 +1,3 @@
-# routes/calendar.py
 from collections import defaultdict
 from datetime import date, timedelta
 
@@ -54,15 +53,16 @@ def fetch_visit_analytics(cur, today):
     )
     visits_this_month = cur.fetchone()["count"]
 
+    # ✅ FIX: alias column + dict access
     cur.execute(
         """
-        SELECT COUNT(*)::float / 4
+        SELECT COUNT(*)::float / 4 AS avg_per_week
         FROM visits
         WHERE visited_at >= %s
         """,
         (today - timedelta(days=28),),
     )
-    avg_per_week = cur.fetchone()[0] or 0
+    avg_per_week = cur.fetchone()["avg_per_week"] or 0
 
     cur.execute(
         """

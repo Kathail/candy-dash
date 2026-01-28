@@ -167,12 +167,17 @@ content %}
                         data-lastvisit="{{ c.last_visit_at.isoformat() if c.last_visit_at else '1900-01-01' }}"
                     >
                         <td class="px-6 py-4 font-medium">
-                            <a
-                                href="{{ url_for('customers.customer_detail', customer_id=c.id) }}"
-                                class="hover:text-blue-400 transition"
+                            <button
+                                type="button"
+                                class="hover:text-blue-400 transition btn-edit"
+                                data-id="{{ c.id }}"
+                                data-name="{{ c.name }}"
+                                data-phone="{{ c.phone or '' }}"
+                                data-address="{{ c.address or '' }}"
+                                data-balance="{{ (c.balance_cents / 100) | round(2) }}"
                             >
                                 {{ c.name }}
-                            </a>
+                            </button>
                         </td>
 
                         <td class="px-6 py-4 text-gray-400">

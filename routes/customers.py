@@ -17,7 +17,7 @@ def customers():
 
 @customers_bp.route("/api/customers/json")
 def get_customers_json():
-    """Return all customers as JSON for the route search modal"""
+    """Return all customers as JSON for route/calendar modals"""
     customers = get_customers()
     return jsonify(
         [
@@ -58,13 +58,6 @@ def customer_add():
     return redirect(url_for("customers.customers"))
 
 
-@customers_bp.post("/customers/delete/<int:customer_id>")
-def customer_delete(customer_id: int):
-    delete_customer(customer_id)
-    flash("Customer deleted", "success")
-    return redirect(url_for("customers.customers"))
-
-
 @customers_bp.post("/customers/edit/<int:customer_id>")
 def customer_edit(customer_id: int):
     customer = get_customer(customer_id)
@@ -89,19 +82,15 @@ def customer_edit(customer_id: int):
     if name != customer["name"]:
         updates.append("name = %s")
         params.append(name)
-
     if phone != (customer["phone"] or ""):
         updates.append("phone = %s")
         params.append(phone or None)
-
     if address != (customer["address"] or ""):
         updates.append("address = %s")
         params.append(address or None)
-
     if notes != (customer["notes"] or ""):
         updates.append("notes = %s")
         params.append(notes or None)
-
     if balance_cents != customer["balance_cents"]:
         updates.append("balance_cents = %s")
         params.append(balance_cents)
@@ -121,4 +110,11 @@ def customer_edit(customer_id: int):
     else:
         flash("No changes made", "info")
 
+    return redirect(url_for("customers.customers"))
+
+
+@customers_bp.post("/customers/delete/<int:customer_id>")
+def customer_delete(customer_id: int):
+    delete_customer(customer_id)
+    flash("Customer deleted", "success")
     return redirect(url_for("customers.customers"))
