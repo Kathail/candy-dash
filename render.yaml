@@ -3,10 +3,10 @@ services:
     name: candy-dash
     runtime: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:create_app()
+    startCommand: gunicorn 'app:create_app()'
     envVars:
       - key: PYTHON_VERSION
-        value: 3.14.0
+        value: 3.13.0
       - key: DATABASE_URL
         fromDatabase:
           name: candy-dash-db
