@@ -10,15 +10,6 @@ import os
 import psycopg
 from psycopg.rows import dict_row
 
-# Load from environment (required for security/portability)
-DATABASE_URL = os.environ.get("DATABASE_URL")
-
-if not DATABASE_URL:
-    raise RuntimeError(
-        "DATABASE_URL environment variable is not set. "
-        "Example: export DATABASE_URL=postgresql://user:pass@localhost:5432/dbname"
-    )
-
 
 def get_conn():
     """
@@ -31,9 +22,18 @@ def get_conn():
             with conn.cursor() as cur:
                 cur.execute(...)
                 conn.commit()   # or conn.rollback()
+
+    In production: Uses DATABASE_URL from environment (set by Render)
+    In development: Defaults to local PostgreSQL database
     """
+    # Use DATABASE_URL from environment (Render sets this automatically)
+    # Falls back to local database for development
+    database_url = os.environ.get(
+        "DATABASE_URL", "postgresql://localhost/candy_route_planner"
+    )
+
     return psycopg.connect(
-        DATABASE_URL,
+        database_url,
         row_factory=dict_row,
         autocommit=False,
     )
