@@ -259,7 +259,7 @@ content %}
                         </div>
                     </button>
                 </li>
-                <!-- NEW: Area Quick Add button -->
+                <!-- Area Quick Add button -->
                 <li>
                     <button
                         onclick="openAreaOptimizer()"
@@ -279,7 +279,13 @@ content %}
                                         stroke-linecap="round"
                                         stroke-linejoin="round"
                                         stroke-width="2"
-                                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0zM15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                                    />
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
                                     />
                                 </svg>
                             </div>
@@ -512,7 +518,7 @@ content %}
     </div>
 </div>
 
-<!-- Area Quick Add Modal (new) -->
+<!-- Area Quick Add Modal -->
 <div
     id="area-optimizer-modal"
     class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50"
@@ -548,7 +554,7 @@ content %}
             </button>
         </div>
         <div class="flex-1 overflow-y-auto p-6" id="area-content">
-            <!-- Dynamic content loaded here by JS -->
+            <!-- Dynamic content injected by JavaScript -->
         </div>
     </div>
 </div>
@@ -557,11 +563,6 @@ content %}
     const scheduledVisits = {{ scheduled_visits | tojson }};
     let currentDate = new Date();
     let selectedDate = null;
-
-    function setSelectedDate(dateStr) {
-        selectedDate = dateStr;
-        // You can also call window.setSelectedDate(dateStr) if you want to expose it globally for app.js
-    }
 
     function renderCalendar() {
         const year = currentDate.getFullYear();
@@ -575,7 +576,7 @@ content %}
         const calendarDays = document.getElementById('calendarDays');
         calendarDays.innerHTML = '';
 
-        // Previous month filler days
+        // Previous month days
         const prevMonthDays = new Date(year, month, 0).getDate();
         for (let i = firstDay - 1; i >= 0; i--) {
             calendarDays.innerHTML += `<div class="min-h-[100px] bg-gray-800/30 rounded-lg p-2 opacity-40"><div class="text-xs text-gray-600">${prevMonthDays - i}</div></div>`;
@@ -615,7 +616,7 @@ content %}
             `;
         }
 
-        // Next month filler days
+        // Next month days
         const remainingCells = 42 - (firstDay + daysInMonth);
         for (let day = 1; day <= remainingCells; day++) {
             calendarDays.innerHTML += `<div class="min-h-[100px] bg-gray-800/30 rounded-lg p-2 opacity-40"><div class="text-xs text-gray-600">${day}</div></div>`;
@@ -647,22 +648,14 @@ content %}
 
     async function openDayDetail(dateStr) {
         selectedDate = dateStr;
-        setSelectedDate(dateStr);  // sync with app.js if needed
-
         const date = new Date(dateStr + 'T00:00:00');
-        document.getElementById('dayDetailTitle').textContent = date.toLocaleDateString('en-US', {
-            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-        });
-
+        document.getElementById('dayDetailTitle').textContent = date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
         document.getElementById('dayDetailModal').classList.remove('hidden');
-
         const content = document.getElementById('dayDetailContent');
         content.innerHTML = '<div class="text-center text-gray-500 py-8">Loading...</div>';
-
         try {
             const response = await fetch(`/api/calendar/visits/${dateStr}`);
             const visits = await response.json();
-
             if (visits.length === 0) {
                 content.innerHTML = `
                     <div class="text-center text-gray-500 py-8">
@@ -724,7 +717,7 @@ content %}
         alert(`Overdue visits (14+ days):\n\n${customers.map(c => `• ${c.name} (${c.days_since || 'Never visited'} days)`).join('\n')}`);
     }
 
-    // Area Quick Add functions (called from button)
+    // Area Quick Add
     async function openAreaOptimizer() {
         const modal = document.getElementById('area-optimizer-modal');
         if (!modal) return;
@@ -735,13 +728,13 @@ content %}
         container.innerHTML = '<div class="text-center py-16 text-gray-400">Loading areas...</div>';
 
         try {
-            const res = await fetch('/calendar/customers_by_area');
-            if (!res.ok) throw new Error('Failed to load');
+            const response = await fetch('/calendar/customers_by_area');
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-            const groups = await res.json();
+            const groups = await response.json();
 
             if (Object.keys(groups).length === 0) {
-                container.innerHTML = '<div class="text-center py-16 text-gray-400">No priority customers found.</div>';
+                container.innerHTML = '<div class="text-center py-16 text-gray-400">No priority customers found right now.</div>';
                 return;
             }
 
@@ -773,7 +766,8 @@ content %}
             });
             container.innerHTML = html;
         } catch (err) {
-            container.innerHTML = '<div class="text-center py-16 text-red-400">Error loading areas.</div>';
+            console.error(err);
+            container.innerHTML = '<div class="text-center py-16 text-red-400">Failed to load customers by area.<br>Please try again later.</div>';
         }
     }
 
@@ -793,7 +787,7 @@ content %}
         modal.classList.remove('hidden');
     }
 
-    // Close modals on escape / click outside
+    // Close modals on escape or outside click
     document.addEventListener('keydown', e => {
         if (e.key === 'Escape') {
             document.getElementById('quickAddModal')?.classList.add('hidden');
@@ -815,8 +809,6 @@ content %}
     });
 
     // Initial render
-    document.addEventListener('DOMContentLoaded', () => {
-        renderCalendar();
-    });
+    renderCalendar();
 </script>
 {% endblock %}
