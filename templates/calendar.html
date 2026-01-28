@@ -11,78 +11,163 @@ content %}
 
     <!-- Stats -->
     <section class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
-            <div class="text-xs text-gray-500">Visits this week</div>
-            <div class="text-2xl font-bold">{{ visits_this_week }}</div>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+            <div class="text-xs text-gray-400 uppercase tracking-wide mb-2">
+                Visits this week
+            </div>
+            <div class="text-3xl font-bold">{{ visits_this_week }}</div>
         </div>
-        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
-            <div class="text-xs text-gray-500">Visits this month</div>
-            <div class="text-2xl font-bold">{{ visits_this_month }}</div>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+            <div class="text-xs text-gray-400 uppercase tracking-wide mb-2">
+                Visits this month
+            </div>
+            <div class="text-3xl font-bold">{{ visits_this_month }}</div>
         </div>
-        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
-            <div class="text-xs text-gray-500">Avg / week</div>
-            <div class="text-2xl font-bold">{{ avg_per_week }}</div>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+            <div class="text-xs text-gray-400 uppercase tracking-wide mb-2">
+                Avg / week
+            </div>
+            <div class="text-3xl font-bold">{{ avg_per_week }}</div>
         </div>
-        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
-            <div class="text-xs text-gray-500">Completion rate</div>
-            <div class="text-2xl font-bold">{{ completion_rate }}%</div>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+            <div class="text-xs text-gray-400 uppercase tracking-wide mb-2">
+                Completion rate
+            </div>
+            <div class="text-3xl font-bold text-green-400">
+                {{ completion_rate }}%
+            </div>
         </div>
     </section>
 
     <!-- Quick Add -->
     <section class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
-        <h2 class="text-xl font-semibold mb-4">Add Customer to Route</h2>
+        <h2 class="text-xl font-semibold mb-5 flex items-center gap-2">
+            <svg
+                class="w-5 h-5 text-blue-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+            >
+                <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 4v16m8-8H4"
+                />
+            </svg>
+            Add Customer to Route
+        </h2>
 
         <form
             method="post"
             action="{{ url_for('route.route_add') }}"
             class="grid grid-cols-1 md:grid-cols-3 gap-4"
         >
-            <select
-                name="customer_id"
-                required
-                class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2"
-            >
-                <option value="">Select customer…</option>
-                {% for c in all_customers %}
-                <option value="{{ c.id }}">
-                    {{ c.name }} {% if c.balance_cents > 0 %} — owes ${{
-                    (c.balance_cents / 100) | round(2) }} {% endif %}
-                </option>
-                {% endfor %}
-            </select>
+            <div>
+                <label class="block text-sm text-gray-400 mb-2">Customer</label>
+                <select
+                    name="customer_id"
+                    required
+                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                    <option value="">Select customer…</option>
+                    {% for c in all_customers %}
+                    <option value="{{ c.id }}">
+                        {{ c.name }} {% if c.balance_cents > 0 %} — owes ${{
+                        (c.balance_cents / 100) | round(2) }} {% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
 
-            <input
-                type="date"
-                name="date"
-                value="{{ today }}"
-                class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2"
-            />
+            <div>
+                <label class="block text-sm text-gray-400 mb-2">Date</label>
+                <input
+                    type="date"
+                    name="date"
+                    value="{{ today }}"
+                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+            </div>
 
-            <button
-                type="submit"
-                class="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 font-medium"
-            >
-                Add to Route
-            </button>
+            <div class="flex items-end">
+                <button
+                    type="submit"
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2.5 font-medium transition"
+                >
+                    Add to Route
+                </button>
+            </div>
         </form>
     </section>
 
     <!-- Scheduled Routes -->
     <section>
-        <h2 class="text-xl font-semibold mb-4">Scheduled Routes</h2>
+        <h2 class="text-xl font-semibold mb-5 flex items-center gap-2">
+            <svg
+                class="w-5 h-5 text-purple-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+            >
+                <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+            </svg>
+            Scheduled Routes
+        </h2>
 
         {% if scheduled_visits %}
         <div class="space-y-4">
             {% for date, visits in scheduled_visits.items() %}
-            <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
-                <div class="font-semibold mb-3">{{ date }}</div>
-                <ul class="space-y-2">
+            <div
+                class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden"
+            >
+                <div class="bg-gray-950 px-6 py-3 border-b border-gray-800">
+                    <div
+                        class="font-semibold flex items-center justify-between"
+                    >
+                        <span>{{ date }}</span>
+                        <span class="text-sm text-gray-400 font-normal">
+                            {{ visits | length }} stop{{ 's' if visits | length
+                            != 1 else '' }}
+                        </span>
+                    </div>
+                </div>
+                <ul class="divide-y divide-gray-800">
                     {% for v in visits %}
-                    <li class="flex justify-between text-sm">
-                        <span>{{ v.customer_name }}</span>
+                    <li
+                        class="px-6 py-3 flex items-center justify-between hover:bg-gray-900/50 transition"
+                    >
+                        <span
+                            class="{% if v.completed %}line-through text-gray-500{% endif %}"
+                        >
+                            {{ v.customer_name }}
+                        </span>
                         {% if v.completed %}
-                        <span class="text-green-400">✓</span>
+                        <span
+                            class="text-green-400 text-sm flex items-center gap-1"
+                        >
+                            <svg
+                                class="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M5 13l4 4L19 7"
+                                />
+                            </svg>
+                            Completed
+                        </span>
+                        {% else %}
+                        <span class="text-gray-500 text-sm">Scheduled</span>
                         {% endif %}
                     </li>
                     {% endfor %}
@@ -91,7 +176,27 @@ content %}
             {% endfor %}
         </div>
         {% else %}
-        <p class="text-gray-500">No scheduled routes yet.</p>
+        <div
+            class="bg-gray-900 border border-gray-800 rounded-xl p-12 text-center"
+        >
+            <svg
+                class="w-16 h-16 mx-auto mb-4 opacity-50 text-gray-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+            >
+                <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+            </svg>
+            <p class="text-gray-500">No scheduled routes yet.</p>
+            <p class="text-sm text-gray-600 mt-2">
+                Use the form above to start planning your week.
+            </p>
+        </div>
         {% endif %}
     </section>
 </div>

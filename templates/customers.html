@@ -1,7 +1,6 @@
 {% extends "base.html" %} {% block title %}Customers{% endblock %} {% block
 content %}
-
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+<div class="max-w-7xl mx-auto space-y-8">
     <!-- Header -->
     <header class="flex items-center justify-between">
         <div>
@@ -9,7 +8,11 @@ content %}
             <p class="text-gray-400 mt-1">Manage customers and balances</p>
         </div>
 
-        <button type="button" data-action="scroll-add" class="btn-primary">
+        <button
+            type="button"
+            data-action="scroll-add"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-medium transition"
+        >
             + Add Customer
         </button>
     </header>
@@ -19,21 +22,23 @@ content %}
     set total_owed = owing | sum(attribute='balance_cents') %}
 
     <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="card-muted">
-            <p class="card-label">Total Customers</p>
-            <p class="card-value">{{ customers | length }}</p>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+            <p class="text-sm text-gray-400 mb-2">Total Customers</p>
+            <p class="text-3xl font-bold">{{ customers | length }}</p>
         </div>
 
-        <div class="card-muted">
-            <p class="card-label">Total Owed</p>
-            <p class="card-value text-red-400">
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+            <p class="text-sm text-gray-400 mb-2">Total Owed</p>
+            <p class="text-3xl font-bold text-red-400">
                 ${{ (total_owed / 100) | round(2) }}
             </p>
         </div>
 
-        <div class="card-muted">
-            <p class="card-label">Customers Owing</p>
-            <p class="card-value text-amber-400">{{ owing | length }}</p>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+            <p class="text-sm text-gray-400 mb-2">Customers Owing</p>
+            <p class="text-3xl font-bold text-amber-400">
+                {{ owing | length }}
+            </p>
         </div>
     </section>
 
@@ -52,28 +57,101 @@ content %}
                 id="customer-search"
                 type="search"
                 placeholder="Search customers…"
-                class="input w-full sm:w-64"
+                class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 w-full sm:w-64 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
         </header>
 
         {% if customers %}
         <div class="overflow-x-auto">
             <table class="w-full text-sm" id="customer-table">
-                <thead class="bg-gray-950 text-gray-400 uppercase text-xs">
+                <thead
+                    class="bg-gray-950 text-gray-400 uppercase text-xs border-b border-gray-800"
+                >
                     <tr>
-                        <th class="sortable px-6 py-4" data-key="name">Name</th>
-                        <th class="sortable px-6 py-4" data-key="phone">
-                            Phone
-                        </th>
-                        <th class="px-6 py-4">Address</th>
                         <th
-                            class="sortable px-6 py-4 text-right"
+                            class="sortable px-6 py-4 text-left cursor-pointer hover:text-blue-400 transition"
+                            data-key="name"
+                        >
+                            <span class="flex items-center gap-2">
+                                Name
+                                <svg
+                                    class="w-4 h-4 opacity-50"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+                                    />
+                                </svg>
+                            </span>
+                        </th>
+                        <th
+                            class="sortable px-6 py-4 text-left cursor-pointer hover:text-blue-400 transition"
+                            data-key="phone"
+                        >
+                            <span class="flex items-center gap-2">
+                                Phone
+                                <svg
+                                    class="w-4 h-4 opacity-50"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+                                    />
+                                </svg>
+                            </span>
+                        </th>
+                        <th class="px-6 py-4 text-left">Address</th>
+                        <th
+                            class="sortable px-6 py-4 text-right cursor-pointer hover:text-blue-400 transition"
                             data-key="balance"
                         >
-                            Balance
+                            <span class="flex items-center justify-end gap-2">
+                                Balance
+                                <svg
+                                    class="w-4 h-4 opacity-50"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+                                    />
+                                </svg>
+                            </span>
                         </th>
-                        <th class="sortable px-6 py-4" data-key="lastVisit">
-                            Last Visit
+                        <th
+                            class="sortable px-6 py-4 text-left cursor-pointer hover:text-blue-400 transition"
+                            data-key="lastvisit"
+                        >
+                            <span class="flex items-center gap-2">
+                                Last Visit
+                                <svg
+                                    class="w-4 h-4 opacity-50"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+                                    />
+                                </svg>
+                            </span>
                         </th>
                         <th class="px-6 py-4 text-right">Actions</th>
                     </tr>
@@ -82,7 +160,7 @@ content %}
                 <tbody id="customer-body" class="divide-y divide-gray-800">
                     {% for c in customers %}
                     <tr
-                        class="customer-row"
+                        class="customer-row hover:bg-gray-900/50 transition"
                         data-name="{{ c.name | lower }}"
                         data-phone="{{ c.phone or '' }}"
                         data-balance="{{ c.balance_cents }}"
@@ -91,7 +169,7 @@ content %}
                         <td class="px-6 py-4 font-medium">
                             <a
                                 href="{{ url_for('customers.customer_detail', customer_id=c.id) }}"
-                                class="hover:text-blue-400"
+                                class="hover:text-blue-400 transition"
                             >
                                 {{ c.name }}
                             </a>
@@ -121,7 +199,7 @@ content %}
 
                         <td class="px-6 py-4 text-right space-x-2">
                             <button
-                                class="btn-secondary btn-edit"
+                                class="bg-gray-800 hover:bg-gray-700 text-white text-xs px-3 py-1.5 rounded transition btn-edit"
                                 data-id="{{ c.id }}"
                                 data-name="{{ c.name }}"
                                 data-phone="{{ c.phone or '' }}"
@@ -137,7 +215,10 @@ content %}
                                 class="inline"
                                 onsubmit="return confirm('Delete {{ c.name }}?');"
                             >
-                                <button type="submit" class="btn-danger">
+                                <button
+                                    type="submit"
+                                    class="bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white text-xs px-3 py-1.5 rounded transition"
+                                >
                                     Delete
                                 </button>
                             </form>
@@ -148,7 +229,22 @@ content %}
             </table>
         </div>
         {% else %}
-        <div class="p-12 text-center text-gray-500">No customers yet.</div>
+        <div class="p-12 text-center text-gray-500">
+            <svg
+                class="w-16 h-16 mx-auto mb-4 opacity-50"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+            >
+                <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                />
+            </svg>
+            <p>No customers yet.</p>
+        </div>
         {% endif %}
     </section>
 
@@ -165,68 +261,101 @@ content %}
             class="grid grid-cols-1 md:grid-cols-2 gap-6"
         >
             <div>
-                <label class="label">Name *</label>
-                <input name="name" required class="input" />
+                <label class="block text-sm text-gray-400 mb-2">Name *</label>
+                <input
+                    name="name"
+                    required
+                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
             </div>
 
             <div>
-                <label class="label">Phone</label>
-                <input name="phone" class="input" />
+                <label class="block text-sm text-gray-400 mb-2">Phone</label>
+                <input
+                    name="phone"
+                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
             </div>
 
             <div class="md:col-span-2">
-                <label class="label">Address</label>
-                <input name="address" class="input" />
+                <label class="block text-sm text-gray-400 mb-2">Address</label>
+                <input
+                    name="address"
+                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
             </div>
 
             <div>
-                <label class="label">Starting Balance ($)</label>
+                <label class="block text-sm text-gray-400 mb-2"
+                    >Starting Balance ($)</label
+                >
                 <input
                     name="balance"
                     type="number"
                     step="0.01"
                     value="0.00"
-                    class="input"
+                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
             </div>
 
             <div class="md:col-span-2 text-right">
-                <button class="btn-primary px-8 py-3">Add Customer</button>
+                <button
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium transition"
+                >
+                    Add Customer
+                </button>
             </div>
         </form>
     </section>
 </div>
 
 <!-- Edit Modal -->
-<div id="edit-modal" class="modal hidden">
-    <div class="modal-card max-w-md">
+<div
+    id="edit-modal"
+    class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+>
+    <div
+        class="bg-gray-900 border border-gray-800 rounded-2xl p-8 max-w-md w-full"
+    >
         <h3 class="text-xl font-semibold mb-6">Edit Customer</h3>
 
         <form id="edit-form" method="post" class="space-y-4">
             <input type="hidden" name="customer_id" />
 
             <div>
-                <label class="label">Name</label>
-                <input name="name" class="input" required />
+                <label class="block text-sm text-gray-400 mb-2">Name</label>
+                <input
+                    name="name"
+                    required
+                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
             </div>
 
             <div>
-                <label class="label">Phone</label>
-                <input name="phone" class="input" />
+                <label class="block text-sm text-gray-400 mb-2">Phone</label>
+                <input
+                    name="phone"
+                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
             </div>
 
             <div>
-                <label class="label">Address</label>
-                <input name="address" class="input" />
+                <label class="block text-sm text-gray-400 mb-2">Address</label>
+                <input
+                    name="address"
+                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
             </div>
 
             <div>
-                <label class="label">Balance ($)</label>
+                <label class="block text-sm text-gray-400 mb-2"
+                    >Balance ($)</label
+                >
                 <input
                     name="balance"
                     type="number"
                     step="0.01"
-                    class="input font-semibold"
+                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 font-semibold focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
             </div>
 
@@ -234,11 +363,15 @@ content %}
                 <button
                     type="button"
                     data-action="close"
-                    class="btn-secondary flex-1"
+                    class="flex-1 bg-gray-800 hover:bg-gray-700 text-white px-4 py-2.5 rounded-lg font-medium transition"
                 >
                     Cancel
                 </button>
-                <button class="btn-primary flex-1">Save</button>
+                <button
+                    class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-medium transition"
+                >
+                    Save Changes
+                </button>
             </div>
         </form>
     </div>
@@ -255,7 +388,7 @@ content %}
 
         let sort = { key: null, dir: 1 };
 
-        // Scroll to add
+        // Scroll to add form
         document
             .querySelector('[data-action="scroll-add"]')
             ?.addEventListener("click", () =>
@@ -264,7 +397,7 @@ content %}
                     .scrollIntoView({ behavior: "smooth" }),
             );
 
-        // Search
+        // Search functionality
         search?.addEventListener("input", () => {
             const q = search.value.toLowerCase();
             rows.forEach((r) => {
@@ -274,7 +407,7 @@ content %}
             });
         });
 
-        // Sorting
+        // Sorting functionality
         document.querySelectorAll("[data-key]").forEach((th) => {
             th.addEventListener("click", () => {
                 const key = th.dataset.key;
@@ -293,7 +426,7 @@ content %}
             });
         });
 
-        // Edit modal
+        // Edit modal functionality
         document.querySelectorAll(".btn-edit").forEach((btn) => {
             btn.addEventListener("click", () => {
                 form.action =
@@ -312,6 +445,7 @@ content %}
             });
         });
 
+        // Close modal
         document
             .querySelectorAll('[data-action="close"]')
             .forEach((btn) =>
@@ -320,8 +454,14 @@ content %}
                 ),
             );
 
+        // Close modal on escape
         document.addEventListener("keydown", (e) => {
             if (e.key === "Escape") modal.classList.add("hidden");
+        });
+
+        // Close modal on backdrop click
+        modal?.addEventListener("click", (e) => {
+            if (e.target === modal) modal.classList.add("hidden");
         });
     })();
 </script>

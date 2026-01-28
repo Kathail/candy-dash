@@ -1,13 +1,12 @@
 {% extends "base.html" %} {% block title %}Dashboard{% endblock %} {% block
 content %}
-
 <div class="max-w-7xl mx-auto space-y-10">
     <!-- Header -->
     <header class="flex items-center justify-between">
         <div>
             <h1 class="text-3xl font-bold mb-1">Welcome Back 👋</h1>
             <p class="text-gray-400">
-                Here’s what’s happening with your routes today
+                Here's what's happening with your routes today
             </p>
         </div>
         <div class="text-right">
@@ -35,7 +34,7 @@ content %}
                 <div class="flex items-start justify-between">
                     <div>
                         <p class="text-white/80 text-sm font-medium mb-1">
-                            Today’s Progress
+                            Today's Progress
                         </p>
                         <p class="text-6xl font-bold text-white">
                             {{ completed_today }} / {{ total_stops_today }}
@@ -80,73 +79,77 @@ content %}
     <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <a
             href="{{ url_for('customers.customers') }}"
-            class="card-kpi hover:border-blue-500"
+            class="bg-gray-900 border border-gray-800 rounded-xl p-6 hover:border-blue-500 transition-colors group"
         >
-            <p class="kpi-label">Customers</p>
-            <p class="kpi-value">{{ total_customers }}</p>
-            <p class="kpi-sub">Total in system</p>
+            <p class="text-sm text-gray-400 mb-2">Customers</p>
+            <p class="text-3xl font-bold mb-1">{{ total_customers }}</p>
+            <p class="text-xs text-gray-500">Total in system</p>
         </a>
 
         <a
             href="{{ url_for('balances.balances') }}"
-            class="card-kpi hover:border-red-500"
+            class="bg-gray-900 border border-gray-800 rounded-xl p-6 hover:border-red-500 transition-colors group"
         >
-            <p class="kpi-label">Total Owed</p>
-            <p class="kpi-value text-red-400">
+            <p class="text-sm text-gray-400 mb-2">Total Owed</p>
+            <p class="text-3xl font-bold text-red-400 mb-1">
                 ${{ (total_owed_cents / 100) | round(2) }}
             </p>
-            <p class="kpi-sub">
-                {{ customers_owing }} customer{{ 's' if customers_owing != 1 }}
+            <p class="text-xs text-gray-500">
+                {{ customers_owing }} customer{{ 's' if customers_owing != 1
+                else '' }}
             </p>
         </a>
 
-        <div class="card-kpi">
-            <p class="kpi-label">Collected Today</p>
-            <p class="kpi-value text-green-400">
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+            <p class="text-sm text-gray-400 mb-2">Collected Today</p>
+            <p class="text-3xl font-bold text-green-400 mb-1">
                 ${{ (collected_today_cents / 100) | round(2) }}
             </p>
-            <p class="kpi-sub">
-                {{ payments_today }} payment{{ 's' if payments_today != 1 }}
+            <p class="text-xs text-gray-500">
+                {{ payments_today }} payment{{ 's' if payments_today != 1 else
+                '' }}
             </p>
         </div>
 
-        <div class="card-kpi">
-            <p class="kpi-label">Avg Balance</p>
-            <p class="kpi-value text-blue-400">
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+            <p class="text-sm text-gray-400 mb-2">Avg Balance</p>
+            <p class="text-3xl font-bold text-blue-400 mb-1">
                 {% if customers_owing > 0 %} ${{ (total_owed_cents /
                 customers_owing / 100) | round(2) }} {% else %} $0.00 {% endif
                 %}
             </p>
-            <p class="kpi-sub">Per owing customer</p>
+            <p class="text-xs text-gray-500">Per owing customer</p>
         </div>
     </section>
 
     <!-- Week + Actions -->
     <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Week Summary -->
-        <div class="lg:col-span-2 card">
+        <div
+            class="lg:col-span-2 bg-gray-900 border border-gray-800 rounded-xl p-6"
+        >
             <h2 class="text-xl font-semibold mb-5">This Week at a Glance</h2>
 
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div class="stat-box">
-                    <p class="stat-label">Stops</p>
-                    <p class="stat-value">{{ weekly_stops }}</p>
+                <div class="bg-gray-800/50 rounded-lg p-4">
+                    <p class="text-xs text-gray-400 mb-1">Stops</p>
+                    <p class="text-2xl font-bold">{{ weekly_stops }}</p>
                 </div>
-                <div class="stat-box">
-                    <p class="stat-label">Collected</p>
-                    <p class="stat-value text-green-400">
+                <div class="bg-gray-800/50 rounded-lg p-4">
+                    <p class="text-xs text-gray-400 mb-1">Collected</p>
+                    <p class="text-2xl font-bold text-green-400">
                         ${{ (weekly_collected_cents / 100) | round(0) | int }}
                     </p>
                 </div>
-                <div class="stat-box">
-                    <p class="stat-label">New Customers</p>
-                    <p class="stat-value text-blue-400">
+                <div class="bg-gray-800/50 rounded-lg p-4">
+                    <p class="text-xs text-gray-400 mb-1">New Customers</p>
+                    <p class="text-2xl font-bold text-blue-400">
                         {{ new_customers_week }}
                     </p>
                 </div>
-                <div class="stat-box">
-                    <p class="stat-label">Avg / Day</p>
-                    <p class="stat-value">
+                <div class="bg-gray-800/50 rounded-lg p-4">
+                    <p class="text-xs text-gray-400 mb-1">Avg / Day</p>
+                    <p class="text-2xl font-bold">
                         {{ (weekly_stops / 7) | round(1) }}
                     </p>
                 </div>
@@ -165,35 +168,136 @@ content %}
                 <div class="bg-gray-800 rounded-full h-2">
                     <div
                         class="bg-blue-500 h-2 rounded-full transition-all"
-                        style="width: {{ weekly_pct | round }}%"
+                        style="width: {{ [weekly_pct | round, 100] | min }}%"
                     ></div>
                 </div>
             </div>
         </div>
 
         <!-- Quick Actions -->
-        <div class="card">
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
             <h2 class="text-xl font-semibold mb-5">Quick Actions</h2>
 
             <div class="space-y-3">
-                {% include "dashboard/_quick_action.html" with
-                href=url_for('route.route'), icon="route", title="View Route",
-                subtitle=(total_stops_today - completed_today) ~ " remaining" %}
-                {% include "dashboard/_quick_action.html" with
-                href=url_for('customers.customers'), icon="customer", title="Add
-                Customer", subtitle="Expand your routes" %} {% include
-                "dashboard/_quick_action.html" with
-                href=url_for('balances.balances'), icon="payment", title="Record
-                Payment", subtitle="Update balances" %} {% include
-                "dashboard/_quick_action.html" with
-                href=url_for('calendar.calendar'), icon="calendar", title="Plan
-                Week", subtitle="Schedule visits" %}
+                <!-- View Route -->
+                <a
+                    href="{{ url_for('route.route') }}"
+                    class="flex items-center gap-3 p-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 transition-colors group"
+                >
+                    <div
+                        class="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center group-hover:bg-blue-500/20 transition"
+                    >
+                        <svg
+                            class="w-5 h-5 text-blue-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+                            />
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <p class="font-medium text-sm">View Route</p>
+                        <p class="text-xs text-gray-400">
+                            {{ total_stops_today - completed_today }} remaining
+                        </p>
+                    </div>
+                </a>
+
+                <!-- Add Customer -->
+                <a
+                    href="{{ url_for('customers.customers') }}"
+                    class="flex items-center gap-3 p-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 transition-colors group"
+                >
+                    <div
+                        class="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center group-hover:bg-green-500/20 transition"
+                    >
+                        <svg
+                            class="w-5 h-5 text-green-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
+                            />
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <p class="font-medium text-sm">Add Customer</p>
+                        <p class="text-xs text-gray-400">Expand your routes</p>
+                    </div>
+                </a>
+
+                <!-- Record Payment -->
+                <a
+                    href="{{ url_for('balances.balances') }}"
+                    class="flex items-center gap-3 p-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 transition-colors group"
+                >
+                    <div
+                        class="w-10 h-10 rounded-lg bg-yellow-500/10 flex items-center justify-center group-hover:bg-yellow-500/20 transition"
+                    >
+                        <svg
+                            class="w-5 h-5 text-yellow-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <p class="font-medium text-sm">Record Payment</p>
+                        <p class="text-xs text-gray-400">Update balances</p>
+                    </div>
+                </a>
+
+                <!-- Plan Week -->
+                <a
+                    href="{{ url_for('calendar.calendar') }}"
+                    class="flex items-center gap-3 p-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 transition-colors group"
+                >
+                    <div
+                        class="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center group-hover:bg-purple-500/20 transition"
+                    >
+                        <svg
+                            class="w-5 h-5 text-purple-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                            />
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <p class="font-medium text-sm">Plan Week</p>
+                        <p class="text-xs text-gray-400">Schedule visits</p>
+                    </div>
+                </a>
             </div>
         </div>
     </section>
 
     <!-- Activity -->
-    <section class="card">
+    <section class="bg-gray-900 border border-gray-800 rounded-xl p-6">
         <div class="flex items-center justify-between mb-5">
             <h2 class="text-xl font-semibold">Recent Activity</h2>
             {% if recent_activity %}
@@ -204,11 +308,43 @@ content %}
         {% if recent_activity %}
         <div class="space-y-3">
             {% for a in recent_activity %}
-            <div class="activity-row">
+            <div
+                class="flex items-start gap-4 p-4 rounded-lg bg-gray-800/30 hover:bg-gray-800/50 transition"
+            >
                 <div
-                    class="activity-icon {{ 'success' if a.type == 'completed' else 'money' }}"
-                ></div>
-                <div class="flex-1">
+                    class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 {% if a.type == 'completed' %}bg-green-500/10{% else %}bg-blue-500/10{% endif %}"
+                >
+                    {% if a.type == 'completed' %}
+                    <svg
+                        class="w-5 h-5 text-green-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M5 13l4 4L19 7"
+                        />
+                    </svg>
+                    {% else %}
+                    <svg
+                        class="w-5 h-5 text-blue-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                    </svg>
+                    {% endif %}
+                </div>
+                <div class="flex-1 min-w-0">
                     <p class="font-medium">
                         {% if a.type == 'completed' %} Completed visit to
                         <span class="text-blue-400">{{ a.customer_name }}</span>
@@ -216,10 +352,10 @@ content %}
                         <span class="text-blue-400">{{ a.customer_name }}</span>
                         {% endif %}
                     </p>
-                    <p class="text-sm text-gray-400">
+                    <p class="text-sm text-gray-400 mt-1">
                         {{ a.time_ago }} {% if a.amount %} •
-                        <span class="text-green-400">${{ a.amount }}</span>{%
-                        endif %}
+                        <span class="text-green-400">${{ a.amount }}</span>
+                        {% endif %}
                     </p>
                 </div>
             </div>
@@ -227,15 +363,30 @@ content %}
         </div>
         {% else %}
         <div class="text-center py-12 text-gray-500">
-            No activity yet — start your route to see updates here.
+            <svg
+                class="w-16 h-16 mx-auto mb-4 opacity-50"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+            >
+                <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+                />
+            </svg>
+            <p>No activity yet — start your route to see updates here.</p>
         </div>
         {% endif %}
     </section>
 
     <!-- Footer Quote -->
-    <p class="text-center text-sm text-gray-500 italic">
-        “Progress doesn’t need to be perfect — it just needs to continue.” 💪
-    </p>
+    <div class="text-center py-8">
+        <p class="text-sm text-gray-500 italic">
+            "Progress doesn't need to be perfect — it just needs to continue."
+            💪
+        </p>
+    </div>
 </div>
-
 {% endblock %}
