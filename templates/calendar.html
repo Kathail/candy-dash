@@ -1,36 +1,33 @@
 {% extends "base.html" %} {% block title %}Calendar{% endblock %} {% block
 content %}
-<div class="max-w-7xl mx-auto space-y-6">
+<div class="max-w-6xl mx-auto space-y-6">
     <!-- Header -->
-    <header class="flex flex-wrap items-center justify-between gap-4">
-        <div>
-            <h1 class="text-2xl sm:text-3xl font-bold">Calendar</h1>
-            <p class="text-sm text-gray-400 mt-1">
-                Plan routes, optimize daily runs, and review performance
-            </p>
-        </div>
+    <header>
+        <h1 class="text-2xl sm:text-3xl font-bold">Calendar</h1>
+        <p class="text-sm text-gray-400 mt-1">
+            Plan routes and review scheduled visits.
+        </p>
+    </header>
 
-        <div class="flex items-center gap-2">
+    <!-- View Controls -->
+    <div class="flex items-center justify-between gap-3">
+        <div class="flex gap-2">
             <button
-                data-view="week"
                 class="view-btn bg-blue-600 text-white px-4 py-2 rounded-lg text-sm"
+                data-view="week"
             >
                 Week
             </button>
             <button
-                data-view="month"
                 class="view-btn bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg text-sm"
+                data-view="month"
             >
                 Month
             </button>
-            <button
-                id="today-btn"
-                class="bg-gray-800 hover:bg-gray-700 px-3 py-2 rounded-lg text-sm"
-            >
-                Today
-            </button>
         </div>
-    </header>
+
+        <div class="text-sm text-gray-400">{{ today }}</div>
+    </div>
 
     <!-- Analytics -->
     <section class="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -55,7 +52,7 @@ content %}
     </section>
 
     <!-- WEEK VIEW -->
-    <section id="week-view" class="space-y-3">
+    <section id="week-view" class="space-y-2">
         <div class="grid grid-cols-7 text-xs text-gray-400 uppercase">
             <div>Mon</div>
             <div>Tue</div>
@@ -66,46 +63,44 @@ content %}
             <div>Sun</div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-7 gap-3">
-            {% for date in week_dates %}
+        <div class="grid grid-cols-1 sm:grid-cols-7 gap-2">
+            {% for date in week_dates %} {% set visits =
+            scheduled_visits.get(date, []) %}
             <div
-                class="day-cell bg-gray-900 border border-gray-800 rounded-xl p-3 cursor-pointer"
-                data-date="{{ date }}"
+                class="bg-gray-900 border border-gray-800 rounded-xl p-3 min-h-[140px]"
             >
                 <div class="flex justify-between items-center mb-2">
                     <span class="font-semibold text-sm">
                         {{ date[-2:] }} {% if date == today %}
-                        <span class="ml-1 text-xs bg-blue-600 px-1.5 rounded"
-                            >Today</span
-                        >
+                        <span class="ml-1 text-xs bg-blue-600 px-1.5 rounded">
+                            Today
+                        </span>
                         {% endif %}
                     </span>
-                    <span class="text-xs text-gray-500 day-count">0</span>
+                    <span class="text-xs text-gray-500">
+                        {{ visits|length }}
+                    </span>
                 </div>
 
-                <ul class="day-list text-xs space-y-1 mb-2"></ul>
-
-                <div class="flex gap-2">
-                    <button
-                        class="optimize-btn flex-1 bg-gray-800 hover:bg-gray-700 rounded py-1 text-xs"
-                        data-date="{{ date }}"
-                    >
-                        Optimize
-                    </button>
-                    <button
-                        class="export-btn flex-1 bg-gray-800 hover:bg-gray-700 rounded py-1 text-xs"
-                        data-date="{{ date }}"
-                    >
-                        Export
-                    </button>
-                </div>
+                <ul class="space-y-1 text-xs">
+                    {% if visits %} {% for v in visits %}
+                    <li class="flex justify-between gap-2 truncate">
+                        <span class="truncate">{{ v.customer_name }}</span>
+                        {% if v.completed %}
+                        <span class="text-green-400">✓</span>
+                        {% endif %}
+                    </li>
+                    {% endfor %} {% else %}
+                    <li class="text-gray-500">No visits</li>
+                    {% endif %}
+                </ul>
             </div>
             {% endfor %}
         </div>
     </section>
 
     <!-- MONTH VIEW -->
-    <section id="month-view" class="hidden space-y-3">
+    <section id="month-view" class="hidden space-y-2">
         <div class="grid grid-cols-7 text-xs text-gray-400 uppercase">
             <div>Mon</div>
             <div>Tue</div>
@@ -117,235 +112,77 @@ content %}
         </div>
 
         <div class="grid grid-cols-7 gap-2">
-            {% for date in month_dates %}
+            {% for date in month_dates %} {% set visits =
+            scheduled_visits.get(date, []) %}
             <div
-                class="day-cell bg-gray-900 border border-gray-800 rounded-xl p-2 cursor-pointer"
-                data-date="{{ date }}"
+                class="border border-gray-800 rounded-xl p-2 min-h-[110px] {% if visits|length == 0 %}bg-gray-900{% elif visits|length < 3 %}bg-blue-900/30{% elif visits|length < 6 %}bg-orange-900/40{% else %}bg-red-900/50{% endif %}"
             >
                 <div class="text-xs font-semibold mb-1">
                     {{ date[-2:] }} {% if date == today %}
-                    <span class="ml-1 text-[10px] bg-blue-600 px-1.5 rounded"
-                        >Today</span
-                    >
+                    <span class="ml-1 text-[10px] bg-blue-600 px-1 rounded">
+                        Today
+                    </span>
                     {% endif %}
                 </div>
-                <div class="month-preview text-xs space-y-1"></div>
+
+                {% if visits %} {% for v in visits[:3] %}
+                <div class="truncate text-xs">
+                    {{ v.customer_name }} {% if v.completed %}
+                    <span class="text-green-400">✓</span>
+                    {% endif %}
+                </div>
+                {% endfor %} {% if visits|length > 3 %}
+                <div class="text-xs text-gray-400">
+                    +{{ visits|length - 3 }} more
+                </div>
+                {% endif %} {% endif %}
             </div>
             {% endfor %}
-        </div>
-
-        <div class="flex gap-3 text-xs text-gray-400">
-            <span class="font-semibold">Heatmap:</span>
-            <span>0</span>
-            <span class="text-blue-400">1–2</span>
-            <span class="text-orange-400">3–5</span>
-            <span class="text-red-400">6+</span>
         </div>
     </section>
 </div>
 
-<!-- Overlay -->
-<div id="overlay" class="hidden fixed inset-0 bg-black/50 z-40"></div>
-
-<!-- Side Panel -->
-<div
-    id="side-panel"
-    class="fixed top-0 right-0 h-full w-full sm:w-[420px] bg-gray-950 border-l border-gray-800 transform translate-x-full transition-transform z-50 flex flex-col"
->
-    <div class="p-4 border-b border-gray-800 flex justify-between items-center">
-        <div>
-            <div class="text-xs text-gray-500">Route</div>
-            <h3 class="font-semibold text-lg" id="panel-date">—</h3>
-        </div>
-        <button id="panel-close" class="text-xl text-gray-400 hover:text-white">
-            ✕
-        </button>
-    </div>
-
-    <div id="panel-content" class="flex-1 overflow-auto p-4 space-y-2"></div>
-
-    <div class="p-4 border-t border-gray-800 flex gap-2">
-        <button
-            id="panel-optimize"
-            class="flex-1 bg-gray-800 hover:bg-gray-700 rounded-lg py-2 text-sm"
-        >
-            Optimize
-        </button>
-        <button
-            id="panel-export"
-            class="flex-1 bg-gray-800 hover:bg-gray-700 rounded-lg py-2 text-sm"
-        >
-            Export
-        </button>
-    </div>
-</div>
-{% endblock %} {% block scripts %}
 <script>
-    /* ===================== Bootstrap ===================== */
-    const TODAY = "{{ today }}";
-    const scheduledVisits = {{ scheduled_visits | tojson }};
+    (() => {
+        const weekView = document.getElementById("week-view");
+        const monthView = document.getElementById("month-view");
+        const buttons = document.querySelectorAll(".view-btn");
 
-    /* ===================== Helpers ===================== */
-    const qs = s => document.querySelector(s);
-    const qsa = s => [...document.querySelectorAll(s)];
-    const esc = s => String(s ?? "").replace(/[&<>"']/g, m =>
-        ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+        function computeStats() {
+            let total = 0;
+            let completed = 0;
+            let days = new Set();
 
-    /* ===================== Storage ===================== */
-    const K = d => ({
-        order: `route:order:${d}`,
-        done:  `route:done:${d}`
-    });
+            document.querySelectorAll("[data-date], .bg-gray-900").forEach(() => {});
 
-    /* ===================== Core ===================== */
-    function getStops(date) {
-        const base = (scheduledVisits[date] || []).map(v => ({
-            name: v.customer_name,
-            done: !!v.completed,
-            key: String(v.customer_id ?? v.customer_name)
-        }));
+            {% for date, visits in scheduled_visits.items() %}
+                total += {{ visits|length }};
+                completed += {{ visits | selectattr("completed") | list | length }};
+                if ({{ visits|length }} > 0) days.add("{{ date }}");
+            {% endfor %}
 
-        const doneMap = JSON.parse(localStorage.getItem(K(date).done) || "{}");
-        base.forEach(s => {
-            if (doneMap[s.key] !== undefined) s.done = doneMap[s.key];
-        });
+            const avg = days.size ? (total / days.size).toFixed(1) : 0;
+            const rate = total ? Math.round((completed / total) * 100) : 0;
 
-        const order = JSON.parse(localStorage.getItem(K(date).order) || "null");
-        if (order) {
-            const m = Object.fromEntries(base.map(s => [s.key, s]));
-            return [...order.map(k => m[k]).filter(Boolean),
-                    ...base.filter(s => !order.includes(s.key))];
-        }
-        return base;
-    }
-
-    /* ===================== Rendering ===================== */
-    function renderDay(cell) {
-        const date = cell.dataset.date;
-        const stops = getStops(date);
-        const list = cell.querySelector(".day-list");
-        const count = cell.querySelector(".day-count");
-        const preview = cell.querySelector(".month-preview");
-
-        if (count) count.textContent = stops.length;
-
-        if (list) {
-            list.innerHTML = stops.slice(0,5).map(s =>
-                `<li class="flex justify-between">
-                    <span class="truncate">${esc(s.name)}</span>
-                    ${s.done ? '<span class="text-green-400">✓</span>' : ''}
-                </li>`
-            ).join("") || `<li class="text-gray-500">No stops</li>`;
+            document.getElementById("stat-total").textContent = total;
+            document.getElementById("stat-completed").textContent = completed;
+            document.getElementById("stat-rate").textContent = rate + "%";
+            document.getElementById("stat-avg").textContent = avg;
         }
 
-        if (preview) {
-            cell.classList.remove("bg-blue-900/40","bg-orange-900/50","bg-red-900/60");
-            if (stops.length > 5) cell.classList.add("bg-red-900/60");
-            else if (stops.length > 2) cell.classList.add("bg-orange-900/50");
-            else if (stops.length > 0) cell.classList.add("bg-blue-900/40");
+        buttons.forEach(btn => {
+            btn.addEventListener("click", () => {
+                buttons.forEach(b => b.classList.remove("bg-blue-600","text-white"));
+                btn.classList.add("bg-blue-600","text-white");
 
-            preview.innerHTML = stops.slice(0,3).map(s =>
-                `<div class="flex justify-between truncate">
-                    <span>${esc(s.name)}</span>
-                    ${s.done ? '✓' : ''}
-                </div>`
-            ).join("") || `<div class="text-gray-500">No stops</div>`;
-        }
-    }
-
-    function renderAll() {
-        qsa(".day-cell").forEach(renderDay);
-
-        let total = 0, done = 0, days = new Set();
-        qsa(".day-cell").forEach(c => {
-            const s = getStops(c.dataset.date);
-            if (!s.length) return;
-            days.add(c.dataset.date);
-            total += s.length;
-            done += s.filter(x => x.done).length;
-        });
-
-        qs("#stat-total").textContent = total;
-        qs("#stat-completed").textContent = done;
-        qs("#stat-rate").textContent = total ? Math.round(done/total*100) + "%" : "0%";
-        qs("#stat-avg").textContent = days.size ? (total/days.size).toFixed(1) : "0";
-    }
-
-    /* ===================== Side Panel ===================== */
-    let activeDate = null;
-
-    function openPanel(date) {
-        activeDate = date;
-        qs("#panel-date").textContent = date;
-        qs("#overlay").classList.remove("hidden");
-        qs("#side-panel").classList.remove("translate-x-full");
-
-        const stops = getStops(date);
-        const doneMap = JSON.parse(localStorage.getItem(K(date).done) || "{}");
-
-        qs("#panel-content").innerHTML = stops.map((s,i) =>
-            `<label class="flex items-center gap-3 bg-gray-900 border border-gray-800 rounded-lg p-3">
-                <input type="checkbox" ${s.done?'checked':''} data-key="${esc(s.key)}"
-                    class="done-toggle accent-blue-500">
-                <span class="flex-1 truncate">${i+1}. ${esc(s.name)}</span>
-            </label>`
-        ).join("") || `<div class="text-gray-500">No stops</div>`;
-
-        qsa(".done-toggle").forEach(cb => {
-            cb.addEventListener("change", () => {
-                doneMap[cb.dataset.key] = cb.checked;
-                localStorage.setItem(K(date).done, JSON.stringify(doneMap));
-                renderAll();
+                const isWeek = btn.dataset.view === "week";
+                weekView.classList.toggle("hidden", !isWeek);
+                monthView.classList.toggle("hidden", isWeek);
             });
         });
-    }
 
-    function closePanel() {
-        activeDate = null;
-        qs("#overlay").classList.add("hidden");
-        qs("#side-panel").classList.add("translate-x-full");
-    }
-
-    /* ===================== Actions ===================== */
-    function optimize(date) {
-        const stops = getStops(date);
-        const shuffled = [...stops].sort(() => Math.random() - 0.5);
-        localStorage.setItem(K(date).order, JSON.stringify(shuffled.map(s => s.key)));
-        renderAll();
-        if (activeDate === date) openPanel(date);
-    }
-
-    function exportDay(date) {
-        const w = window.open("", "_blank");
-        const stops = getStops(date);
-        w.document.write(`<h1>Route ${date}</h1>` + stops.map(
-            (s,i)=>`<p>${i+1}. ${esc(s.name)} ${s.done?'✓':''}</p>`
-        ).join(""));
-        w.print();
-    }
-
-    /* ===================== Wiring ===================== */
-    qs("#panel-close").onclick = closePanel;
-    qs("#overlay").onclick = closePanel;
-    qs("#today-btn").onclick = () => openPanel(TODAY);
-
-    qsa(".day-cell").forEach(c => c.onclick = e => {
-        if (e.target.closest("button")) return;
-        openPanel(c.dataset.date);
-    });
-    qsa(".optimize-btn").forEach(b =>
-        b.onclick = e => { e.stopPropagation(); optimize(b.dataset.date); });
-    qsa(".export-btn").forEach(b =>
-        b.onclick = e => { e.stopPropagation(); exportDay(b.dataset.date); });
-
-    qsa(".view-btn").forEach(b => b.onclick = () => {
-        qsa(".view-btn").forEach(x=>x.classList.remove("bg-blue-600","text-white"));
-        b.classList.add("bg-blue-600","text-white");
-        qs("#week-view").classList.toggle("hidden", b.dataset.view !== "week");
-        qs("#month-view").classList.toggle("hidden", b.dataset.view !== "month");
-    });
-
-    /* ===================== Init ===================== */
-    renderAll();
+        computeStats();
+    })();
 </script>
+
 {% endblock %}
