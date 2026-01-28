@@ -11,7 +11,21 @@
         />
         <meta name="theme-color" content="#0e1117" />
 
-        <!-- App CSS -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script>
+            tailwind.config = {
+                darkMode: "class",
+                theme: {
+                    extend: {
+                        colors: {
+                            app: "#0e1117",
+                        },
+                    },
+                },
+            };
+        </script>
+
+        <!-- Optional: your own overrides -->
         <link
             rel="stylesheet"
             href="{{ url_for('static', filename='css/app.css') }}"
