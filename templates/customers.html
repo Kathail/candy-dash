@@ -33,7 +33,7 @@ content %}
         </button>
     </div>
 
-    <!-- Stats Cards -->
+    <!-- Stats -->
     {% set owing = customers | selectattr('balance_cents', 'gt', 0) | list %} {%
     set total_owed = (owing | sum(attribute='balance_cents') / 100) | round(2)
     %}
@@ -79,7 +79,7 @@ content %}
         </div>
     </div>
 
-    <!-- Bulk Actions Bar -->
+    <!-- Bulk Actions -->
     <div
         id="bulk-bar"
         class="hidden sticky top-4 z-20 bg-gray-950 border border-gray-700 rounded-xl px-5 py-4 shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all"
@@ -91,27 +91,26 @@ content %}
             <button
                 id="bulk-add-to-route"
                 type="button"
-                class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition"
+                class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-medium transition"
             >
                 Add to Route
             </button>
             <button
                 id="bulk-clear"
                 type="button"
-                class="bg-gray-700 hover:bg-gray-600 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition"
+                class="bg-gray-700 hover:bg-gray-600 text-white px-5 py-2 rounded-lg text-sm font-medium transition"
             >
                 Clear
             </button>
         </div>
     </div>
 
-    <!-- Customer List Section -->
+    <!-- Customer Table -->
     <div
         class="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden shadow-sm"
     >
-        <!-- Table Controls -->
         <div
-            class="p-4 sm:p-6 border-b border-gray-700 flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+            class="p-4 sm:p-5 border-b border-gray-700 flex flex-col lg:flex-row lg:items-center justify-between gap-4"
         >
             <div class="flex items-baseline gap-3">
                 <h2 class="text-lg sm:text-xl font-semibold text-white">
@@ -144,19 +143,18 @@ content %}
                         />
                     </svg>
                 </div>
-
                 <div class="flex gap-2 flex-wrap">
                     <button
                         id="toggle-density"
                         type="button"
-                        class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition"
+                        class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
                     >
                         Compact
                     </button>
                     <button
                         id="toggle-select"
                         type="button"
-                        class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition"
+                        class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
                     >
                         Select
                     </button>
@@ -188,7 +186,7 @@ content %}
                         class="bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded-lg text-sm disabled:opacity-50 transition"
                         disabled
                     >
-                        Previous
+                        Prev
                     </button>
                     <span class="text-sm text-gray-300"
                         >Page <span id="current-page">1</span></span
@@ -270,6 +268,7 @@ content %}
                                 >—</span
                             >
                         </th>
+                        <th class="px-4 sm:px-6 py-4 text-right">Notes</th>
                         <th class="px-4 sm:px-6 py-4 text-right">Actions</th>
                     </tr>
                 </thead>
@@ -308,51 +307,23 @@ content %}
                                 {{ c.name }}
                             </button>
 
-                            <!-- Notes preview -->
-                            {% if c.notes %}
-                            <div
-                                class="mt-1.5 text-xs text-gray-500 italic max-w-prose group relative"
-                            >
-                                <span
-                                    class="cursor-pointer hover:text-gray-300"
-                                    onclick="toggleNotesPreview(this)"
-                                >
-                                    Notes: {{ c.notes | striptags | truncate(60)
-                                    }}
-                                </span>
-                                <div
-                                    class="notes-preview hidden absolute z-20 bg-gray-900 border border-gray-700 rounded-lg p-3 text-xs text-gray-300 w-80 sm:w-96 shadow-2xl mt-1 left-0 top-full"
-                                >
-                                    {{ c.notes | safe }}
-                                </div>
-                            </div>
-                            {% endif %}
-
-                            <!-- Mobile-only info -->
+                            <!-- Mobile info -->
                             <div
                                 class="mt-2 text-xs text-gray-500 space-y-1 lg:hidden"
                             >
                                 {% if c.phone %}
                                 <div>
                                     Phone:
-                                    <a
-                                        href="tel:{{ c.phone }}"
-                                        class="text-blue-400 hover:text-blue-300 transition"
+                                    <span class="text-gray-300"
+                                        >{{ c.phone }}</span
                                     >
-                                        {{ c.phone }}
-                                    </a>
                                 </div>
                                 {% endif %} {% if c.address %}
                                 <div class="truncate">
                                     Addr:
-                                    <a
-                                        href="https://www.google.com/maps/search/?api=1&query={{ c.address | urlencode }}"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        class="text-blue-400 hover:text-blue-300 transition"
+                                    <span class="text-gray-300"
+                                        >{{ c.address }}</span
                                     >
-                                        {{ c.address }}
-                                    </a>
                                 </div>
                                 {% endif %}
                                 <div>
@@ -368,28 +339,12 @@ content %}
                         <td
                             class="px-4 sm:px-6 py-4 text-gray-400 hidden lg:table-cell"
                         >
-                            {% if c.phone %}
-                            <a
-                                href="tel:{{ c.phone }}"
-                                class="hover:text-blue-400 transition"
-                            >
-                                {{ c.phone }}
-                            </a>
-                            {% else %} — {% endif %}
+                            {{ c.phone or '—' }}
                         </td>
                         <td
                             class="px-4 sm:px-6 py-4 text-gray-400 hidden xl:table-cell truncate"
                         >
-                            {% if c.address %}
-                            <a
-                                href="https://www.google.com/maps/search/?api=1&query={{ c.address | urlencode }}"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                class="hover:text-blue-400 hover:underline transition"
-                            >
-                                {{ c.address }}
-                            </a>
-                            {% else %} — {% endif %}
+                            {{ c.address or '—' }}
                         </td>
                         <td
                             class="px-4 sm:px-6 py-4 text-right font-semibold {{ bal_class }}"
@@ -402,6 +357,45 @@ content %}
                             {% if c.last_visit_at %}{{
                             c.last_visit_at.strftime('%b %d, %Y') }}{% else
                             %}Never{% endif %}
+                        </td>
+                        <td class="px-4 sm:px-6 py-4 text-right">
+                            <button
+                                type="button"
+                                onclick="toggleNotes(this)"
+                                class="text-blue-400 hover:text-blue-300 text-sm font-medium transition"
+                            >
+                                Notes
+                            </button>
+                            <div class="notes-section hidden mt-3">
+                                <form
+                                    method="post"
+                                    action="{{ url_for('customers.update_notes', customer_id=c.id) }}"
+                                    class="space-y-2"
+                                >
+                                    <textarea
+                                        name="notes"
+                                        rows="3"
+                                        class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-100 placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-y"
+                                    >
+{{ c.notes or "" }}</textarea
+                                    >
+                                    <div class="flex justify-end gap-2">
+                                        <button
+                                            type="button"
+                                            onclick="toggleNotes(this)"
+                                            class="text-gray-400 hover:text-gray-300 text-xs"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-lg text-xs font-medium transition"
+                                        >
+                                            Save
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
                         </td>
                         <td class="px-4 sm:px-6 py-4 text-right">
                             <div class="flex items-center justify-end gap-2">
@@ -586,10 +580,10 @@ content %}
         </form>
     </div>
 </div>
-{% endblock %} {% block scripts %}
+
 <script>
     // ============================================================================
-    // Customers Page – Enhanced with tel:, maps, notes preview & pagination
+    // Customers Page – Cleaned up, with inline notes editing
     // ============================================================================
     document.addEventListener("DOMContentLoaded", () => {
         const rows = [...document.querySelectorAll(".customer-row")];
@@ -601,15 +595,13 @@ content %}
         const selectedCount = document.getElementById("selected-count");
         const selectAllChk = document.getElementById("select-all");
 
-        let sortState = { key: "balance", dir: -1 }; // default: highest balance first
+        let sortState = { key: "balance", dir: -1 };
         let selectMode = false;
         let compactMode = false;
-
-        // ── Pagination State ───────────────────────────────────────────────────
         let currentPage = 1;
         let pageSize = 20;
 
-        // ── Scroll to add form ─────────────────────────────────────────────────
+        // ── Scroll to add form ────────────────────────────────────────────────
         document
             .querySelector('[data-action="scroll-add"]')
             ?.addEventListener("click", () => {
@@ -625,7 +617,7 @@ content %}
                 const match = row.dataset.search?.includes(term) ?? false;
                 row.dataset.filtered = match ? "true" : "false";
             });
-            paginate(); // pagination handles visibility now
+            paginate();
         }
         searchInput?.addEventListener("input", filterRows);
 
@@ -649,8 +641,10 @@ content %}
         }
 
         function sortRows() {
-            const toSort = rows.filter((r) => r.dataset.filtered !== "false");
-            toSort.sort((a, b) => {
+            const visibleRows = rows.filter(
+                (r) => r.dataset.filtered !== "false",
+            );
+            visibleRows.sort((a, b) => {
                 let va = a.dataset[sortState.key] ?? "";
                 let vb = b.dataset[sortState.key] ?? "";
                 const na = Number(va),
@@ -658,7 +652,7 @@ content %}
                 const num = !isNaN(na) && !isNaN(nb);
                 return sortState.dir * (num ? na - nb : va.localeCompare(vb));
             });
-            toSort.forEach((r) => r.parentElement.appendChild(r));
+            visibleRows.forEach((r) => r.parentElement.appendChild(r));
             updateSortIndicators();
         }
 
@@ -677,7 +671,7 @@ content %}
             });
         });
 
-        // ── Pagination Logic ───────────────────────────────────────────────────
+        // ── Pagination ─────────────────────────────────────────────────────────
         function paginate() {
             const visibleRows = rows.filter(
                 (r) => r.dataset.filtered !== "false",
@@ -691,9 +685,9 @@ content %}
             const start = (currentPage - 1) * pageSize;
             const end = start + pageSize;
 
-            visibleRows.slice(start, end).forEach((r) => {
-                r.style.display = "";
-            });
+            visibleRows
+                .slice(start, end)
+                .forEach((r) => (r.style.display = ""));
 
             document.getElementById("showing-count").textContent = Math.min(
                 end,
@@ -732,21 +726,22 @@ content %}
             }
         });
 
-        // ── Notes Preview Toggle ───────────────────────────────────────────────
-        window.toggleNotesPreview = function (el) {
-            const preview = el.nextElementSibling;
-            if (preview) preview.classList.toggle("hidden");
+        // ── Inline Notes Toggle & Edit ─────────────────────────────────────────
+        window.toggleNotes = function (btn) {
+            const row = btn.closest("tr");
+            const section = row.querySelector(".notes-section");
+            if (section) section.classList.toggle("hidden");
         };
 
-        // Close notes preview when clicking outside
+        // Close notes when clicking outside
         document.addEventListener("click", (e) => {
             if (
-                !e.target.closest(".group") &&
-                !e.target.closest(".notes-preview")
+                !e.target.closest('button[onclick*="toggleNotes"]') &&
+                !e.target.closest(".notes-section")
             ) {
                 document
-                    .querySelectorAll(".notes-preview:not(.hidden)")
-                    .forEach((p) => p.classList.add("hidden"));
+                    .querySelectorAll(".notes-section:not(.hidden)")
+                    .forEach((s) => s.classList.add("hidden"));
             }
         });
 
@@ -876,9 +871,9 @@ content %}
 
         // ── Initial Setup ──────────────────────────────────────────────────────
         toggleSelectMode(false);
-        filterRows(); // applies search + pagination
-        sortRows(); // default sort
-        paginate(); // show first page
+        filterRows();
+        sortRows();
+        paginate();
     });
 </script>
 {% endblock %}
