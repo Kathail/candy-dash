@@ -384,7 +384,7 @@ content %}
                             <div class="notes-section hidden mt-3">
                                 <form
                                     method="post"
-                                    action="{{ url_for('customers.update_notes', customer_id=c.id) }}"
+                                    action="{{ url_for('route.route_update_notes', stop_id=c.id) }}"
                                     class="space-y-2"
                                 >
                                     <textarea
@@ -763,7 +763,7 @@ content %}
             }
         });
 
-        // ── Inline Notes Toggle & Edit ─────────────────────────────────────────
+        // ── Inline Notes Toggle ────────────────────────────────────────────────
         window.toggleNotes = function (btn) {
             const row = btn.closest("tr");
             const section = row.querySelector(".notes-section");
