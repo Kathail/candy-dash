@@ -1,5 +1,6 @@
 // static/js/app.js
 // Candy Dash – Shared frontend utilities (HTMX + Alpine)
+// Single source of truth for shared UI behavior
 
 (() => {
   "use strict";
@@ -61,12 +62,20 @@
   // ---------------------------------------------------------------------------
   document.addEventListener("alpine:init", () => {
     Alpine.data("customerTable", ({ mode }) => ({
-      // state
+      // ---------------------------------------------------------------------
+      // Exposed state
+      // ---------------------------------------------------------------------
+      mode, // 'customers' | 'balances'
+
+      rows: Array.isArray(window.CUSTOMERS) ? window.CUSTOMERS : [],
+
       searchTerm: "",
       sortKey: mode === "balances" ? "balance" : "name",
       sortDir: mode === "balances" ? "desc" : "asc",
 
-      // actions
+      // ---------------------------------------------------------------------
+      // Actions
+      // ---------------------------------------------------------------------
       sortBy(key) {
         if (this.sortKey === key) {
           this.sortDir = this.sortDir === "asc" ? "desc" : "asc";
@@ -76,20 +85,27 @@
         }
       },
 
-      // computed
+      sortIndicator(key) {
+        if (this.sortKey !== key) return "";
+        return this.sortDir === "asc" ? "▲" : "▼";
+      },
+
+      // ---------------------------------------------------------------------
+      // Computed
+      // ---------------------------------------------------------------------
       get filteredRows() {
         const t = this.searchTerm.toLowerCase();
 
         let rows = !t
-          ? customers
-          : customers.filter((c) =>
+          ? this.rows
+          : this.rows.filter((c) =>
               [c.name, c.phone, c.email, c.address, c.notes]
                 .filter(Boolean)
                 .some((v) => v.toLowerCase().includes(t)),
             );
 
-        if (mode === "balances") {
-          rows = rows.filter((c) => c.balance > 0);
+        if (this.mode === "balances") {
+          rows = rows.filter((c) => Number(c.balance) > 0);
         }
 
         return [...rows].sort((a, b) => {
@@ -105,11 +121,14 @@
         });
       },
 
-      // helpers
+      // ---------------------------------------------------------------------
+      // Helpers
+      // ---------------------------------------------------------------------
       balanceClass(balance) {
-        if (balance <= 0) return "text-gray-400";
-        if (balance < 20) return "text-yellow-300";
-        if (balance < 100) return "text-orange-400";
+        const n = Number(balance);
+        if (!Number.isFinite(n) || n <= 0) return "text-gray-400";
+        if (n < 20) return "text-yellow-300";
+        if (n < 100) return "text-orange-400";
         return "theme-text-danger";
       },
     }));
