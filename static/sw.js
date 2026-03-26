@@ -2,19 +2,22 @@
    Candy Route Planner - Service Worker
    ============================================ */
 
-var CACHE_NAME = "candy-route-v4";
+var CACHE_NAME = "candy-route-v5";
 
 var PRECACHE_URLS = [
-  "/",
   "/static/css/app.css",
   "/static/js/app.js",
   "/static/js/offline.js",
+  "/static/vendor/tailwind.min.js",
+  "/static/vendor/alpine.min.js",
+  "/static/vendor/htmx.min.js",
+  "/static/vendor/chart.min.js",
   "/static/manifest.json",
   "/static/icons/favicon.svg",
 ];
 
 /* ------------------------------------------
-   Install: pre-cache static assets
+   Install: pre-cache static assets only
    ------------------------------------------ */
 self.addEventListener("install", function (event) {
   event.waitUntil(
@@ -53,8 +56,9 @@ self.addEventListener("activate", function (event) {
 self.addEventListener("fetch", function (event) {
   var url = new URL(event.request.url);
 
-  // Only handle same-origin requests
+  // Only handle same-origin GET requests
   if (url.origin !== self.location.origin) return;
+  if (event.request.method !== "GET") return;
 
   // Static assets: cache-first
   if (isStaticAsset(url.pathname)) {
@@ -62,24 +66,16 @@ self.addEventListener("fetch", function (event) {
     return;
   }
 
-  // API calls: network-first with cache fallback
+  // API calls: network only (don't cache dynamic JSON)
   if (url.pathname.startsWith("/api/")) {
-    event.respondWith(networkFirst(event.request));
-    return;
+    return; // let browser handle normally
   }
 
-  // Page navigations: network-first, offline fallback
+  // Page navigations: network only, no caching
+  // This prevents stale CSRF tokens and login redirects
   if (event.request.mode === "navigate") {
-    event.respondWith(
-      networkFirst(event.request).catch(function () {
-        return caches.match("/offline");
-      })
-    );
-    return;
+    return; // let browser handle normally
   }
-
-  // Everything else: network-first
-  event.respondWith(networkFirst(event.request));
 });
 
 /* ------------------------------------------
@@ -100,43 +96,9 @@ function cacheFirst(request) {
   });
 }
 
-function networkFirst(request) {
-  return fetch(request)
-    .then(function (response) {
-      if (response.ok) {
-        var clone = response.clone();
-        caches.open(CACHE_NAME).then(function (cache) {
-          cache.put(request, clone);
-        });
-      }
-      return response;
-    })
-    .catch(function () {
-      return caches.match(request);
-    });
-}
-
 /* ------------------------------------------
    Helpers
    ------------------------------------------ */
 function isStaticAsset(pathname) {
-  var extensions = [
-    ".css",
-    ".js",
-    ".png",
-    ".jpg",
-    ".jpeg",
-    ".gif",
-    ".svg",
-    ".ico",
-    ".woff",
-    ".woff2",
-    ".ttf",
-    ".eot",
-    ".webp",
-  ];
-  var lower = pathname.toLowerCase();
-  return extensions.some(function (ext) {
-    return lower.endsWith(ext);
-  });
+  return pathname.startsWith("/static/");
 }
