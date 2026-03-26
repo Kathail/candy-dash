@@ -229,7 +229,7 @@ function plannerApp() {
     selectedDate: selectedISO,
     customerSearch: '',
     allStops: {},
-    stops: {{ stops | tojson if stops else '[]' }},
+    stops: {{ stops_json | tojson }},
 
     init() {
       this.fetchAllStops();

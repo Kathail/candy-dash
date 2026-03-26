@@ -41,10 +41,23 @@ def index():
         .all()
     )
 
+    stops_json = [
+        {
+            "id": s.id,
+            "customer_id": s.customer_id,
+            "customer_name": s.customer.name,
+            "city": s.customer.city or "",
+            "sequence": s.sequence,
+            "completed": s.completed,
+        }
+        for s in stops
+    ]
+
     return render_template(
         "planner.html",
         selected_date=selected_date,
         stops=stops,
+        stops_json=stops_json,
         customers=customers,
     )
 

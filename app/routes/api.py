@@ -96,8 +96,19 @@ def sync():
 
     Returns results with current balances.
     """
-    payments_data = request.get_json(silent=True)
-    if not payments_data or not isinstance(payments_data, list):
+    raw = request.get_json(silent=True)
+    if not raw:
+        return jsonify({"error": "Expected JSON payload."}), 400
+
+    # Accept either a raw array or {"payments": [...]}
+    if isinstance(raw, list):
+        payments_data = raw
+    elif isinstance(raw, dict) and "payments" in raw:
+        payments_data = raw["payments"]
+    else:
+        return jsonify({"error": "Expected a JSON array of payments."}), 400
+
+    if not isinstance(payments_data, list):
         return jsonify({"error": "Expected a JSON array of payments."}), 400
 
     results = []
