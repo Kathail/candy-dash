@@ -2,7 +2,7 @@
 <div class="bg-gray-800 rounded-lg shadow border border-gray-700 p-4 flex flex-col sm:flex-row sm:items-center gap-3">
   <div class="flex-1 min-w-0">
     <a href="{{ url_for('customers.profile', id=customer.id) }}"
-       class="font-medium text-indigo-400 hover:text-indigo-300 truncate block">
+       class="font-medium text-indigo-400 hover:text-indigo-300 truncate block min-h-[44px] flex items-center">
       {{ customer.name }}
     </a>
     <p class="text-sm text-gray-500">{{ customer.city or 'No city' }}</p>
@@ -29,7 +29,7 @@
   </div>
 
   <a href="{{ url_for('customers.profile', id=customer.id) }}"
-     class="flex-shrink-0 text-gray-500 hover:text-indigo-400">
+     class="flex-shrink-0 text-gray-500 hover:text-indigo-400 min-h-[44px] min-w-[44px] flex items-center justify-center">
     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
     </svg>
@@ -48,16 +48,16 @@
 <div class="flex items-center justify-center gap-1 mt-4">
   {% if pagination.has_prev %}
   <a href="?page={{ pagination.prev_num }}&q={{ request.args.get('q', '') }}&status={{ request.args.get('status', '') }}&city={{ request.args.get('city', '') }}&sort={{ request.args.get('sort', 'name') }}&dir={{ request.args.get('dir', 'asc') }}"
-     class="px-3 py-1.5 text-sm rounded-md border border-gray-600 text-gray-300 hover:bg-gray-700">&laquo; Prev</a>
+     class="px-3 py-1.5 text-sm rounded-md border border-gray-600 text-gray-300 hover:bg-gray-700 min-h-[44px] inline-flex items-center">&laquo; Prev</a>
   {% endif %}
 
   {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
     {% if page_num %}
       {% if page_num == pagination.page %}
-      <span class="px-3 py-1.5 text-sm rounded-md bg-indigo-600 text-white font-medium">{{ page_num }}</span>
+      <span class="px-3 py-1.5 text-sm rounded-md bg-indigo-600 text-white font-medium min-h-[44px] inline-flex items-center">{{ page_num }}</span>
       {% else %}
       <a href="?page={{ page_num }}&q={{ request.args.get('q', '') }}&status={{ request.args.get('status', '') }}&city={{ request.args.get('city', '') }}&sort={{ request.args.get('sort', 'name') }}&dir={{ request.args.get('dir', 'asc') }}"
-         class="px-3 py-1.5 text-sm rounded-md border border-gray-600 text-gray-300 hover:bg-gray-700">{{ page_num }}</a>
+         class="px-3 py-1.5 text-sm rounded-md border border-gray-600 text-gray-300 hover:bg-gray-700 min-h-[44px] inline-flex items-center">{{ page_num }}</a>
       {% endif %}
     {% else %}
     <span class="px-2 text-gray-400">...</span>
@@ -66,7 +66,7 @@
 
   {% if pagination.has_next %}
   <a href="?page={{ pagination.next_num }}&q={{ request.args.get('q', '') }}&status={{ request.args.get('status', '') }}&city={{ request.args.get('city', '') }}&sort={{ request.args.get('sort', 'name') }}&dir={{ request.args.get('dir', 'asc') }}"
-     class="px-3 py-1.5 text-sm rounded-md border border-gray-600 text-gray-300 hover:bg-gray-700">Next &raquo;</a>
+     class="px-3 py-1.5 text-sm rounded-md border border-gray-600 text-gray-300 hover:bg-gray-700 min-h-[44px] inline-flex items-center">Next &raquo;</a>
   {% endif %}
 </div>
 {% endif %}

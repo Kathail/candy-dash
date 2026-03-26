@@ -137,7 +137,7 @@
           {% set lv = last_visits.get(stop.customer_id) %}
           {% set lp = last_payments.get(stop.customer_id) %}
           {% if lv or lp %}
-          <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-gray-500">
+          <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
             {% if lv %}
             <span>Last visit: {{ lv|dateformat('%b %d') }}</span>
             {% endif %}

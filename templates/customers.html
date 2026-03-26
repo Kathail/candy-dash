@@ -37,7 +37,7 @@
             hx-trigger="change"
             hx-target="#customer-list"
             hx-include="[name='q'], [name='city'], [name='sort'], [name='dir']"
-            class="rounded-lg border-gray-600 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 bg-gray-700 text-gray-200">
+            class="min-h-[44px] rounded-lg border-gray-600 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 bg-gray-700 text-gray-200">
       <option value="" {{ 'selected' if not status_filter }}>All Statuses</option>
       <option value="active" {{ 'selected' if status_filter == 'active' }}>Active</option>
       <option value="inactive" {{ 'selected' if status_filter == 'inactive' }}>Inactive</option>
@@ -48,7 +48,7 @@
             hx-trigger="change"
             hx-target="#customer-list"
             hx-include="[name='q'], [name='status'], [name='sort'], [name='dir']"
-            class="rounded-lg border-gray-600 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 bg-gray-700 text-gray-200">
+            class="min-h-[44px] rounded-lg border-gray-600 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 bg-gray-700 text-gray-200">
       <option value="" {{ 'selected' if not city_filter }}>All Cities</option>
       {% for city in cities %}
       <option value="{{ city }}" {{ 'selected' if city_filter == city }}>{{ city }}</option>
@@ -60,7 +60,7 @@
             hx-trigger="change"
             hx-target="#customer-list"
             hx-include="[name='q'], [name='status'], [name='city'], [name='dir']"
-            class="rounded-lg border-gray-600 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 bg-gray-700 text-gray-200">
+            class="min-h-[44px] rounded-lg border-gray-600 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 bg-gray-700 text-gray-200">
       <option value="name" {{ 'selected' if sort == 'name' }}>Sort by Name</option>
       <option value="balance" {{ 'selected' if sort == 'balance' }}>Sort by Balance</option>
       <option value="city" {{ 'selected' if sort == 'city' }}>Sort by City</option>
@@ -71,7 +71,7 @@
             hx-trigger="change"
             hx-target="#customer-list"
             hx-include="[name='q'], [name='status'], [name='city'], [name='sort']"
-            class="rounded-lg border-gray-600 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 bg-gray-700 text-gray-200">
+            class="min-h-[44px] rounded-lg border-gray-600 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 bg-gray-700 text-gray-200">
       <option value="asc" {{ 'selected' if direction == 'asc' }}>Ascending</option>
       <option value="desc" {{ 'selected' if direction == 'desc' }}>Descending</option>
     </select>
@@ -121,7 +121,7 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="button"
                     @click="$dispatch('open-payment-modal', { customerId: {{ customer.id }}, customerName: '{{ customer.name|e }}' })"
-                    class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-indigo-400 bg-indigo-500/10 rounded-lg hover:bg-indigo-500/20">
+                    class="inline-flex items-center gap-1 px-3 py-2.5 min-h-[44px] text-xs font-medium text-indigo-400 bg-indigo-500/10 rounded-lg hover:bg-indigo-500/20">
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V7m0 10v1"/>
               </svg>
@@ -176,7 +176,7 @@
             <td class="px-5 py-3 text-right">
               <button type="button"
                       @click="$dispatch('open-payment-modal', { customerId: {{ customer.id }}, customerName: '{{ customer.name|e }}' })"
-                      class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-indigo-400 bg-indigo-500/10 rounded-lg hover:bg-indigo-500/20">
+                      class="inline-flex items-center gap-1 px-3 py-2.5 min-h-[44px] text-xs font-medium text-indigo-400 bg-indigo-500/10 rounded-lg hover:bg-indigo-500/20">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V7m0 10v1"/>
                 </svg>

@@ -24,7 +24,7 @@
         <label for="username" class="block text-sm font-medium text-gray-300 mb-1">Username</label>
         <input type="text" name="username" id="username" required
                value="{{ user.username if editing and user else '' }}"
-               class="block w-full rounded-md border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+               class="block w-full rounded-md border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm min-h-[44px]"
                placeholder="Enter username">
       </div>
 
@@ -33,7 +33,7 @@
         <label for="email" class="block text-sm font-medium text-gray-300 mb-1">Email</label>
         <input type="email" name="email" id="email"
                value="{{ user.email if editing and user and user.email else '' }}"
-               class="block w-full rounded-md border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+               class="block w-full rounded-md border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm min-h-[44px]"
                placeholder="Enter email (optional)">
       </div>
 
@@ -42,7 +42,7 @@
       <div>
         <label for="password" class="block text-sm font-medium text-gray-300 mb-1">Password</label>
         <input type="password" name="password" id="password" required minlength="12"
-               class="block w-full rounded-md border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+               class="block w-full rounded-md border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm min-h-[44px]"
                placeholder="Minimum 12 characters">
         <p class="mt-1 text-xs text-gray-400">Password must be at least 12 characters long.</p>
       </div>
@@ -52,7 +52,7 @@
       <div>
         <label for="role" class="block text-sm font-medium text-gray-300 mb-1">Role</label>
         <select name="role" id="role"
-                class="block w-full rounded-md border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                class="block w-full rounded-md border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm min-h-[44px]">
           <option value="sales" {% if editing and user and user.role == 'sales' %}selected{% endif %}>Sales</option>
           <option value="admin" {% if editing and user and user.role == 'admin' %}selected{% endif %}>Admin</option>
           <option value="manager" {% if editing and user and user.role == 'manager' %}selected{% endif %}>Manager</option>
@@ -64,7 +64,7 @@
       <div class="flex items-center gap-2">
         <input type="checkbox" name="is_active" id="is_active" value="1"
                {% if user and user.is_active %}checked{% endif %}
-               class="h-4 w-4 rounded border-gray-600 bg-gray-700 text-indigo-400 focus:ring-indigo-500">
+               class="h-5 w-5 rounded border-gray-600 bg-gray-700 text-indigo-400 focus:ring-indigo-500">
         <label for="is_active" class="text-sm font-medium text-gray-300">Active</label>
       </div>
       {% endif %}
@@ -72,11 +72,11 @@
       <!-- Submit -->
       <div class="flex gap-3 pt-4 border-t border-gray-700">
         <button type="submit"
-                class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
+                class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors min-h-[44px]">
           {% if editing %}Update User{% else %}Create User{% endif %}
         </button>
         <a href="{{ url_for('admin.index') }}"
-           class="inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 text-sm font-medium rounded-md text-gray-300 hover:bg-gray-700 transition-colors">
+           class="inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 text-sm font-medium rounded-md text-gray-300 hover:bg-gray-700 transition-colors min-h-[44px]">
           Cancel
         </a>
       </div>

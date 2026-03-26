@@ -55,7 +55,7 @@
       <div class="flex-1">
         <label for="city" class="sr-only">City</label>
         <select name="city" id="city"
-                class="block w-full rounded-md border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                class="block w-full rounded-md border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm min-h-[44px]">
           <option value="">All Cities</option>
           {% for city in cities %}
           <option value="{{ city }}" {% if city == city_filter %}selected{% endif %}>{{ city }}</option>
@@ -67,7 +67,7 @@
       <div class="flex-1">
         <label for="bucket" class="sr-only">Aging</label>
         <select name="bucket" id="bucket"
-                class="block w-full rounded-md border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                class="block w-full rounded-md border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm min-h-[44px]">
           <option value="">All Aging</option>
           <option value="0-30" {% if bucket_filter == '0-30' %}selected{% endif %}>0-30 Days</option>
           <option value="31-60" {% if bucket_filter == '31-60' %}selected{% endif %}>31-60 Days</option>
@@ -80,7 +80,7 @@
       <div class="flex-1">
         <label for="sort" class="sr-only">Sort</label>
         <select name="sort" id="sort"
-                class="block w-full rounded-md border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                class="block w-full rounded-md border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm min-h-[44px]">
           <option value="balance_desc" {% if sort == 'balance_desc' %}selected{% endif %}>Balance (High to Low)</option>
           <option value="balance_asc" {% if sort == 'balance_asc' %}selected{% endif %}>Balance (Low to High)</option>
           <option value="name_asc" {% if sort == 'name_asc' %}selected{% endif %}>Name (A-Z)</option>
