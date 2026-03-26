@@ -25,8 +25,8 @@ def create_app():
     # Configuration
     app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret-key-change-in-production")
 
-    turso_url = os.environ.get("TURSO_DATABASE_URL")
-    turso_token = os.environ.get("TURSO_AUTH_TOKEN")
+    turso_url = (os.environ.get("TURSO_DATABASE_URL") or "").strip()
+    turso_token = (os.environ.get("TURSO_AUTH_TOKEN") or "").strip()
 
     if turso_url and turso_token:
         # Register libsql_client's DBAPI2 driver as a SQLAlchemy dialect

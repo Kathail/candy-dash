@@ -27,10 +27,10 @@ class dialect(SQLiteDialect_pysqlite):
         query = dict(url.query)
         auth_token = query.pop("authToken", None)
 
-        # Reconstruct the Turso URL
-        turso_url = db_path
+        # Reconstruct the Turso URL, stripping any stray whitespace/newlines
+        turso_url = db_path.strip()
         if auth_token:
-            turso_url = f"{turso_url}?authToken={auth_token}"
+            turso_url = f"{turso_url}?authToken={auth_token.strip()}"
 
         return [turso_url], {}
 
