@@ -25,24 +25,9 @@ def create_app():
     # Configuration
     app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret-key-change-in-production")
 
-    turso_url = (os.environ.get("TURSO_DATABASE_URL") or "").strip()
-    turso_token = (os.environ.get("TURSO_AUTH_TOKEN") or "").strip()
-
-    if turso_url and turso_token:
-        # Register libsql_client's DBAPI2 driver as a SQLAlchemy dialect
-        from sqlalchemy.dialects import registry as dialect_registry
-        dialect_registry.register("sqlite.libsql", "app.libsql_dialect", "dialect")
-
-        # Build connection URL for our custom dialect
-        # Convert libsql:// to https:// for the HTTP client
-        http_url = turso_url.replace("libsql://", "https://")
-        app.config["SQLALCHEMY_DATABASE_URI"] = (
-            f"sqlite+libsql:///{http_url}?authToken={turso_token}"
-        )
-    else:
-        app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
-            "DATABASE_URL", "sqlite:///candy_route.db"
-        )
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
+        "DATABASE_URL", "sqlite:///candy_route.db"
+    )
 
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config["PERMANENT_SESSION_LIFETIME"] = 60 * 60 * 24 * 31  # 31 days
