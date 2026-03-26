@@ -145,7 +145,15 @@ def complete_stop(id):
         except (InvalidOperation, ValueError):
             pass  # ignore invalid amount, still complete the stop
 
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        # Retry without payment — at least complete the stop
+        stop.completed = True
+        stop.completed_at = datetime.now(timezone.utc)
+        db.session.commit()
+        receipt_number = None
 
     # For HTMX, return the updated stop card
     if request.headers.get("HX-Request"):

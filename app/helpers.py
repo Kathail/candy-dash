@@ -61,6 +61,7 @@ def generate_receipt_number(payment_date=None):
     """Generate a unique receipt number in format RCP-YYYYMMDD-XXXX."""
     from app.models import Payment
     from app import db
+    from sqlalchemy import func as sa_func
 
     if payment_date is None:
         payment_date = datetime.now(timezone.utc)
@@ -68,15 +69,33 @@ def generate_receipt_number(payment_date=None):
     date_str = payment_date.strftime("%Y%m%d")
     prefix = f"RCP-{date_str}-"
 
-    day_start = payment_date.replace(hour=0, minute=0, second=0, microsecond=0)
-    day_end = payment_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+    # Find the highest existing sequence for this day
+    last = (
+        Payment.query
+        .filter(Payment.receipt_number.like(f"{prefix}%"))
+        .order_by(Payment.receipt_number.desc())
+        .first()
+    )
 
-    count = Payment.query.filter(
-        Payment.payment_date >= day_start,
-        Payment.payment_date <= day_end
-    ).count()
+    if last and last.receipt_number.startswith(prefix):
+        try:
+            seq = int(last.receipt_number[len(prefix):]) + 1
+        except ValueError:
+            seq = 1
+    else:
+        seq = 1
 
-    return f"{prefix}{(count + 1):04d}"
+    # Also check unflushed session objects for higher sequences
+    for obj in db.session.new:
+        if isinstance(obj, Payment) and hasattr(obj, 'receipt_number') and obj.receipt_number:
+            if obj.receipt_number.startswith(prefix):
+                try:
+                    pending_seq = int(obj.receipt_number[len(prefix):]) + 1
+                    seq = max(seq, pending_seq)
+                except ValueError:
+                    pass
+
+    return f"{prefix}{seq:04d}"
 
 
 def generate_receipt_pdf(payment, customer):
