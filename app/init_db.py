@@ -38,7 +38,9 @@ def _seed_customers():
         print(f"  Seeded {len(customers)} customers/leads from seed_data.json")
     except Exception as e:
         db.session.rollback()
+        import traceback
         print(f"  Warning: failed to seed customers: {e}")
+        traceback.print_exc()
 
 
 def init_database():

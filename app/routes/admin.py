@@ -137,6 +137,29 @@ def reset_password(id):
     return redirect(url_for("admin.edit_user", id=user.id))
 
 
+@bp.route("/seed", methods=["POST"])
+@admin_required
+def seed():
+    """Trigger customer seed from seed_data.json."""
+    from app.models import Customer
+    from app.init_db import _seed_customers
+
+    count_before = Customer.query.count()
+    try:
+        _seed_customers()
+    except Exception as e:
+        flash(f"Seed failed: {e}", "error")
+        return redirect(url_for("admin.index"))
+
+    count_after = Customer.query.count()
+    added = count_after - count_before
+    if added > 0:
+        flash(f"Seeded {added} customers/leads.", "success")
+    else:
+        flash("No new records seeded (table may already have data, or seed_data.json not found).", "warning")
+    return redirect(url_for("admin.index"))
+
+
 @bp.route("/reimport", methods=["POST"])
 @admin_required
 def reimport():
