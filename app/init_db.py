@@ -1,9 +1,44 @@
 """Database initialization, auto-migration, and seed data."""
 
+import json
 import os
 import secrets
+from decimal import Decimal
+from pathlib import Path
+
 from app import db
-from app.models import User
+from app.models import User, Customer
+
+
+def _seed_customers():
+    """Load seed data from seed_data.json if customers table is empty."""
+    if Customer.query.count() > 0:
+        return
+
+    seed_file = Path(__file__).parent.parent / "seed_data.json"
+    if not seed_file.exists():
+        return
+
+    try:
+        data = json.loads(seed_file.read_text())
+        customers = data.get("customers", [])
+        for c in customers:
+            db.session.add(Customer(
+                name=c["name"],
+                address=c.get("address"),
+                city=c.get("city"),
+                phone=c.get("phone"),
+                notes=c.get("notes"),
+                balance=Decimal(str(c.get("balance", "0"))),
+                status=c.get("status", "active"),
+                tax_exempt=c.get("tax_exempt", False),
+                lead_source=c.get("lead_source"),
+            ))
+        db.session.commit()
+        print(f"  Seeded {len(customers)} customers/leads from seed_data.json")
+    except Exception as e:
+        db.session.rollback()
+        print(f"  Warning: failed to seed customers: {e}")
 
 
 def init_database():
@@ -36,3 +71,6 @@ def init_database():
             print(f"{'='*50}\n")
         else:
             print("  Default admin user created with ADMIN_PASSWORD from environment.")
+
+    # Seed customers/leads from seed_data.json if table is empty
+    _seed_customers()
