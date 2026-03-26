@@ -44,7 +44,7 @@
     </div>
 
     <!-- Quick Payment Form (collapsed) -->
-    <div x-show="showPayment" x-collapse class="mt-3 pt-3 border-t border-gray-100">
+    <div x-show="showPayment" x-transition class="mt-3 pt-3 border-t border-gray-100">
       <form method="post" action="{{ url_for('balances.quick_payment', id=customer.id) }}"
             class="flex flex-col sm:flex-row gap-2">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

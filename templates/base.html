@@ -9,10 +9,10 @@
   <meta name="apple-mobile-web-app-title" content="Candy Dash">
   <meta name="description" content="Candy Route Planner - manage routes, customers, and deliveries">
   <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
-  <link rel="icon" type="image/png" href="{{ url_for('static', filename='icons/icon-192.png') }}">
-  <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192.png') }}">
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='icons/favicon.svg') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/favicon.svg') }}">
   <title>{% block title %}Candy Dash{% endblock %}</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/tailwind.min.css') }}">
+  <script src="{{ url_for('static', filename='vendor/tailwind.min.js') }}"></script>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
   <style>[x-cloak] { display: none !important; }</style>
   {% block head %}{% endblock %}
@@ -134,6 +134,7 @@
     {# Desktop top bar with search #}
     <header class="hidden lg:flex items-center justify-between h-14 px-6 bg-white border-b border-gray-200 sticky top-0 z-20">
       <h1 class="text-lg font-semibold text-gray-800 mr-4">{% block page_title %}{% endblock %}</h1>
+      {% block header_actions %}{% endblock %}
 
       {# Global search #}
       <div class="relative w-full max-w-md" x-data="globalSearch()">
