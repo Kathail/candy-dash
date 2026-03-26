@@ -48,13 +48,19 @@ class dialect(SQLiteDialect_pysqlite):
         import libsql_experimental as libsql
         # Aggressively clean the auth token — Rust HTTP library rejects
         # any non-visible ASCII characters in header values
-        token = "".join(
-            c for c in (self._turso_auth_token or "")
-            if 32 <= ord(c) < 127
-        )
+        raw_token = self._turso_auth_token or ""
+        token = "".join(c for c in raw_token if 32 <= ord(c) < 127)
+        sync_url = "".join(c for c in (self._turso_sync_url or "") if 32 <= ord(c) < 127)
+
+        import sys
+        print(f"[libsql] token len: raw={len(raw_token)} clean={len(token)}", file=sys.stderr)
+        print(f"[libsql] token first/last 10: {repr(raw_token[:10])}...{repr(raw_token[-10:])}", file=sys.stderr)
+        print(f"[libsql] sync_url: {sync_url}", file=sys.stderr)
+        print(f"[libsql] db_path: {self._local_db_path}", file=sys.stderr)
+
         conn = libsql.connect(
             self._local_db_path,
-            sync_url=self._turso_sync_url,
+            sync_url=sync_url,
             auth_token=token,
         )
         conn.sync()
