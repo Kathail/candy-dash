@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#111827">
+  <meta name="theme-color" content="#0b1220">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Candy Dash">
@@ -14,10 +14,9 @@
   <title>{% block title %}Candy Dash{% endblock %}</title>
   <script src="{{ url_for('static', filename='vendor/tailwind.min.js') }}"></script>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
-  <style>[x-cloak] { display: none !important; }</style>
   {% block head %}{% endblock %}
 </head>
-<body class="h-full bg-gray-950 text-gray-100" x-data="{ sidebarOpen: false }">
+<body class="h-full bg-app text-app" x-data="{ sidebarOpen: false }">
 
   {# ── Mobile top bar ── #}
   <header class="lg:hidden fixed top-0 inset-x-0 z-40 bg-gray-900 text-white shadow-md border-b border-gray-800">
