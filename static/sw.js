@@ -2,7 +2,7 @@
    Candy Route Planner - Service Worker
    ============================================ */
 
-var CACHE_NAME = "candy-route-v1";
+var CACHE_NAME = "candy-route-v2";
 
 var PRECACHE_URLS = [
   "/",
@@ -11,7 +11,6 @@ var PRECACHE_URLS = [
   "/static/js/offline.js",
   "/static/manifest.json",
   "/static/icons/favicon.svg",
-  "/offline",
 ];
 
 /* ------------------------------------------

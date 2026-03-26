@@ -25,8 +25,8 @@ class dialect(SQLiteDialect_pysqlite):
     @classmethod
     def configure(cls, sync_url, auth_token, local_db_path=None):
         """Set Turso connection parameters before engine creation."""
-        cls._turso_sync_url = sync_url
-        cls._turso_auth_token = auth_token
+        cls._turso_sync_url = sync_url.strip()
+        cls._turso_auth_token = auth_token.strip()
         cls._local_db_path = local_db_path or os.path.join(
             tempfile.gettempdir(), "candy_route_replica.db"
         )
