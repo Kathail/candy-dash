@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+  <!-- Page Header -->
+  <h1 class="text-2xl font-bold text-gray-900 mb-6">Analytics</h1>
+
+  <!-- Charts Grid -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+    <!-- Revenue Over Time -->
+    <div class="bg-white rounded-lg shadow p-4 sm:p-6">
+      <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Revenue Over Time</h2>
+      <div class="relative" style="height: 300px;">
+        <canvas id="revenueChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Collections by City -->
+    <div class="bg-white rounded-lg shadow p-4 sm:p-6">
+      <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Collections by City</h2>
+      <div class="relative" style="height: 300px;">
+        <canvas id="cityChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Customer Status Distribution -->
+    <div class="bg-white rounded-lg shadow p-4 sm:p-6">
+      <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Customer Status Distribution</h2>
+      <div class="relative" style="height: 300px;">
+        <canvas id="statusChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Route Efficiency -->
+    <div class="bg-white rounded-lg shadow p-4 sm:p-6">
+      <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Route Efficiency</h2>
+      <div class="relative" style="height: 300px;">
+        <canvas id="efficiencyChart"></canvas>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const charts = JSON.parse('{{ charts_json | safe }}');
+
+  const indigo500 = '#6366f1';
+  const indigo300 = '#a5b4fc';
+  const blue500 = '#3b82f6';
+  const blue300 = '#93c5fd';
+
+  // Revenue Over Time - Line Chart
+  new Chart(document.getElementById('revenueChart'), {
+    type: 'line',
+    data: {
+      labels: charts.revenue.labels,
+      datasets: [{
+        label: 'Revenue',
+        data: charts.revenue.data,
+        borderColor: indigo500,
+        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+        fill: true,
+        tension: 0.3,
+        pointBackgroundColor: indigo500,
+        pointRadius: 4,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => '$' + ctx.parsed.y.toLocaleString(undefined, { minimumFractionDigits: 2 }),
+          },
+        },
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: (val) => '$' + val.toLocaleString(),
+          },
+        },
+      },
+    },
+  });
+
+  // Collections by City - Bar Chart
+  const cityColors = charts.collections_by_city.labels.map((_, i) => {
+    const palette = ['#6366f1', '#3b82f6', '#8b5cf6', '#06b6d4', '#0ea5e9', '#818cf8', '#60a5fa'];
+    return palette[i % palette.length];
+  });
+
+  new Chart(document.getElementById('cityChart'), {
+    type: 'bar',
+    data: {
+      labels: charts.collections_by_city.labels,
+      datasets: [{
+        label: 'Collections',
+        data: charts.collections_by_city.data,
+        backgroundColor: cityColors,
+        borderRadius: 4,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => '$' + ctx.parsed.y.toLocaleString(undefined, { minimumFractionDigits: 2 }),
+          },
+        },
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: (val) => '$' + val.toLocaleString(),
+          },
+        },
+      },
+    },
+  });
+
+  // Customer Status Distribution - Doughnut Chart
+  new Chart(document.getElementById('statusChart'), {
+    type: 'doughnut',
+    data: {
+      labels: charts.status_distribution.labels,
+      datasets: [{
+        data: charts.status_distribution.data,
+        backgroundColor: ['#6366f1', '#3b82f6', '#f59e0b', '#ef4444', '#10b981', '#8b5cf6'],
+        borderWidth: 2,
+        borderColor: '#ffffff',
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { padding: 16, usePointStyle: true },
+        },
+      },
+    },
+  });
+
+  // Route Efficiency - Line Chart
+  new Chart(document.getElementById('efficiencyChart'), {
+    type: 'line',
+    data: {
+      labels: charts.route_efficiency.labels,
+      datasets: [
+        {
+          label: 'Total Stops',
+          data: charts.route_efficiency.total,
+          borderColor: blue300,
+          backgroundColor: 'rgba(59, 130, 246, 0.05)',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 4,
+        },
+        {
+          label: 'Completed',
+          data: charts.route_efficiency.completed,
+          borderColor: indigo500,
+          backgroundColor: 'rgba(99, 102, 241, 0.1)',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 4,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { padding: 16, usePointStyle: true },
+        },
+      },
+      scales: {
+        y: { beginAtZero: true },
+      },
+    },
+  });
+});
+</script>
+{% endblock %}

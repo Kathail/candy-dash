@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}Route - {{ route_date|dateformat }} - Candy Dash{% endblock %}
+{% block page_title %}Route{% endblock %}
+
+{% block content %}
+{% set completed_count = stops|selectattr('completed')|list|length %}
+{% set total_count = stops|length %}
+
+<div class="space-y-4">
+
+  <!-- Date Selector -->
+  <div class="flex items-center justify-between bg-white rounded-xl shadow-sm border border-gray-200 px-4 py-3">
+    <a href="{{ url_for('route.index', date=(route_date - import('datetime').timedelta(days=1)).isoformat()) if false else url_for('route.index', date=route_date.isoformat()) }}"
+       hx-boost="true"
+       class="p-2 rounded-lg hover:bg-gray-100 text-gray-600 hover:text-gray-900"
+       onclick="window.location.href='{{ url_for('route.index') }}?date={{ route_date.toordinal() - 1 }}';">
+      {# Use JS for prev/next since Jinja date math is limited without importing #}
+    </a>
+    <div class="flex items-center gap-3" x-data="{ date: '{{ route_date.isoformat() }}' }">
+      <a href="{{ url_for('route.index', date=route_date.isoformat()) }}"
+         class="p-2 rounded-lg hover:bg-gray-100 text-gray-500"
+         onclick="event.preventDefault(); const d = new Date('{{ route_date.isoformat() }}'); d.setDate(d.getDate()-1); window.location.href='{{ url_for('route.index') }}?date=' + d.toISOString().slice(0,10);">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+      </a>
+      <span class="text-base font-semibold text-gray-900 min-w-[140px] text-center">
+        {{ route_date|dateformat('%A, %b %d') }}
+      </span>
+      <a href="#"
+         class="p-2 rounded-lg hover:bg-gray-100 text-gray-500"
+         onclick="event.preventDefault(); const d = new Date('{{ route_date.isoformat() }}'); d.setDate(d.getDate()+1); window.location.href='{{ url_for('route.index') }}?date=' + d.toISOString().slice(0,10);">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+      </a>
+    </div>
+    <a href="{{ url_for('route.index') }}"
+       class="text-xs font-medium text-indigo-600 hover:text-indigo-800 px-3 py-1.5 rounded-lg hover:bg-indigo-50">
+      Today
+    </a>
+  </div>
+
+  <!-- Progress Bar -->
+  {% if total_count > 0 %}
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 px-4 py-3">
+    <div class="flex items-center justify-between mb-2">
+      <span class="text-sm font-medium text-gray-700">Progress</span>
+      <span class="text-sm font-semibold text-gray-900">{{ completed_count }}/{{ total_count }} stops</span>
+    </div>
+    <div class="w-full bg-gray-200 rounded-full h-2.5">
+      <div class="h-2.5 rounded-full transition-all duration-500
+                  {% if completed_count == total_count %}bg-green-500{% else %}bg-indigo-600{% endif %}"
+           style="width: {{ (completed_count / total_count * 100)|int }}%"></div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Stop Cards -->
+  {% if stops %}
+    {% set ns = namespace(current_city='') %}
+    {% for stop in stops %}
+      {# City Group Header #}
+      {% if stop.customer.city != ns.current_city %}
+        {% set ns.current_city = stop.customer.city %}
+        <div class="flex items-center gap-2 pt-3">
+          <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+          <h2 class="text-sm font-bold text-indigo-700 uppercase tracking-wide">{{ stop.customer.city or 'No City' }}</h2>
+          <div class="flex-1 h-px bg-indigo-200"></div>
+        </div>
+      {% endif %}
+
+      {# Stop Card #}
+      <div id="stop-{{ stop.id }}"
+           class="bg-white rounded-xl shadow-sm border {{ 'border-green-200 opacity-75' if stop.completed else 'border-gray-200' }} overflow-hidden">
+        <div class="p-4">
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2">
+                {% if stop.completed %}
+                <svg class="w-5 h-5 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                </svg>
+                {% endif %}
+                <a href="{{ url_for('customers.profile', id=stop.customer.id) }}"
+                   class="text-sm font-semibold {{ 'text-gray-500 line-through' if stop.completed else 'text-gray-900 hover:text-indigo-600' }}">
+                  {{ stop.customer.name }}
+                </a>
+              </div>
+              {% if stop.customer.address %}
+              <p class="text-xs text-gray-500 mt-1">{{ stop.customer.address }}</p>
+              {% endif %}
+              {% if stop.customer.phone %}
+              <a href="tel:{{ stop.customer.phone }}" class="inline-flex items-center gap-1 text-xs text-indigo-600 hover:underline mt-1">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                </svg>
+                {{ stop.customer.phone }}
+              </a>
+              {% endif %}
+            </div>
+            <div class="text-right flex-shrink-0">
+              {% if stop.customer.balance and stop.customer.balance > 0 %}
+              <span class="text-sm font-semibold text-amber-600">{{ stop.customer.balance|currency }}</span>
+              {% endif %}
+            </div>
+          </div>
+
+          {% if stop.notes %}
+          <div class="mt-2 px-3 py-2 bg-yellow-50 rounded-lg border border-yellow-100">
+            <p class="text-xs text-yellow-800">{{ stop.notes }}</p>
+          </div>
+          {% endif %}
+
+          {% if stop.completed and stop.completed_at %}
+          <p class="text-xs text-green-600 mt-2">
+            Completed at {{ stop.completed_at|dateformat('%I:%M %p') }}
+          </p>
+          {% endif %}
+
+          {# Complete / Uncomplete Button #}
+          <div class="mt-3 flex items-center gap-2">
+            {% if not stop.completed %}
+            <button hx-post="{{ url_for('route.complete_stop', id=stop.id) }}"
+                    hx-target="#stop-{{ stop.id }}"
+                    hx-swap="outerHTML"
+                    class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 transition-colors">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              Complete
+            </button>
+            {% else %}
+            <button hx-post="{{ url_for('route.uncomplete_stop', id=stop.id) }}"
+                    hx-target="#stop-{{ stop.id }}"
+                    hx-swap="outerHTML"
+                    class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg hover:bg-gray-200 transition-colors">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+              Undo
+            </button>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+
+  {% else %}
+    {# Empty State #}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-10 text-center">
+      <svg class="w-12 h-12 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+      </svg>
+      <p class="text-sm font-medium text-gray-500">No stops scheduled for this date.</p>
+      <p class="text-xs text-gray-400 mt-1">Use the planner to add route stops.</p>
+    </div>
+  {% endif %}
+
+  <!-- Spacer for bottom bar -->
+  {% if stops %}
+  <div class="h-16"></div>
+  {% endif %}
+
+</div>
+
+<!-- Bottom Bar -->
+{% if stops %}
+<div class="fixed bottom-0 left-0 right-0 lg:pl-64 bg-white border-t border-gray-200 px-4 py-3 z-20">
+  <a href="{{ url_for('route.summary', date=route_date.isoformat()) }}"
+     class="block w-full text-center px-4 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors">
+    End Route
+  </a>
+</div>
+{% endif %}
+
+{% endblock %}

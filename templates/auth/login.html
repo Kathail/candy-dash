@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#4f46e5">
+  <title>Login - Candy Dash</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/tailwind.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+</head>
+<body class="h-full bg-gradient-to-br from-indigo-600 to-blue-500 flex items-center justify-center p-4">
+
+  <div class="w-full max-w-sm">
+    {# Logo / Title #}
+    <div class="text-center mb-8">
+      <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/20 backdrop-blur mb-4">
+        <svg class="w-9 h-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+        </svg>
+      </div>
+      <h1 class="text-2xl font-bold text-white">Candy Dash</h1>
+      <p class="text-indigo-200 text-sm mt-1">Candy Route Planner</p>
+    </div>
+
+    {# Flash messages #}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, msg in messages %}
+        <div class="mb-4 rounded-lg px-4 py-3 text-sm
+                    {{ 'bg-green-50 text-green-800 border border-green-200' if cat == 'success'
+                       else 'bg-red-50 text-red-800 border border-red-200' if cat == 'error'
+                       else 'bg-yellow-50 text-yellow-800 border border-yellow-200' if cat == 'warning'
+                       else 'bg-blue-50 text-blue-800 border border-blue-200' }}">
+          {{ msg }}
+        </div>
+      {% endfor %}
+    {% endwith %}
+
+    {# Login card #}
+    <div class="bg-white rounded-2xl shadow-xl p-6 sm:p-8">
+      <h2 class="text-lg font-semibold text-gray-900 mb-6 text-center">Sign in to your account</h2>
+
+      <form method="POST" action="{{ url_for('auth.login') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="mb-4">
+          <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+          <input type="text" id="username" name="username" required autofocus autocomplete="username"
+                 class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 min-h-[44px]">
+        </div>
+
+        <div class="mb-6">
+          <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+          <input type="password" id="password" name="password" required autocomplete="current-password"
+                 class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 min-h-[44px]">
+        </div>
+
+        <div class="flex items-center mb-6">
+          <input type="checkbox" id="remember" name="remember" value="1"
+                 class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+          <label for="remember" class="ml-2 text-sm text-gray-600">Remember me</label>
+        </div>
+
+        <button type="submit"
+                class="w-full bg-indigo-600 text-white rounded-lg px-4 py-2.5 text-sm font-semibold hover:bg-indigo-700 focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 min-h-[44px] transition-colors">
+          Sign In
+        </button>
+      </form>
+    </div>
+  </div>
+
+</body>
+</html>

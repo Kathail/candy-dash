@@ -1,0 +1,78 @@
+"""Authentication routes: login, logout, change password."""
+
+from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask_login import current_user, login_required, login_user, logout_user
+
+from app import db
+from app.helpers import safe_redirect
+from app.models import User
+
+bp = Blueprint("auth", __name__, url_prefix="")
+
+
+@bp.route("/login", methods=["GET", "POST"])
+def login():
+    """Show login form and authenticate user."""
+    if current_user.is_authenticated:
+        return redirect(url_for("dashboard.index"))
+
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+        remember = bool(request.form.get("remember"))
+
+        user = User.query.filter_by(username=username).first()
+
+        if user is None or not user.check_password(password):
+            flash("Invalid username or password.", "error")
+            return render_template("auth/login.html"), 401
+
+        if not user.is_active:
+            flash("Your account has been deactivated. Contact an administrator.", "error")
+            return render_template("auth/login.html"), 403
+
+        login_user(user, remember=remember)
+        flash(f"Welcome back, {user.username}!", "success")
+
+        next_page = request.args.get("next")
+        return redirect(safe_redirect(next_page))
+
+    return render_template("auth/login.html")
+
+
+@bp.route("/logout")
+@login_required
+def logout():
+    """Log the current user out."""
+    logout_user()
+    flash("You have been logged out.", "info")
+    return redirect(url_for("auth.login"))
+
+
+@bp.route("/change-password", methods=["GET", "POST"])
+@login_required
+def change_password():
+    """Allow the logged-in user to change their own password."""
+    if request.method == "POST":
+        old_password = request.form.get("old_password", "")
+        new_password = request.form.get("new_password", "")
+        confirm_password = request.form.get("confirm_password", "")
+
+        if not current_user.check_password(old_password):
+            flash("Current password is incorrect.", "error")
+            return render_template("auth/change_password.html"), 400
+
+        if len(new_password) < 12:
+            flash("New password must be at least 12 characters long.", "error")
+            return render_template("auth/change_password.html"), 400
+
+        if new_password != confirm_password:
+            flash("New passwords do not match.", "error")
+            return render_template("auth/change_password.html"), 400
+
+        current_user.set_password(new_password)
+        db.session.commit()
+        flash("Your password has been updated.", "success")
+        return redirect(url_for("dashboard.index"))
+
+    return render_template("auth/change_password.html")

@@ -1,0 +1,78 @@
+<div class="space-y-3">
+  {% for item in customers %}
+  {% set customer = item.customer %}
+  {% set bucket = item.bucket %}
+  <div class="bg-white rounded-lg shadow border border-gray-200 p-4" x-data="{ showPayment: false }">
+    <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+
+      <!-- Customer Info -->
+      <div class="flex-1 min-w-0">
+        <a href="{{ url_for('customers.profile', id=customer.id) }}"
+           class="font-medium text-indigo-600 hover:text-indigo-800 truncate block">
+          {{ customer.name }}
+        </a>
+        <p class="text-sm text-gray-500">{{ customer.city or 'No city' }}</p>
+      </div>
+
+      <!-- Balance -->
+      <div class="text-right flex-shrink-0">
+        <p class="text-lg font-bold text-gray-900">{{ customer.balance | currency }}</p>
+      </div>
+
+      <!-- Aging Badge -->
+      <div class="flex-shrink-0">
+        {% if bucket == '0-30' %}
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">{{ bucket }} days</span>
+        {% elif bucket == '31-60' %}
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">{{ bucket }} days</span>
+        {% elif bucket == '61-90' %}
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">{{ bucket }} days</span>
+        {% else %}
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">{{ bucket }} days</span>
+        {% endif %}
+      </div>
+
+      <!-- Quick Payment Toggle -->
+      <button @click="showPayment = !showPayment"
+              class="flex-shrink-0 inline-flex items-center px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-md hover:bg-green-700 transition-colors">
+        <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
+        </svg>
+        Pay
+      </button>
+    </div>
+
+    <!-- Quick Payment Form (collapsed) -->
+    <div x-show="showPayment" x-collapse class="mt-3 pt-3 border-t border-gray-100">
+      <form method="post" action="{{ url_for('balances.quick_payment', id=customer.id) }}"
+            class="flex flex-col sm:flex-row gap-2">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="flex-1">
+          <input type="number" name="amount" step="0.01" min="0.01" required
+                 placeholder="Amount"
+                 class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+        </div>
+        <div class="flex-1">
+          <input type="text" name="notes" placeholder="Notes (optional)"
+                 class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+        </div>
+        <button type="submit"
+                class="inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors">
+          Record Payment
+        </button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+
+  {% if not customers %}
+  <div class="text-center py-12 bg-white rounded-lg shadow">
+    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+    </svg>
+    <p class="mt-2 text-gray-500">No outstanding balances found.</p>
+  </div>
+  {% endif %}
+</div>
