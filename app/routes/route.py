@@ -172,7 +172,7 @@ def receipts_zip(date_str):
     try:
         target_date = date.fromisoformat(date_str)
     except ValueError:
-        flash("Invalid date format.", "danger")
+        flash("Invalid date format.", "error")
         return redirect(url_for("route.index"))
 
     day_start = datetime(target_date.year, target_date.month, target_date.day, tzinfo=timezone.utc)

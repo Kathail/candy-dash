@@ -91,16 +91,14 @@ def new():
             status="lead",
         )
         db.session.add(lead)
+        db.session.flush()
 
         log = ActivityLog(
-            customer_id=None,  # will be set after flush
+            customer_id=lead.id,
             user_id=current_user.id,
             action="lead_created",
             description=f"Lead '{name}' created.",
         )
-
-        db.session.flush()
-        log.customer_id = lead.id
         db.session.add(log)
         db.session.commit()
 
@@ -199,13 +197,7 @@ def import_csv():
 
         db.session.commit()
 
-        log = ActivityLog(
-            customer_id=None,
-            user_id=current_user.id,
-            action="leads_imported",
-            description=f"Imported {imported} leads from CSV.",
-        )
-        # Use the first imported lead as a reference if available
+        # Use the last imported lead as a reference for the activity log
         if imported > 0:
             last_lead = (
                 Customer.query
@@ -214,7 +206,12 @@ def import_csv():
                 .first()
             )
             if last_lead:
-                log.customer_id = last_lead.id
+                log = ActivityLog(
+                    customer_id=last_lead.id,
+                    user_id=current_user.id,
+                    action="leads_imported",
+                    description=f"Imported {imported} leads from CSV.",
+                )
                 db.session.add(log)
                 db.session.commit()
 

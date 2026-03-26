@@ -145,7 +145,7 @@ def new():
     if request.method == "POST":
         name = request.form.get("name", "").strip()
         if not name:
-            flash("Customer name is required.", "danger")
+            flash("Customer name is required.", "error")
             return render_template("customer_form.html", customer=None)
 
         customer = Customer(
@@ -189,7 +189,7 @@ def edit(id):
     if request.method == "POST":
         name = request.form.get("name", "").strip()
         if not name:
-            flash("Customer name is required.", "danger")
+            flash("Customer name is required.", "error")
             return render_template("customer_form.html", customer=customer)
 
         customer.name = name
@@ -230,11 +230,11 @@ def record_payment(id):
     try:
         amount = Decimal(raw_amount)
     except (InvalidOperation, ValueError):
-        flash("Invalid payment amount.", "danger")
+        flash("Invalid payment amount.", "error")
         return redirect(url_for("customers.profile", id=customer.id))
 
     if amount <= 0:
-        flash("Payment amount must be greater than zero.", "danger")
+        flash("Payment amount must be greater than zero.", "error")
         return redirect(url_for("customers.profile", id=customer.id))
 
     notes = request.form.get("notes", "").strip() or None
@@ -271,7 +271,7 @@ def record_payment(id):
         db.session.commit()
     except Exception:
         db.session.rollback()
-        flash("An error occurred while recording the payment.", "danger")
+        flash("An error occurred while recording the payment.", "error")
         return redirect(url_for("customers.profile", id=customer.id))
 
     flash(
@@ -313,7 +313,7 @@ def delete_payment(id, payment_id):
         db.session.commit()
     except Exception:
         db.session.rollback()
-        flash("An error occurred while deleting the payment.", "danger")
+        flash("An error occurred while deleting the payment.", "error")
         return redirect(url_for("customers.profile", id=customer.id))
 
     flash(f"Payment #{payment.receipt_number} deleted and balance restored.", "success")

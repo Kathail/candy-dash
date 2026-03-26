@@ -65,13 +65,13 @@
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
-          {% for payment in taxable_payments %}
+          {% for row in rows if not row.tax_exempt %}
           <tr class="hover:bg-gray-50">
-            <td class="px-4 py-3 text-sm text-gray-900">{{ payment.customer_name or payment.name or 'Unknown' }}</td>
-            <td class="px-4 py-3 text-sm text-gray-900 text-right font-medium">{{ payment.amount | currency }}</td>
+            <td class="px-4 py-3 text-sm text-gray-900">{{ row.name or 'Unknown' }}</td>
+            <td class="px-4 py-3 text-sm text-gray-900 text-right font-medium">{{ row.total | currency }}</td>
           </tr>
           {% endfor %}
-          {% if not taxable_payments %}
+          {% if not taxable_total %}
           <tr>
             <td colspan="2" class="px-4 py-6 text-sm text-gray-400 text-center">No taxable payments for this period.</td>
           </tr>
@@ -95,13 +95,13 @@
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
-          {% for payment in exempt_payments %}
+          {% for row in rows if row.tax_exempt %}
           <tr class="hover:bg-gray-50">
-            <td class="px-4 py-3 text-sm text-gray-900">{{ payment.customer_name or payment.name or 'Unknown' }}</td>
-            <td class="px-4 py-3 text-sm text-gray-900 text-right font-medium">{{ payment.amount | currency }}</td>
+            <td class="px-4 py-3 text-sm text-gray-900">{{ row.name or 'Unknown' }}</td>
+            <td class="px-4 py-3 text-sm text-gray-900 text-right font-medium">{{ row.total | currency }}</td>
           </tr>
           {% endfor %}
-          {% if not exempt_payments %}
+          {% if not exempt_total %}
           <tr>
             <td colspan="2" class="px-4 py-6 text-sm text-gray-400 text-center">No tax-exempt payments for this period.</td>
           </tr>

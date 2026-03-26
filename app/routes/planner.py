@@ -75,13 +75,13 @@ def add_stop():
     sequence = request.form.get("sequence", 0, type=int)
 
     if not customer_id or not route_date_str:
-        flash("Customer and date are required.", "danger")
+        flash("Customer and date are required.", "error")
         return redirect(url_for("planner.index"))
 
     try:
         route_date = date.fromisoformat(route_date_str)
     except ValueError:
-        flash("Invalid date.", "danger")
+        flash("Invalid date.", "error")
         return redirect(url_for("planner.index"))
 
     customer = Customer.query.get_or_404(customer_id)
