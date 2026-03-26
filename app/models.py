@@ -41,7 +41,7 @@ class Customer(db.Model):
     name = db.Column(db.String(200), nullable=False)
     address = db.Column(db.String(300), nullable=True)
     city = db.Column(db.String(100), nullable=True)
-    phone = db.Column(db.String(50), nullable=True)
+    phone = db.Column(db.String(30), nullable=True)
     notes = db.Column(db.Text, nullable=True)
     balance = db.Column(db.Numeric(10, 2), nullable=False, default=0)
     status = db.Column(db.String(20), nullable=False, default="active")
