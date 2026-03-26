@@ -6,38 +6,38 @@
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
   <!-- Page Header -->
-  <h1 class="text-2xl font-bold text-gray-900 mb-6">Analytics</h1>
+  <h1 class="text-2xl font-bold text-gray-100 mb-6">Analytics</h1>
 
   <!-- Charts Grid -->
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
     <!-- Revenue Over Time -->
-    <div class="bg-white rounded-lg shadow p-4 sm:p-6">
-      <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Revenue Over Time</h2>
+    <div class="bg-gray-800 rounded-lg shadow p-4 sm:p-6">
+      <h2 class="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-4">Revenue Over Time</h2>
       <div class="relative" style="height: 300px;">
         <canvas id="revenueChart"></canvas>
       </div>
     </div>
 
     <!-- Collections by City -->
-    <div class="bg-white rounded-lg shadow p-4 sm:p-6">
-      <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Collections by City</h2>
+    <div class="bg-gray-800 rounded-lg shadow p-4 sm:p-6">
+      <h2 class="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-4">Collections by City</h2>
       <div class="relative" style="height: 300px;">
         <canvas id="cityChart"></canvas>
       </div>
     </div>
 
     <!-- Customer Status Distribution -->
-    <div class="bg-white rounded-lg shadow p-4 sm:p-6">
-      <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Customer Status Distribution</h2>
+    <div class="bg-gray-800 rounded-lg shadow p-4 sm:p-6">
+      <h2 class="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-4">Customer Status Distribution</h2>
       <div class="relative" style="height: 300px;">
         <canvas id="statusChart"></canvas>
       </div>
     </div>
 
     <!-- Route Efficiency -->
-    <div class="bg-white rounded-lg shadow p-4 sm:p-6">
-      <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Route Efficiency</h2>
+    <div class="bg-gray-800 rounded-lg shadow p-4 sm:p-6">
+      <h2 class="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-4">Route Efficiency</h2>
       <div class="relative" style="height: 300px;">
         <canvas id="efficiencyChart"></canvas>
       </div>
@@ -142,7 +142,7 @@ document.addEventListener('DOMContentLoaded', function() {
         data: charts.status_distribution.data,
         backgroundColor: ['#6366f1', '#3b82f6', '#f59e0b', '#ef4444', '#10b981', '#8b5cf6'],
         borderWidth: 2,
-        borderColor: '#ffffff',
+        borderColor: '#1f2937',
       }],
     },
     options: {

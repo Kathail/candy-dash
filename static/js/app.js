@@ -215,7 +215,7 @@
   }
 
   function formatCurrency(amount) {
-    return "R " + parseFloat(amount).toFixed(2);
+    return "$" + parseFloat(amount).toFixed(2);
   }
 
   /* ------------------------------------------

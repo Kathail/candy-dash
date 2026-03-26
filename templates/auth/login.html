@@ -8,7 +8,7 @@
   <script src="{{ url_for('static', filename='vendor/tailwind.min.js') }}"></script>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
 </head>
-<body class="h-full bg-gradient-to-br from-indigo-600 to-blue-500 flex items-center justify-center p-4">
+<body class="h-full bg-gradient-to-br from-gray-950 to-gray-900 flex items-center justify-center p-4">
 
   <div class="w-full max-w-sm">
     {# Logo / Title #}
@@ -27,42 +27,42 @@
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% for cat, msg in messages %}
         <div class="mb-4 rounded-lg px-4 py-3 text-sm
-                    {{ 'bg-green-50 text-green-800 border border-green-200' if cat == 'success'
-                       else 'bg-red-50 text-red-800 border border-red-200' if cat == 'error'
-                       else 'bg-yellow-50 text-yellow-800 border border-yellow-200' if cat == 'warning'
-                       else 'bg-blue-50 text-blue-800 border border-blue-200' }}">
+                    {{ 'bg-green-500/20 text-green-400 border border-green-500/30' if cat == 'success'
+                       else 'bg-red-500/20 text-red-400 border border-red-500/30' if cat == 'error'
+                       else 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' if cat == 'warning'
+                       else 'bg-blue-500/20 text-blue-400 border border-blue-500/30' }}">
           {{ msg }}
         </div>
       {% endfor %}
     {% endwith %}
 
     {# Login card #}
-    <div class="bg-white rounded-2xl shadow-xl p-6 sm:p-8">
-      <h2 class="text-lg font-semibold text-gray-900 mb-6 text-center">Sign in to your account</h2>
+    <div class="bg-gray-800 rounded-2xl shadow-xl p-6 sm:p-8">
+      <h2 class="text-lg font-semibold text-gray-100 mb-6 text-center">Sign in to your account</h2>
 
       <form method="POST" action="{{ url_for('auth.login') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
         <div class="mb-4">
-          <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+          <label for="username" class="block text-sm font-medium text-gray-400 mb-1">Username</label>
           <input type="text" id="username" name="username" required autofocus autocomplete="username"
-                 class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 min-h-[44px]">
+                 class="w-full bg-gray-700 border border-gray-600 text-gray-200 placeholder-gray-500 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 min-h-[44px]">
         </div>
 
         <div class="mb-6">
-          <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+          <label for="password" class="block text-sm font-medium text-gray-400 mb-1">Password</label>
           <input type="password" id="password" name="password" required autocomplete="current-password"
-                 class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 min-h-[44px]">
+                 class="w-full bg-gray-700 border border-gray-600 text-gray-200 placeholder-gray-500 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 min-h-[44px]">
         </div>
 
         <div class="flex items-center mb-6">
           <input type="checkbox" id="remember" name="remember" value="1"
-                 class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
-          <label for="remember" class="ml-2 text-sm text-gray-600">Remember me</label>
+                 class="w-4 h-4 text-indigo-600 border-gray-600 rounded focus:ring-indigo-500 bg-gray-700">
+          <label for="remember" class="ml-2 text-sm text-gray-400">Remember me</label>
         </div>
 
         <button type="submit"
-                class="w-full bg-indigo-600 text-white rounded-lg px-4 py-2.5 text-sm font-semibold hover:bg-indigo-700 focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 min-h-[44px] transition-colors">
+                class="w-full bg-indigo-600 text-white rounded-lg px-4 py-2.5 text-sm font-semibold hover:bg-indigo-500 focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 min-h-[44px] transition-colors">
           Sign In
         </button>
       </form>

@@ -1,8 +1,8 @@
 {% for customer in pagination.items %}
-<div class="bg-white rounded-lg shadow border border-gray-200 p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+<div class="bg-gray-800 rounded-lg shadow border border-gray-700 p-4 flex flex-col sm:flex-row sm:items-center gap-3">
   <div class="flex-1 min-w-0">
     <a href="{{ url_for('customers.profile', id=customer.id) }}"
-       class="font-medium text-indigo-600 hover:text-indigo-800 truncate block">
+       class="font-medium text-indigo-400 hover:text-indigo-300 truncate block">
       {{ customer.name }}
     </a>
     <p class="text-sm text-gray-500">{{ customer.city or 'No city' }}</p>
@@ -13,23 +13,23 @@
     <span class="text-gray-500">{{ customer.phone }}</span>
     {% endif %}
 
-    <span class="font-medium {% if customer.balance > 0 %}text-red-600{% else %}text-gray-900{% endif %}">
+    <span class="font-medium {% if customer.balance > 0 %}text-red-600{% else %}text-gray-100{% endif %}">
       {{ customer.balance | currency }}
     </span>
 
     {% if customer.status == 'active' %}
-    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Active</span>
+    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-500/20 text-green-400">Active</span>
     {% elif customer.status == 'inactive' %}
-    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">Inactive</span>
+    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-700 text-gray-400">Inactive</span>
     {% elif customer.status == 'lead' %}
-    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">Lead</span>
+    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-500/20 text-blue-400">Lead</span>
     {% else %}
-    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">{{ customer.status }}</span>
+    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-700 text-gray-400">{{ customer.status }}</span>
     {% endif %}
   </div>
 
   <a href="{{ url_for('customers.profile', id=customer.id) }}"
-     class="flex-shrink-0 text-gray-400 hover:text-indigo-600">
+     class="flex-shrink-0 text-gray-500 hover:text-indigo-400">
     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
     </svg>
@@ -38,7 +38,7 @@
 {% endfor %}
 
 {% if not pagination.items %}
-<div class="text-center py-12 bg-white rounded-lg shadow">
+<div class="text-center py-12 bg-gray-800 rounded-lg shadow">
   <p class="text-gray-500">No customers found.</p>
 </div>
 {% endif %}
@@ -48,7 +48,7 @@
 <div class="flex items-center justify-center gap-1 mt-4">
   {% if pagination.has_prev %}
   <a href="?page={{ pagination.prev_num }}&q={{ request.args.get('q', '') }}&status={{ request.args.get('status', '') }}&city={{ request.args.get('city', '') }}&sort={{ request.args.get('sort', 'name') }}&dir={{ request.args.get('dir', 'asc') }}"
-     class="px-3 py-1.5 text-sm rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50">&laquo; Prev</a>
+     class="px-3 py-1.5 text-sm rounded-md border border-gray-600 text-gray-300 hover:bg-gray-700">&laquo; Prev</a>
   {% endif %}
 
   {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
@@ -57,7 +57,7 @@
       <span class="px-3 py-1.5 text-sm rounded-md bg-indigo-600 text-white font-medium">{{ page_num }}</span>
       {% else %}
       <a href="?page={{ page_num }}&q={{ request.args.get('q', '') }}&status={{ request.args.get('status', '') }}&city={{ request.args.get('city', '') }}&sort={{ request.args.get('sort', 'name') }}&dir={{ request.args.get('dir', 'asc') }}"
-         class="px-3 py-1.5 text-sm rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50">{{ page_num }}</a>
+         class="px-3 py-1.5 text-sm rounded-md border border-gray-600 text-gray-300 hover:bg-gray-700">{{ page_num }}</a>
       {% endif %}
     {% else %}
     <span class="px-2 text-gray-400">...</span>
@@ -66,7 +66,7 @@
 
   {% if pagination.has_next %}
   <a href="?page={{ pagination.next_num }}&q={{ request.args.get('q', '') }}&status={{ request.args.get('status', '') }}&city={{ request.args.get('city', '') }}&sort={{ request.args.get('sort', 'name') }}&dir={{ request.args.get('dir', 'asc') }}"
-     class="px-3 py-1.5 text-sm rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50">Next &raquo;</a>
+     class="px-3 py-1.5 text-sm rounded-md border border-gray-600 text-gray-300 hover:bg-gray-700">Next &raquo;</a>
   {% endif %}
 </div>
 {% endif %}
