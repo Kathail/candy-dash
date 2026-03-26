@@ -25,22 +25,11 @@ def create_app():
     # Configuration
     app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret-key-change-in-production")
 
-    turso_url = (os.environ.get("TURSO_DATABASE_URL") or "").strip()
-    turso_token = (os.environ.get("TURSO_AUTH_TOKEN") or "").strip()
-
-    if turso_url and turso_token:
-        # Use libsql_experimental embedded replica: local SQLite synced to Turso
-        from sqlalchemy.dialects import registry as dialect_registry
-        dialect_registry.register("sqlite.libsql", "app.libsql_dialect", "dialect")
-
-        from app.libsql_dialect import dialect as libsql_dialect
-        libsql_dialect.configure(sync_url=turso_url, auth_token=turso_token)
-
-        app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite+libsql://"
-    else:
-        app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
-            "DATABASE_URL", "sqlite:///candy_route.db"
-        )
+    database_url = os.environ.get("DATABASE_URL", "sqlite:///candy_route.db")
+    # Render provides postgres:// but SQLAlchemy needs postgresql://
+    if database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config["PERMANENT_SESSION_LIFETIME"] = 60 * 60 * 24 * 31  # 31 days
