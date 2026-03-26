@@ -29,14 +29,16 @@ def create_app():
     turso_token = os.environ.get("TURSO_AUTH_TOKEN")
 
     if turso_url and turso_token:
-        try:
-            import sqlalchemy_libsql  # noqa: F401
-            app.config["SQLALCHEMY_DATABASE_URI"] = f"{turso_url}?authToken={turso_token}"
-        except ImportError:
-            print("WARNING: sqlalchemy-libsql not installed, falling back to local SQLite")
-            app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
-                "DATABASE_URL", "sqlite:///candy_route.db"
-            )
+        # Register libsql_client's DBAPI2 driver as a SQLAlchemy dialect
+        from sqlalchemy.dialects import registry as dialect_registry
+        dialect_registry.register("sqlite.libsql", "app.libsql_dialect", "dialect")
+
+        # Build connection URL for our custom dialect
+        # Convert libsql:// to https:// for the HTTP client
+        http_url = turso_url.replace("libsql://", "https://")
+        app.config["SQLALCHEMY_DATABASE_URI"] = (
+            f"sqlite+libsql:///{http_url}?authToken={turso_token}"
+        )
     else:
         app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
             "DATABASE_URL", "sqlite:///candy_route.db"
