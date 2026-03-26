@@ -88,19 +88,20 @@ def index():
     eight_weeks_ago = today - timedelta(weeks=8)
     weekly_efficiency = (
         db.session.query(
-            func.strftime("%Y-%W", RouteStop.route_date).label("week"),
+            extract("year", RouteStop.route_date).label("yr"),
+            extract("week", RouteStop.route_date).label("wk"),
             func.count(RouteStop.id).label("total"),
             func.sum(
                 case((RouteStop.completed.is_(True), 1), else_=0)
             ).label("completed"),
         )
         .filter(RouteStop.route_date >= eight_weeks_ago)
-        .group_by("week")
-        .order_by("week")
+        .group_by("yr", "wk")
+        .order_by("yr", "wk")
         .all()
     )
 
-    efficiency_labels = [row.week for row in weekly_efficiency]
+    efficiency_labels = [f"{int(row.yr)}-W{int(row.wk):02d}" for row in weekly_efficiency]
     efficiency_total = [row.total for row in weekly_efficiency]
     efficiency_completed = [int(row.completed) for row in weekly_efficiency]
 
