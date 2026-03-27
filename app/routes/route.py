@@ -90,6 +90,10 @@ def index():
             if last_pay:
                 last_payments[cid] = last_pay
 
+    prev_date = route_date - timedelta(days=1)
+    next_date = route_date + timedelta(days=1)
+    is_today = route_date == date.today()
+
     return render_template(
         "route.html",
         stops=stops,
@@ -98,6 +102,9 @@ def index():
         collected_today=collected_today,
         last_visits=last_visits,
         last_payments=last_payments,
+        prev_date=prev_date,
+        next_date=next_date,
+        is_today=is_today,
     )
 
 

@@ -62,6 +62,31 @@ def create_app():
     with app.app_context():
         init_database()
 
+    # Global context for mobile bottom nav badges
+    @app.context_processor
+    def nav_badge_context():
+        try:
+            from flask_login import current_user as cu
+            if not cu.is_authenticated:
+                return {}
+            from app.models import RouteStop, Customer
+            from datetime import date as _date
+            today = _date.today()
+            remaining_stops = RouteStop.query.filter(
+                RouteStop.route_date == today,
+                RouteStop.completed.is_(False),
+            ).count()
+            overdue_count = Customer.query.filter(
+                Customer.balance > 0,
+                Customer.status == "active",
+            ).count()
+            return {
+                "nav_remaining_stops": remaining_stops,
+                "nav_overdue_count": overdue_count,
+            }
+        except Exception:
+            return {}
+
     # Error handlers
     @app.errorhandler(404)
     def not_found(e):

@@ -1,114 +1,120 @@
 {% extends "base.html" %}
 
 {% block title %}Tax Report - Candy Dash{% endblock %}
+{% block page_title %}Tax Report{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+<div class="max-w-4xl mx-auto space-y-6">
 
-  <!-- Page Header -->
-  <div class="mb-6">
-    <a href="{{ url_for('reports.index') }}"
-       class="text-sm text-indigo-400 hover:text-indigo-300 font-medium">&larr; Back to Reports</a>
-    <h1 class="text-2xl font-bold text-gray-100 mt-2">Tax Report</h1>
-    <p class="text-sm text-gray-500 mt-1">
-      {{ start | dateformat }} &mdash; {{ end | dateformat }}
-    </p>
-  </div>
-
-  <!-- Export Buttons -->
-  <div class="flex flex-wrap gap-2 mb-6">
-    <a href="{{ url_for('reports.tax', start=start, end=end, format='csv') }}"
-       class="inline-flex items-center px-3 py-1.5 bg-gray-700 border border-gray-600 text-xs font-medium rounded-md text-gray-300 hover:bg-gray-700 transition-colors">
-      <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+  {# ── Header ── #}
+  <div class="animate-fade-in-up">
+    <nav class="flex items-center gap-1.5 text-sm mb-2">
+      <a href="{{ url_for('reports.index') }}" class="text-indigo-400 hover:text-indigo-300">Reports</a>
+      <svg class="w-3.5 h-3.5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
       </svg>
-      Export CSV
-    </a>
-    <a href="{{ url_for('reports.tax', start=start, end=end, format='xlsx') }}"
-       class="inline-flex items-center px-3 py-1.5 bg-gray-700 border border-gray-600 text-xs font-medium rounded-md text-gray-300 hover:bg-gray-700 transition-colors">
-      <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-      </svg>
-      Export Excel
-    </a>
-  </div>
-
-  <!-- Summary Cards -->
-  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-    <div class="bg-gray-800 rounded-lg shadow p-5">
-      <p class="text-sm font-medium text-gray-500">Taxable Total</p>
-      <p class="text-2xl font-bold text-indigo-400 mt-1">{{ taxable_total | currency }}</p>
-    </div>
-    <div class="bg-gray-800 rounded-lg shadow p-5">
-      <p class="text-sm font-medium text-gray-500">Exempt Total</p>
-      <p class="text-2xl font-bold text-blue-600 mt-1">{{ exempt_total | currency }}</p>
-    </div>
-    <div class="bg-gray-800 rounded-lg shadow p-5">
-      <p class="text-sm font-medium text-gray-500">Grand Total</p>
-      <p class="text-2xl font-bold text-gray-100 mt-1">{{ (taxable_total + exempt_total) | currency }}</p>
+      <span class="text-gray-400">Tax</span>
+    </nav>
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-100">Tax Report</h1>
+        <p class="text-xs text-gray-500 mt-0.5">{{ start|dateformat }} &ndash; {{ end|dateformat }}</p>
+      </div>
+      <div class="flex gap-1.5">
+        <a href="{{ url_for('reports.tax', start_date=start.strftime('%Y-%m-%d'), end_date=end.strftime('%Y-%m-%d'), format='csv') }}"
+           class="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-700 border border-gray-600 text-xs font-medium rounded-lg text-gray-300 hover:bg-gray-600 transition btn-press min-h-[40px]">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          CSV
+        </a>
+        <a href="{{ url_for('reports.tax', start_date=start.strftime('%Y-%m-%d'), end_date=end.strftime('%Y-%m-%d'), format='xlsx') }}"
+           class="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-700 border border-gray-600 text-xs font-medium rounded-lg text-gray-300 hover:bg-gray-600 transition btn-press min-h-[40px]">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          Excel
+        </a>
+      </div>
     </div>
   </div>
 
-  <!-- Taxable Customers -->
-  <div class="bg-gray-800 rounded-lg shadow mb-6">
-    <div class="px-4 py-4 sm:px-6 border-b border-gray-700">
-      <h2 class="text-lg font-semibold text-gray-100">Taxable Customers</h2>
+  {# ── KPI Cards ── #}
+  <div class="grid grid-cols-3 gap-3">
+    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 animate-fade-in-up stagger-1">
+      <p class="text-2xs font-semibold text-gray-500 uppercase tracking-wider">Taxable</p>
+      <p class="text-xl font-bold text-indigo-400 mt-1">{{ taxable_total|currency }}</p>
     </div>
-    <div class="overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-700">
-        <thead class="bg-gray-900">
-          <tr>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Customer</th>
-            <th class="px-4 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">Amount</th>
-          </tr>
-        </thead>
-        <tbody class="bg-gray-800 divide-y divide-gray-700">
-          {% for row in rows if not row.tax_exempt %}
-          <tr class="hover:bg-gray-700">
-            <td class="px-4 py-3 text-sm text-gray-100">{{ row.name or 'Unknown' }}</td>
-            <td class="px-4 py-3 text-sm text-gray-100 text-right font-medium">{{ row.total | currency }}</td>
-          </tr>
-          {% endfor %}
-          {% if not taxable_total %}
-          <tr>
-            <td colspan="2" class="px-4 py-6 text-sm text-gray-400 text-center">No taxable payments for this period.</td>
-          </tr>
-          {% endif %}
-        </tbody>
-      </table>
+    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 animate-fade-in-up stagger-2">
+      <p class="text-2xs font-semibold text-gray-500 uppercase tracking-wider">Exempt</p>
+      <p class="text-xl font-bold text-blue-400 mt-1">{{ exempt_total|currency }}</p>
+    </div>
+    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 animate-fade-in-up stagger-3">
+      <p class="text-2xs font-semibold text-gray-500 uppercase tracking-wider">Total</p>
+      <p class="text-xl font-bold text-gray-100 mt-1">{{ (taxable_total + exempt_total)|currency }}</p>
     </div>
   </div>
 
-  <!-- Tax-Exempt Customers -->
-  <div class="bg-gray-800 rounded-lg shadow">
-    <div class="px-4 py-4 sm:px-6 border-b border-gray-700">
-      <h2 class="text-lg font-semibold text-gray-100">Tax-Exempt Customers</h2>
+  {# ── Taxable Customers ── #}
+  <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden animate-fade-in-up stagger-4">
+    <div class="px-5 py-4 border-b border-gray-700 flex items-center gap-2">
+      <div class="w-2 h-2 rounded-full bg-indigo-500"></div>
+      <h2 class="text-sm font-semibold text-gray-100">Taxable</h2>
+      <span class="text-2xs text-gray-500 ml-auto">{{ taxable_total|currency }}</span>
     </div>
-    <div class="overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-700">
-        <thead class="bg-gray-900">
-          <tr>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Customer</th>
-            <th class="px-4 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">Amount</th>
-          </tr>
-        </thead>
-        <tbody class="bg-gray-800 divide-y divide-gray-700">
-          {% for row in rows if row.tax_exempt %}
-          <tr class="hover:bg-gray-700">
-            <td class="px-4 py-3 text-sm text-gray-100">{{ row.name or 'Unknown' }}</td>
-            <td class="px-4 py-3 text-sm text-gray-100 text-right font-medium">{{ row.total | currency }}</td>
-          </tr>
-          {% endfor %}
-          {% if not exempt_total %}
-          <tr>
-            <td colspan="2" class="px-4 py-6 text-sm text-gray-400 text-center">No tax-exempt payments for this period.</td>
-          </tr>
-          {% endif %}
-        </tbody>
-      </table>
+    {% set taxable_rows = rows|selectattr('tax_exempt', 'false')|list %}
+    {% if taxable_rows %}
+    <div class="divide-y divide-gray-700">
+      {% for row in rows if not row.tax_exempt %}
+      <div class="flex items-center justify-between px-5 py-3 hover:bg-gray-700/50 transition">
+        <div class="flex items-center gap-3">
+          {% set colors = ['bg-indigo-500/20 text-indigo-400', 'bg-purple-500/20 text-purple-400', 'bg-blue-500/20 text-blue-400', 'bg-emerald-500/20 text-emerald-400', 'bg-amber-500/20 text-amber-400', 'bg-rose-500/20 text-rose-400'] %}
+          <div class="avatar-initials {{ colors[loop.index0 % 6] }}">
+            {{ (row.name or '?')[:2] }}
+          </div>
+          <div>
+            <p class="text-sm font-medium text-gray-100">{{ row.name or 'Unknown' }}</p>
+            <p class="text-2xs text-gray-500">{{ row.city or 'No city' }} &middot; {{ row.count }} payment{{ 's' if row.count != 1 else '' }}</p>
+          </div>
+        </div>
+        <span class="text-sm font-bold text-gray-100">{{ row.total|currency }}</span>
+      </div>
+      {% endfor %}
     </div>
+    {% else %}
+    <div class="px-5 py-8 text-center">
+      <p class="text-sm text-gray-500">No taxable payments.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  {# ── Exempt Customers ── #}
+  <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden animate-fade-in-up stagger-5">
+    <div class="px-5 py-4 border-b border-gray-700 flex items-center gap-2">
+      <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+      <h2 class="text-sm font-semibold text-gray-100">Tax Exempt</h2>
+      <span class="text-2xs text-gray-500 ml-auto">{{ exempt_total|currency }}</span>
+    </div>
+    {% set exempt_rows = rows|selectattr('tax_exempt')|list %}
+    {% if exempt_rows %}
+    <div class="divide-y divide-gray-700">
+      {% for row in rows if row.tax_exempt %}
+      <div class="flex items-center justify-between px-5 py-3 hover:bg-gray-700/50 transition">
+        <div class="flex items-center gap-3">
+          {% set colors = ['bg-blue-500/20 text-blue-400', 'bg-cyan-500/20 text-cyan-400', 'bg-indigo-500/20 text-indigo-400', 'bg-purple-500/20 text-purple-400', 'bg-emerald-500/20 text-emerald-400', 'bg-amber-500/20 text-amber-400'] %}
+          <div class="avatar-initials {{ colors[loop.index0 % 6] }}">
+            {{ (row.name or '?')[:2] }}
+          </div>
+          <div>
+            <p class="text-sm font-medium text-gray-100">{{ row.name or 'Unknown' }}</p>
+            <p class="text-2xs text-gray-500">{{ row.city or 'No city' }} &middot; {{ row.count }} payment{{ 's' if row.count != 1 else '' }}</p>
+          </div>
+        </div>
+        <span class="text-sm font-bold text-gray-100">{{ row.total|currency }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="px-5 py-8 text-center">
+      <p class="text-sm text-gray-500">No tax-exempt payments.</p>
+    </div>
+    {% endif %}
   </div>
 
 </div>

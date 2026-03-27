@@ -1,27 +1,41 @@
 {% extends "base.html" %}
 
-{% block title %}Leads{% endblock %}
+{% block title %}Leads - Candy Dash{% endblock %}
+{% block page_title %}Leads{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6" x-data="{ showImportModal: false }">
+<div class="max-w-6xl mx-auto space-y-6" x-data="{ showImportModal: false, showFilters: false }">
 
-  <!-- Page Header -->
-  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-    <h1 class="text-2xl font-bold text-gray-100">Leads</h1>
-    <div class="flex gap-2 mt-3 sm:mt-0">
+  {# ── Breadcrumb ── #}
+  <nav class="flex items-center gap-1.5 text-sm mb-4">
+    <a href="{{ url_for('customers.index') }}" class="text-indigo-400 hover:text-indigo-300">Customers</a>
+    <svg class="w-3.5 h-3.5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+    </svg>
+    <span class="text-gray-400">Leads</span>
+  </nav>
+
+  {# ── Header ── #}
+  <div class="flex items-center justify-between mb-5">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-100">Leads</h1>
+      {% if leads %}
+      <p class="text-xs text-gray-500 mt-0.5">{{ leads|length }} lead{{ 's' if leads|length != 1 else '' }} in pipeline</p>
+      {% endif %}
+    </div>
+    <div class="flex gap-2">
       {% if current_user.is_admin %}
       <button @click="showImportModal = true"
-              class="inline-flex items-center px-3 py-2 bg-gray-700 border border-gray-600 text-sm font-medium rounded-md text-gray-300 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
-        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+              class="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-700 border border-gray-600 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-600 transition-colors btn-press min-h-[44px]">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
         </svg>
-        Import CSV
+        <span class="hidden sm:inline">Import</span>
       </button>
       {% endif %}
       <a href="{{ url_for('leads.new') }}"
-         class="inline-flex items-center px-3 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
-        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+         class="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-500 transition-colors btn-press min-h-[44px]">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
         </svg>
         Add Lead
@@ -29,140 +43,178 @@
     </div>
   </div>
 
-  <!-- Filter Bar -->
-  <div class="bg-gray-800 rounded-lg shadow p-4 mb-6">
-    <form method="get" action="{{ url_for('leads.index') }}" class="flex flex-col sm:flex-row gap-3">
-      <!-- Lead Source -->
-      <div class="flex-1">
-        <label for="lead_source" class="sr-only">Lead Source</label>
-        <select name="lead_source" id="lead_source"
-                class="block w-full rounded-md border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
-          <option value="">All Sources</option>
-          {% for source in lead_sources %}
-          <option value="{{ source }}" {% if source == lead_source_filter %}selected{% endif %}>{{ source }}</option>
-          {% endfor %}
-        </select>
-      </div>
+  {# ── Search + Filter Toggle ── #}
+  <div class="flex gap-2 mb-4">
+    <form id="leads-filter-form" method="get" action="{{ url_for('leads.index') }}" class="relative flex-1">
+      <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+      </svg>
+      <input type="search" name="q" value="{{ q }}"
+             placeholder="Search leads..."
+             onchange="this.form.submit()"
+             class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-600 bg-gray-700 text-sm text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 placeholder:text-gray-500 min-h-[44px]">
+      {# Hidden fields to preserve filter state #}
+      {% if lead_source_filter %}<input type="hidden" name="lead_source" value="{{ lead_source_filter }}">{% endif %}
+      {% if city_filter %}<input type="hidden" name="city" value="{{ city_filter }}">{% endif %}
+    </form>
+    <button @click="showFilters = !showFilters"
+            :class="showFilters ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-gray-700 text-gray-400 border-gray-600'"
+            class="flex items-center gap-1.5 px-3 min-h-[44px] rounded-xl border text-sm font-medium transition-colors btn-press">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+      </svg>
+      <span class="hidden sm:inline">Filters</span>
+      {% if lead_source_filter or city_filter %}
+      <span class="w-2 h-2 rounded-full bg-indigo-400"></span>
+      {% endif %}
+    </button>
+  </div>
 
-      <!-- City -->
-      <div class="flex-1">
-        <label for="city" class="sr-only">City</label>
-        <select name="city" id="city"
-                class="block w-full rounded-md border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
-          <option value="">All Cities</option>
-          {% for city in cities %}
-          <option value="{{ city }}" {% if city == city_filter %}selected{% endif %}>{{ city }}</option>
-          {% endfor %}
-        </select>
-      </div>
-
-      <button type="submit"
-              class="inline-flex items-center justify-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
-        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+  {# ── Collapsible Filters ── #}
+  <div x-show="showFilters" x-transition x-cloak
+       class="bg-gray-800 rounded-xl border border-gray-700 p-4 mb-4 animate-fade-in-up">
+    <form method="get" action="{{ url_for('leads.index') }}" class="flex flex-wrap gap-3">
+      {% if q %}<input type="hidden" name="q" value="{{ q }}">{% endif %}
+      <select name="lead_source" onchange="this.form.submit()"
+              class="min-h-[44px] rounded-lg border-gray-600 text-sm bg-gray-700 text-gray-200">
+        <option value="">All Sources</option>
+        {% for source in lead_sources %}
+        <option value="{{ source }}" {% if source == lead_source_filter %}selected{% endif %}>{{ source }}</option>
+        {% endfor %}
+      </select>
+      <select name="city" onchange="this.form.submit()"
+              class="min-h-[44px] rounded-lg border-gray-600 text-sm bg-gray-700 text-gray-200">
+        <option value="">All Cities</option>
+        {% for city in cities %}
+        <option value="{{ city }}" {% if city == city_filter %}selected{% endif %}>{{ city }}</option>
+        {% endfor %}
+      </select>
+      {% if lead_source_filter or city_filter %}
+      <a href="{{ url_for('leads.index', q=q) }}"
+         class="inline-flex items-center gap-1 px-3 min-h-[44px] text-sm text-gray-400 hover:text-gray-200 transition">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
         </svg>
-        Filter
-      </button>
+        Clear filters
+      </a>
+      {% endif %}
     </form>
   </div>
 
-  <!-- Lead Cards -->
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+  {# ── Lead Cards ── #}
+  {% if leads %}
+  <div class="space-y-2">
     {% for lead in leads %}
-    <div class="bg-gray-800 rounded-lg shadow border border-gray-700 p-4">
-      <div class="flex items-start justify-between mb-3">
-        <div>
-          <h3 class="font-semibold text-gray-100">{{ lead.name }}</h3>
-          <p class="text-sm text-gray-500">{{ lead.city or 'No city' }}</p>
+    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 card-lift animate-fade-in-up stagger-{{ loop.index0 % 8 + 1 }}">
+      <div class="flex items-center gap-3">
+        {# Avatar #}
+        {% set colors = ['bg-purple-500/20 text-purple-400', 'bg-blue-500/20 text-blue-400', 'bg-cyan-500/20 text-cyan-400', 'bg-emerald-500/20 text-emerald-400', 'bg-amber-500/20 text-amber-400', 'bg-rose-500/20 text-rose-400'] %}
+        <div class="avatar-initials {{ colors[lead.id % 6] }}">
+          {{ lead.name[:2] }}
         </div>
-        {% if lead.lead_source %}
-        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-500/20 text-blue-400">
-          {{ lead.lead_source }}
+
+        {# Info #}
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2">
+            <p class="text-sm font-semibold text-gray-100 truncate">{{ lead.name }}</p>
+            {% if lead.lead_source %}
+            <span class="hidden sm:inline-flex px-1.5 py-0.5 text-2xs font-semibold rounded-full bg-blue-500/20 text-blue-400">
+              {{ lead.lead_source }}
+            </span>
+            {% endif %}
+          </div>
+          <p class="text-xs text-gray-500 truncate">
+            {{ lead.city or 'No city' }}{% if lead.phone %} · <a href="tel:{{ lead.phone }}" class="text-indigo-400 hover:underline" @click.stop>{{ lead.phone }}</a>{% endif %}
+          </p>
+        </div>
+
+        {# Age badge #}
+        {% set age_days = (today - lead.created_at.date()).days if lead.created_at else 0 %}
+        <span class="hidden sm:inline-flex px-2 py-0.5 text-2xs font-medium rounded-full
+                     {{ 'bg-green-500/20 text-green-400' if age_days <= 7 else 'bg-yellow-500/20 text-yellow-400' if age_days <= 30 else 'bg-red-500/20 text-red-400' }}">
+          {% if age_days == 0 %}today{% elif age_days == 1 %}1d{% else %}{{ age_days }}d{% endif %}
         </span>
-        {% endif %}
-      </div>
 
-      {% if lead.phone %}
-      <p class="text-sm text-gray-400 mb-2">
-        <a href="tel:{{ lead.phone }}" class="inline-flex items-center text-indigo-400 hover:underline">
-          <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-          </svg>
-          {{ lead.phone }}
-        </a>
-      </p>
-      {% endif %}
-
-      <p class="text-xs text-gray-400 mb-3">Created {{ lead.created_at | dateformat }}</p>
-
-      <div class="flex gap-2">
-        <a href="{{ url_for('leads.edit', id=lead.id) }}"
-           class="flex-1 inline-flex items-center justify-center px-3 py-2.5 min-h-[44px] bg-gray-700 border border-gray-600 text-xs font-medium rounded-md text-gray-300 hover:bg-gray-700 transition-colors">
-          Edit
-        </a>
-        <form method="post" action="{{ url_for('leads.convert', id=lead.id) }}"
-              class="flex-1"
-              onsubmit="return confirm('Convert this lead to an active customer?')">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <button type="submit"
-                  class="w-full inline-flex items-center justify-center px-3 py-2.5 min-h-[44px] bg-green-600 text-white text-xs font-medium rounded-md hover:bg-green-700 transition-colors">
-            Convert
-          </button>
-        </form>
+        {# Actions #}
+        <div class="flex items-center gap-1.5">
+          <a href="{{ url_for('leads.edit', id=lead.id) }}"
+             class="p-2 rounded-lg text-gray-500 hover:text-gray-300 hover:bg-gray-700 transition btn-press min-w-[40px] min-h-[40px] flex items-center justify-center">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+            </svg>
+          </a>
+          <form method="post" action="{{ url_for('leads.convert', id=lead.id) }}"
+                onsubmit="return confirm('Convert {{ lead.name|e }} to an active customer?')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-xs font-semibold rounded-lg hover:bg-green-500 transition btn-press min-h-[40px]">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              Convert
+            </button>
+          </form>
+        </div>
       </div>
     </div>
     {% endfor %}
   </div>
 
-  {% if not leads %}
-  <div class="text-center py-12 bg-gray-800 rounded-lg shadow">
-    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
-    </svg>
-    <p class="mt-2 text-gray-500">No leads found.</p>
+  {% else %}
+  {# ── Empty State ── #}
+  <div class="bg-gray-800 rounded-xl border border-gray-700 p-10 text-center animate-fade-in-up">
+    <div class="text-4xl mb-3">
+      {% if q or lead_source_filter or city_filter %}&#128270;{% else %}&#127793;{% endif %}
+    </div>
+    <p class="text-sm font-medium text-gray-400">
+      {% if q or lead_source_filter or city_filter %}
+      No leads match your search.
+      {% else %}
+      No leads in the pipeline yet.
+      {% endif %}
+    </p>
+    {% if not (q or lead_source_filter or city_filter) %}
+    <a href="{{ url_for('leads.new') }}"
+       class="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-500 btn-press transition">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+      </svg>
+      Add your first lead
+    </a>
+    {% endif %}
   </div>
   {% endif %}
 
-  <!-- CSV Import Modal (admin only) -->
+  {# ── CSV Import Modal ── #}
   {% if current_user.is_admin %}
-  <div x-show="showImportModal"
-       x-transition:enter="transition ease-out duration-200"
-       x-transition:enter-start="opacity-0"
-       x-transition:enter-end="opacity-100"
-       x-transition:leave="transition ease-in duration-150"
-       x-transition:leave-start="opacity-100"
-       x-transition:leave-end="opacity-0"
-       class="fixed inset-0 z-50 overflow-y-auto"
-       x-cloak>
-    <div class="flex items-center justify-center min-h-screen px-4">
-      <div class="fixed inset-0 bg-black bg-opacity-40" @click="showImportModal = false"></div>
-      <div class="relative bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6 z-10">
-        <h3 class="text-lg font-semibold text-gray-100 mb-4">Import Leads from CSV</h3>
-        <p class="text-sm text-gray-500 mb-4">
-          Upload a CSV file with columns: name, address, city, phone, notes, lead_source
-        </p>
-        <form method="post" action="{{ url_for('leads.import_csv') }}" enctype="multipart/form-data">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <div class="mb-4">
-            <label for="csv_file" class="block text-sm font-medium text-gray-300 mb-1">CSV File</label>
-            <input type="file" name="csv_file" id="csv_file" accept=".csv" required
-                   class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
-          </div>
-          <div class="flex gap-3 justify-end">
-            <button type="button" @click="showImportModal = false"
-                    class="px-4 py-2 bg-gray-700 border border-gray-600 text-sm font-medium rounded-md text-gray-300 hover:bg-gray-700">
-              Cancel
-            </button>
-            <button type="submit"
-                    class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-500">
-              Upload
-            </button>
-          </div>
-        </form>
-      </div>
+  <div x-show="showImportModal" x-cloak
+       class="fixed inset-0 z-[70] flex items-center justify-center p-4">
+    <div x-show="showImportModal"
+         x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+         @click="showImportModal = false" class="absolute inset-0 bg-black/60"></div>
+    <div x-show="showImportModal"
+         x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+         x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
+         class="relative theme-card rounded-xl shadow-2xl w-full max-w-md p-6">
+      <h3 class="text-lg font-bold text-gray-100 mb-1">Import Leads from CSV</h3>
+      <p class="text-sm text-gray-500 mb-4">
+        Columns: name, address, city, phone, notes, lead_source
+      </p>
+      <form method="post" action="{{ url_for('leads.import_csv') }}" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="mb-4">
+          <label for="csv_file" class="block text-sm font-medium text-gray-300 mb-1">CSV File</label>
+          <input type="file" name="csv_file" id="csv_file" accept=".csv" required
+                 class="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-500/20 file:text-indigo-400 hover:file:bg-indigo-500/30 file:transition">
+        </div>
+        <div class="flex gap-3">
+          <button type="button" @click="showImportModal = false"
+                  class="theme-btn-secondary flex-1 rounded-lg min-h-[44px] btn-press">Cancel</button>
+          <button type="submit"
+                  class="theme-btn-primary flex-1 rounded-lg min-h-[44px] btn-press">Upload</button>
+        </div>
+      </form>
     </div>
   </div>
   {% endif %}

@@ -4,7 +4,7 @@ import json
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, request
 from flask_login import login_required
 from sqlalchemy import func, extract, case
 
@@ -34,17 +34,23 @@ def index():
     """Analytics dashboard with charts data."""
     today = date.today()
 
-    # --- Revenue over last 12 months (monthly sums) ---
-    twelve_months_ago = datetime(
-        today.year - 1, today.month, 1, tzinfo=timezone.utc
-    )
+    months = request.args.get("months", 12, type=int)
+    months = max(1, min(months, 24))
+    y = today.year
+    m = today.month - months
+    while m <= 0:
+        m += 12
+        y -= 1
+    range_start = datetime(y, m, 1, tzinfo=timezone.utc)
+
+    # --- Revenue over selected months (monthly sums) ---
     monthly_revenue_rows = (
         db.session.query(
             extract("year", Payment.payment_date).label("year"),
             extract("month", Payment.payment_date).label("month"),
             func.coalesce(func.sum(Payment.amount), Decimal("0")).label("total"),
         )
-        .filter(Payment.payment_date >= twelve_months_ago)
+        .filter(Payment.payment_date >= range_start)
         .group_by("year", "month")
         .order_by("year", "month")
         .all()
@@ -64,7 +70,7 @@ def index():
             func.coalesce(func.sum(Payment.amount), Decimal("0")).label("total"),
         )
         .join(Payment, Payment.customer_id == Customer.id)
-        .filter(Payment.payment_date >= twelve_months_ago)
+        .filter(Payment.payment_date >= range_start)
         .group_by(Customer.city)
         .order_by(func.sum(Payment.amount).desc())
         .all()
@@ -84,8 +90,9 @@ def index():
     status_labels = [row[0] or "unknown" for row in status_dist]
     status_data = [row[1] for row in status_dist]
 
-    # --- Route efficiency: completed / total stops by week (last 8 weeks) ---
-    eight_weeks_ago = today - timedelta(weeks=8)
+    # --- Route efficiency: completed / total stops by week ---
+    efficiency_weeks = max(8, months * 4)
+    efficiency_start = today - timedelta(weeks=efficiency_weeks)
     weekly_efficiency = (
         db.session.query(
             extract("year", RouteStop.route_date).label("yr"),
@@ -95,7 +102,7 @@ def index():
                 case((RouteStop.completed.is_(True), 1), else_=0)
             ).label("completed"),
         )
-        .filter(RouteStop.route_date >= eight_weeks_ago)
+        .filter(RouteStop.route_date >= efficiency_start)
         .group_by("yr", "wk")
         .order_by("yr", "wk")
         .all()
@@ -127,4 +134,22 @@ def index():
     }
     charts_json = json.dumps(charts, cls=_DecimalEncoder)
 
-    return render_template("analytics.html", charts_json=charts_json)
+    # KPI summaries for the selected period
+    total_revenue = sum(revenue_data) if revenue_data else Decimal("0")
+    total_payments = db.session.query(func.count(Payment.id)).filter(
+        Payment.payment_date >= range_start
+    ).scalar() or 0
+    active_customers = Customer.query.filter(Customer.status == "active").count()
+    total_stops = sum(efficiency_total) if efficiency_total else 0
+    completed_stops = sum(efficiency_completed) if efficiency_completed else 0
+    completion_rate = round(completed_stops / total_stops * 100) if total_stops else 0
+
+    return render_template(
+        "analytics.html",
+        charts_json=charts_json,
+        months=months,
+        total_revenue=total_revenue,
+        total_payments=total_payments,
+        active_customers=active_customers,
+        completion_rate=completion_rate,
+    )

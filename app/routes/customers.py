@@ -28,8 +28,17 @@ def index():
     q = request.args.get("q", "").strip()
     status_filter = request.args.get("status", "").strip()
     city_filter = request.args.get("city", "").strip()
-    sort = request.args.get("sort", "name")
+    sort_param = request.args.get("sort", "name")
+    # Support combined sort values like "balance_desc" or separate sort+dir
     direction = request.args.get("dir", "asc")
+    if sort_param.endswith("_desc"):
+        sort = sort_param.rsplit("_", 1)[0]
+        direction = "desc"
+    elif sort_param.endswith("_asc"):
+        sort = sort_param.rsplit("_", 1)[0]
+        direction = "asc"
+    else:
+        sort = sort_param
 
     query = Customer.query
 
@@ -73,15 +82,7 @@ def index():
     )
     cities = [c[0] for c in cities]
 
-    # HTMX partial response
-    if request.headers.get("HX-Request"):
-        return render_template(
-            "partials/customer_rows.html",
-            pagination=pagination,
-        )
-
-    return render_template(
-        "customers.html",
+    tpl_ctx = dict(
         pagination=pagination,
         q=q,
         status_filter=status_filter,
@@ -90,6 +91,12 @@ def index():
         direction=direction,
         cities=cities,
     )
+
+    # HTMX partial response
+    if request.headers.get("HX-Request"):
+        return render_template("partials/customer_rows.html", **tpl_ctx)
+
+    return render_template("customers.html", **tpl_ctx)
 
 
 # ---------------------------------------------------------------------------

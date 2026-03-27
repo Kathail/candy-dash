@@ -14,7 +14,16 @@
 {% endblock %}
 
 {% block content %}
-<div class="space-y-6">
+<div class="max-w-6xl mx-auto space-y-6">
+
+  <!-- Breadcrumb -->
+  <nav class="flex items-center gap-1.5 text-sm">
+    <a href="{{ url_for('customers.index') }}" class="text-indigo-400 hover:text-indigo-300">Customers</a>
+    <svg class="w-3.5 h-3.5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+    </svg>
+    <span class="text-gray-400 truncate">{{ customer.name }}</span>
+  </nav>
 
   <!-- Header -->
   <div class="flex items-center gap-4 flex-wrap">
@@ -32,10 +41,11 @@
         {% endif %}
       </div>
     </div>
-    <form method="POST" action="{{ url_for('customers.toggle_status', id=customer.id) }}">
+    <form method="POST" action="{{ url_for('customers.toggle_status', id=customer.id) }}"
+          onsubmit="return confirm('{{ 'Deactivate' if customer.status == 'active' else 'Activate' }} {{ customer.name }}?')">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <button type="submit"
-              class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors
+              class="btn-press inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors
                      {{ 'text-red-400 border-red-500/30 bg-red-500/10 hover:bg-red-500/20' if customer.status == 'active' else 'text-green-400 border-green-500/30 bg-green-500/10 hover:bg-green-500/20' }}">
         {{ 'Deactivate' if customer.status == 'active' else 'Activate' }}
       </button>
@@ -43,7 +53,7 @@
   </div>
 
   <!-- Info + Balance Cards -->
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 animate-fade-in-up">
     <!-- Info Card -->
     <div class="lg:col-span-2 bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-5">
       <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Customer Info</h3>
@@ -95,8 +105,8 @@
         {{ customer.balance|currency }}
       </p>
       <div class="mt-auto space-y-2">
-        <button type="button" @click="$dispatch('open-payment-modal', { customerId: {{ customer.id }}, customerName: '{{ customer.name|e }}' })"
-                class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-500 transition-colors">
+        <button type="button" @click="$dispatch('open-payment-modal', { customerId: {{ customer.id }}, customerName: '{{ customer.name|e }}', customerBalance: {{ customer.balance or 0 }} })"
+                class="btn-press w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-500 transition-colors">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V7m0 10v1"/>
           </svg>
@@ -107,39 +117,39 @@
   </div>
 
   <!-- Add Note Form -->
-  <div class="bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-5">
+  <div class="bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-5 animate-fade-in-up">
     <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Add Note</h3>
     <form method="POST" action="{{ url_for('customers.add_note', id=customer.id) }}" class="flex gap-3">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="text" name="note" placeholder="Type a note..."
              class="flex-1 rounded-lg border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
       <button type="submit"
-              class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-500 transition-colors">
+              class="btn-press px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-500 transition-colors">
         Add
       </button>
     </form>
   </div>
 
   <!-- Tabs -->
-  <div x-data="{ tab: 'payments' }">
+  <div x-data="{ tab: 'payments' }" class="animate-fade-in-up">
     <!-- Tab Headers -->
     <div class="border-b border-gray-700">
       <nav class="flex gap-6 -mb-px overflow-x-auto">
         <button @click="tab = 'payments'"
                 :class="tab === 'payments' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-300 hover:border-gray-600'"
-                class="whitespace-nowrap pb-3 px-1 border-b-2 text-sm font-medium transition-colors">
+                class="btn-press whitespace-nowrap pb-3 px-1 border-b-2 text-sm font-medium transition-colors">
           Payment History
           <span class="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-gray-700 text-gray-400">{{ payments|length }}</span>
         </button>
         <button @click="tab = 'activity'"
                 :class="tab === 'activity' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-300 hover:border-gray-600'"
-                class="whitespace-nowrap pb-3 px-1 border-b-2 text-sm font-medium transition-colors">
+                class="btn-press whitespace-nowrap pb-3 px-1 border-b-2 text-sm font-medium transition-colors">
           Activity Log
           <span class="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-gray-700 text-gray-400">{{ activity|length }}</span>
         </button>
         <button @click="tab = 'routes'"
                 :class="tab === 'routes' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-300 hover:border-gray-600'"
-                class="whitespace-nowrap pb-3 px-1 border-b-2 text-sm font-medium transition-colors">
+                class="btn-press whitespace-nowrap pb-3 px-1 border-b-2 text-sm font-medium transition-colors">
           Route History
           <span class="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-gray-700 text-gray-400">{{ route_history|length }}</span>
         </button>

@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% block title %}Import CSV - Candy Dash{% endblock %}
+{% block page_title %}Import CSV{% endblock %}
 
 {% block content %}
 <div class="max-w-2xl mx-auto space-y-6">
@@ -57,7 +58,7 @@
       </div>
 
       <button type="submit"
-              class="w-full theme-btn-primary rounded-lg min-h-[44px] text-sm font-medium">
+              class="btn-press w-full theme-btn-primary rounded-lg min-h-[44px] text-sm font-medium">
         Import CSV
       </button>
     </form>
@@ -65,7 +66,7 @@
 
   {# Column format help #}
   <div class="theme-card rounded-xl p-6">
-    <h2 class="text-sm font-semibold text-gray-300 mb-3">Supported Columns</h2>
+    <h2 class="text-sm font-semibold text-gray-100 mb-3">Supported Columns</h2>
     <p class="text-xs text-gray-500 mb-3">Column names are auto-detected (case-insensitive). Only <strong>name</strong> is required.</p>
     <div class="overflow-x-auto">
       <table class="w-full text-xs">

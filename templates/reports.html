@@ -1,135 +1,153 @@
 {% extends "base.html" %}
 
-{% block title %}Reports{% endblock %}
+{% block title %}Reports - Candy Dash{% endblock %}
+{% block page_title %}Reports{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6" x-data="reportsApp()">
+<div class="max-w-2xl mx-auto space-y-6" x-data="reportsApp()">
 
-  <!-- Page Header -->
-  <h1 class="text-2xl font-bold text-gray-100 mb-6">Reports</h1>
-
-  <!-- Date Range Picker -->
-  <div class="bg-gray-800 rounded-lg shadow p-4 mb-6">
-    <h2 class="text-sm font-semibold text-gray-300 mb-3">Date Range</h2>
-    <div class="flex flex-col sm:flex-row gap-3 items-end">
-      <div class="flex-1">
-        <label for="start_date" class="block text-xs font-medium text-gray-500 mb-1">Start Date</label>
-        <input type="date" id="start_date" x-model="startDate"
-               class="block w-full rounded-md border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
-      </div>
-      <div class="flex-1">
-        <label for="end_date" class="block text-xs font-medium text-gray-500 mb-1">End Date</label>
-        <input type="date" id="end_date" x-model="endDate"
-               class="block w-full rounded-md border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
-      </div>
-    </div>
+  {# ── Header ── #}
+  <div class="animate-fade-in-up">
+    <h1 class="text-2xl font-bold text-gray-100">Reports</h1>
+    <p class="text-xs text-gray-500 mt-0.5">Export and review your data</p>
   </div>
 
-  <!-- Report Type Cards -->
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-    <!-- Financial Report -->
-    <div class="bg-gray-800 rounded-lg shadow p-6">
-      <div class="flex items-center gap-3 mb-3">
-        <div class="w-10 h-10 bg-indigo-500/20 rounded-lg flex items-center justify-center">
-          <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-          </svg>
-        </div>
-        <h3 class="text-lg font-semibold text-gray-100">Financial Report</h3>
+  {# ── Date Range ── #}
+  <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 animate-fade-in-up stagger-1">
+    {# Quick presets #}
+    <div class="flex flex-wrap gap-1.5 mb-3">
+      {% set presets = [('today', 'Today'), ('week', 'This Week'), ('month', 'This Month'), ('lastMonth', 'Last Month'), ('quarter', 'Quarter')] %}
+      {% for key, label in presets %}
+      <button @click="setPreset('{{ key }}')"
+              :class="activePreset === '{{ key }}' ? 'bg-indigo-600 text-white' : 'bg-gray-700 text-gray-400 hover:bg-gray-600'"
+              class="px-3 py-1.5 text-xs font-semibold rounded-lg transition btn-press">
+        {{ label }}
+      </button>
+      {% endfor %}
+    </div>
+    {# Custom range #}
+    <div class="flex gap-3">
+      <div class="flex-1">
+        <label class="block text-2xs font-semibold text-gray-500 uppercase tracking-wider mb-1">From</label>
+        <input type="date" x-model="startDate" @change="activePreset = ''"
+               class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 text-sm min-h-[44px] focus:border-indigo-500 focus:ring-indigo-500">
       </div>
-      <p class="text-sm text-gray-500 mb-4">Payment summary by customer and city for the selected period.</p>
-      <div class="flex flex-wrap gap-2">
-        <a :href="'{{ url_for('reports.financial') }}?start_date=' + startDate + '&end_date=' + endDate"
-           class="inline-flex items-center px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-md hover:bg-indigo-500 transition-colors">
-          View
-        </a>
-        <a :href="'{{ url_for('reports.financial') }}?start_date=' + startDate + '&end_date=' + endDate + '&format=csv'"
-           class="inline-flex items-center px-3 py-1.5 bg-gray-700 border border-gray-600 text-xs font-medium rounded-md text-gray-300 hover:bg-gray-700 transition-colors">
-          <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-          </svg>
-          CSV
-        </a>
-        <a :href="'{{ url_for('reports.financial') }}?start_date=' + startDate + '&end_date=' + endDate + '&format=xlsx'"
-           class="inline-flex items-center px-3 py-1.5 bg-gray-700 border border-gray-600 text-xs font-medium rounded-md text-gray-300 hover:bg-gray-700 transition-colors">
-          <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-          </svg>
-          Excel
-        </a>
+      <div class="flex-1">
+        <label class="block text-2xs font-semibold text-gray-500 uppercase tracking-wider mb-1">To</label>
+        <input type="date" x-model="endDate" @change="activePreset = ''"
+               class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 text-sm min-h-[44px] focus:border-indigo-500 focus:ring-indigo-500">
       </div>
     </div>
-
-    <!-- Tax Report -->
-    <div class="bg-gray-800 rounded-lg shadow p-6">
-      <div class="flex items-center gap-3 mb-3">
-        <div class="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
-          <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/>
-          </svg>
-        </div>
-        <h3 class="text-lg font-semibold text-gray-100">Tax Report</h3>
-      </div>
-      <p class="text-sm text-gray-500 mb-4">Payments grouped by tax-exempt and taxable customers.</p>
-      <div class="flex flex-wrap gap-2">
-        <a :href="'{{ url_for('reports.tax') }}?start_date=' + startDate + '&end_date=' + endDate"
-           class="inline-flex items-center px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-md hover:bg-indigo-500 transition-colors">
-          View
-        </a>
-        <a :href="'{{ url_for('reports.tax') }}?start_date=' + startDate + '&end_date=' + endDate + '&format=csv'"
-           class="inline-flex items-center px-3 py-1.5 bg-gray-700 border border-gray-600 text-xs font-medium rounded-md text-gray-300 hover:bg-gray-700 transition-colors">
-          <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-          </svg>
-          CSV
-        </a>
-        <a :href="'{{ url_for('reports.tax') }}?start_date=' + startDate + '&end_date=' + endDate + '&format=xlsx'"
-           class="inline-flex items-center px-3 py-1.5 bg-gray-700 border border-gray-600 text-xs font-medium rounded-md text-gray-300 hover:bg-gray-700 transition-colors">
-          <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-          </svg>
-          Excel
-        </a>
-      </div>
-    </div>
-
-    <!-- Collections Report -->
-    <div class="bg-gray-800 rounded-lg shadow p-6">
-      <div class="flex items-center gap-3 mb-3">
-        <div class="w-10 h-10 bg-indigo-500/20 rounded-lg flex items-center justify-center">
-          <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
-          </svg>
-        </div>
-        <h3 class="text-lg font-semibold text-gray-100">Collections Report</h3>
-      </div>
-      <p class="text-sm text-gray-500 mb-4">Collections summary by sales representative for the period.</p>
-      <div class="flex flex-wrap gap-2">
-        <a :href="'{{ url_for('reports.collections') }}?start_date=' + startDate + '&end_date=' + endDate"
-           class="inline-flex items-center px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-md hover:bg-indigo-500 transition-colors">
-          View
-        </a>
-      </div>
-    </div>
-
+    {# Date summary #}
+    <p class="text-2xs text-gray-500 mt-2" x-text="dateSummary()"></p>
   </div>
+
+  {# ── Report Cards ── #}
+  {% set reports = [
+    ('financial', 'Financial', 'Payment summary by customer and city.', 'indigo',
+     'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z'),
+    ('tax', 'Tax', 'Taxable vs. exempt breakdown.', 'blue',
+     'M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z'),
+    ('collections', 'Collections', 'By sales rep for the period.', 'emerald',
+     'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z'),
+  ] %}
+
+  <div class="space-y-3">
+    {% for key, title, desc, color, icon in reports %}
+    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 card-lift animate-fade-in-up stagger-{{ loop.index + 1 }}">
+      <div class="flex items-center gap-4">
+        {# Icon #}
+        <div class="w-11 h-11 rounded-xl bg-{{ color }}-500/15 flex items-center justify-center flex-shrink-0">
+          <svg class="w-5 h-5 text-{{ color }}-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ icon }}"/>
+          </svg>
+        </div>
+
+        {# Info #}
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-semibold text-gray-100">{{ title }}</p>
+          <p class="text-xs text-gray-500">{{ desc }}</p>
+        </div>
+
+        {# Actions #}
+        <div class="flex items-center gap-1.5 flex-shrink-0">
+          <a :href="'{{ url_for('reports.' ~ key) }}?start_date=' + startDate + '&end_date=' + endDate"
+             class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-{{ color }}-600 text-white text-xs font-semibold rounded-lg hover:bg-{{ color }}-500 transition btn-press min-h-[40px]">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a9 9 0 11-18 0 9 9 0 0118 0z M10 8l6 4-6 4V8z"/>
+            </svg>
+            View
+          </a>
+          <a :href="'{{ url_for('reports.' ~ key) }}?start_date=' + startDate + '&end_date=' + endDate + '&format=csv'"
+             class="p-2 rounded-lg text-gray-500 hover:text-gray-300 hover:bg-gray-700 transition btn-press min-w-[40px] min-h-[40px] flex items-center justify-center"
+             title="Download CSV">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+          </a>
+          <a :href="'{{ url_for('reports.' ~ key) }}?start_date=' + startDate + '&end_date=' + endDate + '&format=xlsx'"
+             class="p-2 rounded-lg text-gray-500 hover:text-gray-300 hover:bg-gray-700 transition btn-press min-w-[40px] min-h-[40px] flex items-center justify-center"
+             title="Download Excel">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
 </div>
+{% endblock %}
 
+{% block scripts %}
 <script>
 function reportsApp() {
+  const fmt = (d) => d.toISOString().split('T')[0];
   const today = new Date();
-  const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
   return {
-    startDate: firstOfMonth.toISOString().split('T')[0],
-    endDate: today.toISOString().split('T')[0],
+    startDate: fmt(new Date(today.getFullYear(), today.getMonth(), 1)),
+    endDate: fmt(today),
+    activePreset: 'month',
+
+    dateSummary() {
+      if (!this.startDate || !this.endDate) return '';
+      const s = new Date(this.startDate + 'T00:00:00');
+      const e = new Date(this.endDate + 'T00:00:00');
+      const days = Math.round((e - s) / 86400000) + 1;
+      return days + ' day' + (days !== 1 ? 's' : '') + ' selected';
+    },
+
+    setPreset(name) {
+      this.activePreset = name;
+      const t = new Date();
+      switch (name) {
+        case 'today':
+          this.startDate = this.endDate = fmt(t);
+          break;
+        case 'week': {
+          const day = t.getDay();
+          const mon = new Date(t); mon.setDate(t.getDate() - (day === 0 ? 6 : day - 1));
+          this.startDate = fmt(mon); this.endDate = fmt(t);
+          break;
+        }
+        case 'month':
+          this.startDate = fmt(new Date(t.getFullYear(), t.getMonth(), 1)); this.endDate = fmt(t);
+          break;
+        case 'lastMonth': {
+          const s = new Date(t.getFullYear(), t.getMonth() - 1, 1);
+          const e = new Date(t.getFullYear(), t.getMonth(), 0);
+          this.startDate = fmt(s); this.endDate = fmt(e);
+          break;
+        }
+        case 'quarter': {
+          const qm = Math.floor(t.getMonth() / 3) * 3;
+          this.startDate = fmt(new Date(t.getFullYear(), qm, 1)); this.endDate = fmt(t);
+          break;
+        }
+      }
+    },
   };
 }
 </script>

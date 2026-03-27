@@ -1,61 +1,63 @@
 {% extends "base.html" %}
 
 {% block title %}Outstanding Balances{% endblock %}
+{% block page_title %}Balances{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+<div class="max-w-6xl mx-auto space-y-6">
 
   <!-- Page Header -->
-  <h1 class="text-2xl font-bold text-gray-100 mb-6">Outstanding Balances</h1>
+  <h1 class="text-2xl font-bold text-gray-100 mb-6 animate-fade-in-up">Outstanding Balances</h1>
 
   <!-- Summary Cards -->
-  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-6 animate-fade-in-up stagger-1">
     <!-- Total Outstanding -->
-    <div class="bg-gray-800 rounded-lg shadow p-4 col-span-2 sm:col-span-1">
+    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 col-span-2 sm:col-span-1">
       <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Outstanding</p>
       <p class="mt-1 text-2xl font-bold text-gray-100">{{ total_outstanding | currency }}</p>
       <p class="text-xs text-gray-400">{{ customers | length }} customer(s)</p>
     </div>
 
     <!-- 0-30 Days -->
-    <div class="bg-gray-800 rounded-lg shadow p-4 border-l-4 border-green-500">
+    <a href="{{ url_for('balances.index', bucket='0-30') }}" class="bg-gray-800 rounded-xl p-4 border-l-4 border-green-500 block hover:bg-gray-700/50 transition">
       <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">0-30 Days</p>
-      <p class="mt-1 text-xl font-bold text-green-700">{{ (bucket_totals.get('0-30', 0)) | currency }}</p>
-    </div>
+      <p class="mt-1 text-xl font-bold text-green-400">{{ (bucket_totals.get('0-30', 0)) | currency }}</p>
+    </a>
 
     <!-- 31-60 Days -->
-    <div class="bg-gray-800 rounded-lg shadow p-4 border-l-4 border-yellow-500">
+    <a href="{{ url_for('balances.index', bucket='31-60') }}" class="bg-gray-800 rounded-xl p-4 border-l-4 border-yellow-500 block hover:bg-gray-700/50 transition">
       <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">31-60 Days</p>
-      <p class="mt-1 text-xl font-bold text-yellow-700">{{ (bucket_totals.get('31-60', 0)) | currency }}</p>
-    </div>
+      <p class="mt-1 text-xl font-bold text-yellow-400">{{ (bucket_totals.get('31-60', 0)) | currency }}</p>
+    </a>
 
     <!-- 61-90 Days -->
-    <div class="bg-gray-800 rounded-lg shadow p-4 border-l-4 border-orange-500">
+    <a href="{{ url_for('balances.index', bucket='61-90') }}" class="bg-gray-800 rounded-xl p-4 border-l-4 border-orange-500 block hover:bg-gray-700/50 transition">
       <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">61-90 Days</p>
-      <p class="mt-1 text-xl font-bold text-orange-700">{{ (bucket_totals.get('61-90', 0)) | currency }}</p>
-    </div>
+      <p class="mt-1 text-xl font-bold text-orange-400">{{ (bucket_totals.get('61-90', 0)) | currency }}</p>
+    </a>
 
     <!-- 90+ Days -->
-    <div class="bg-gray-800 rounded-lg shadow p-4 border-l-4 border-red-500">
+    <a href="{{ url_for('balances.index', bucket='90+') }}" class="bg-gray-800 rounded-xl p-4 border-l-4 border-red-500 block hover:bg-gray-700/50 transition">
       <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">90+ Days</p>
-      <p class="mt-1 text-xl font-bold text-red-700">{{ (bucket_totals.get('90+', 0)) | currency }}</p>
-    </div>
+      <p class="mt-1 text-xl font-bold text-red-400">{{ (bucket_totals.get('90+', 0)) | currency }}</p>
+    </a>
   </div>
 
   <!-- Filter Bar -->
-  <div class="bg-gray-800 rounded-lg shadow p-4 mb-6">
-    <form method="get" action="{{ url_for('balances.index') }}"
-          hx-get="{{ url_for('balances.index') }}"
-          hx-target="#balance-list"
-          hx-swap="innerHTML"
-          hx-push-url="true"
-          class="flex flex-col sm:flex-row gap-3">
+  <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 mb-6 animate-fade-in-up stagger-2">
+    <div class="flex flex-col sm:flex-row gap-3">
 
       <!-- City Filter -->
       <div class="flex-1">
         <label for="city" class="sr-only">City</label>
         <select name="city" id="city"
-                class="block w-full rounded-md border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm min-h-[44px]">
+                hx-get="{{ url_for('balances.index') }}"
+                hx-trigger="change"
+                hx-target="#balance-list"
+                hx-swap="innerHTML"
+                hx-push-url="true"
+                hx-include="[name='bucket'], [name='sort']"
+                class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm min-h-[44px]">
           <option value="">All Cities</option>
           {% for city in cities %}
           <option value="{{ city }}" {% if city == city_filter %}selected{% endif %}>{{ city }}</option>
@@ -67,7 +69,13 @@
       <div class="flex-1">
         <label for="bucket" class="sr-only">Aging</label>
         <select name="bucket" id="bucket"
-                class="block w-full rounded-md border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm min-h-[44px]">
+                hx-get="{{ url_for('balances.index') }}"
+                hx-trigger="change"
+                hx-target="#balance-list"
+                hx-swap="innerHTML"
+                hx-push-url="true"
+                hx-include="[name='city'], [name='sort']"
+                class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm min-h-[44px]">
           <option value="">All Aging</option>
           <option value="0-30" {% if bucket_filter == '0-30' %}selected{% endif %}>0-30 Days</option>
           <option value="31-60" {% if bucket_filter == '31-60' %}selected{% endif %}>31-60 Days</option>
@@ -80,7 +88,13 @@
       <div class="flex-1">
         <label for="sort" class="sr-only">Sort</label>
         <select name="sort" id="sort"
-                class="block w-full rounded-md border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm min-h-[44px]">
+                hx-get="{{ url_for('balances.index') }}"
+                hx-trigger="change"
+                hx-target="#balance-list"
+                hx-swap="innerHTML"
+                hx-push-url="true"
+                hx-include="[name='city'], [name='bucket']"
+                class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm min-h-[44px]">
           <option value="balance_desc" {% if sort == 'balance_desc' %}selected{% endif %}>Balance (High to Low)</option>
           <option value="balance_asc" {% if sort == 'balance_asc' %}selected{% endif %}>Balance (Low to High)</option>
           <option value="name_asc" {% if sort == 'name_asc' %}selected{% endif %}>Name (A-Z)</option>
@@ -88,15 +102,7 @@
         </select>
       </div>
 
-      <button type="submit"
-              class="inline-flex items-center justify-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
-        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
-        </svg>
-        Filter
-      </button>
-    </form>
+    </div>
   </div>
 
   <!-- Balance List -->

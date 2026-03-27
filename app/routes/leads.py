@@ -33,6 +33,16 @@ def index():
     if city_filter:
         query = query.filter(Customer.city == city_filter)
 
+    q = request.args.get("q", "").strip()
+    if q:
+        like = f"%{q}%"
+        query = query.filter(
+            db.or_(
+                Customer.name.ilike(like),
+                Customer.phone.ilike(like),
+            )
+        )
+
     leads = query.order_by(Customer.created_at.desc()).all()
 
     # Available filter options
@@ -62,6 +72,7 @@ def index():
     )
     cities = [c[0] for c in cities]
 
+    from datetime import date
     return render_template(
         "leads.html",
         leads=leads,
@@ -69,6 +80,8 @@ def index():
         cities=cities,
         lead_source_filter=lead_source_filter,
         city_filter=city_filter,
+        q=q,
+        today=date.today(),
     )
 
 
@@ -157,7 +170,7 @@ def convert(id):
     db.session.commit()
 
     flash(f"'{lead.name}' has been converted to an active customer.", "success")
-    return redirect(url_for("leads.index"))
+    return redirect(url_for("customers.profile", id=lead.id))
 
 
 @bp.route("/import-csv", methods=["POST"])

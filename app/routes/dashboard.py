@@ -112,9 +112,19 @@ def index():
             "total": float(total),
         })
 
+    # Greeting based on time of day
+    hour = datetime.now().hour
+    if hour < 12:
+        greeting = "Good morning"
+    elif hour < 17:
+        greeting = "Good afternoon"
+    else:
+        greeting = "Good evening"
+
     return render_template(
         "dashboard.html",
         today=today,
+        greeting=greeting,
         total_stops=total_stops,
         completed_stops=completed_stops,
         payment_count=payment_count,

@@ -203,6 +203,7 @@ def tax():
 def collections():
     """Collections report by sales rep (recorded_by) for date range."""
     start, end = _parse_date_range()
+    fmt = request.args.get("format", "").lower()
 
     rows = (
         db.session.query(
@@ -216,6 +217,14 @@ def collections():
         .order_by(func.sum(Payment.amount).desc())
         .all()
     )
+
+    if fmt in ("csv", "xlsx"):
+        headers = ["Sales Rep", "Payment Count", "Total"]
+        export_rows = [(r.username, r.count, float(r.total)) for r in rows]
+        filename = f"collections_report_{start.strftime('%Y%m%d')}_{end.strftime('%Y%m%d')}"
+        if fmt == "csv":
+            return _csv_response(export_rows, headers, f"{filename}.csv")
+        return _xlsx_response(export_rows, headers, f"{filename}.xlsx")
 
     return render_template(
         "reports/collections.html",

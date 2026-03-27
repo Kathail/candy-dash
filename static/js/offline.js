@@ -1,22 +1,31 @@
-/* ============================================
-   Candy Route Planner - Offline Payment Queue
-   ============================================ */
+// ==========================================================================
+// Candy Dash — Offline Payment Queue
+// Queues payments in localStorage when offline, syncs when back online.
+// ==========================================================================
 
-(function () {
+(() => {
   "use strict";
 
-  var QUEUE_KEY = "paymentQueue";
+  const QUEUE_KEY = "paymentQueue";
+
+  function showToast(message, category) {
+    document.dispatchEvent(new CustomEvent("show-toast", {
+      detail: { message, category },
+    }));
+  }
+
+  function csrfToken() {
+    return window.CandyDash && window.CandyDash.csrfToken
+      ? window.CandyDash.csrfToken()
+      : "";
+  }
 
   /**
    * Add a payment to the offline queue.
-   * @param {string|number} customerId
-   * @param {number} amount
-   * @param {string} [notes='']
-   * @returns {object} The queued payment entry.
    */
   function addToQueue(customerId, amount, notes) {
-    var queue = getQueue();
-    var entry = {
+    const queue = getQueue();
+    const entry = {
       customerId: String(customerId),
       amount: parseFloat(amount),
       notes: notes || "",
@@ -27,26 +36,18 @@
     saveQueue(queue);
     updateBadge();
 
-    if (window.CandyApp && window.CandyApp.toast) {
-      window.CandyApp.toast.show(
-        "Payment queued offline (Ref: " + entry.receiptRef + ")",
-        "warning",
-        4000
-      );
-    }
-
+    showToast("Payment queued offline (Ref: " + entry.receiptRef + ")", "warning");
     return entry;
   }
 
   /**
    * Get all queued payments.
-   * @returns {Array}
    */
   function getQueue() {
     try {
-      var raw = localStorage.getItem(QUEUE_KEY);
+      const raw = localStorage.getItem(QUEUE_KEY);
       return raw ? JSON.parse(raw) : [];
-    } catch (e) {
+    } catch (_) {
       return [];
     }
   }
@@ -61,7 +62,6 @@
 
   /**
    * Return number of items in the queue.
-   * @returns {number}
    */
   function getQueueCount() {
     return getQueue().length;
@@ -70,51 +70,41 @@
   /**
    * Sync queued payments to the server.
    * POSTs to /api/sync. On success clears queue; on failure keeps it.
-   * @returns {Promise}
    */
   function syncPayments() {
-    var queue = getQueue();
+    const queue = getQueue();
     if (queue.length === 0) return Promise.resolve();
 
     return fetch("/api/sync", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "X-CSRFToken": csrfToken(),
         "X-Requested-With": "XMLHttpRequest",
       },
       body: JSON.stringify({ payments: queue }),
     })
-      .then(function (resp) {
+      .then((resp) => {
         if (!resp.ok) throw new Error("Sync failed: " + resp.status);
         return resp.json();
       })
-      .then(function (data) {
+      .then((data) => {
+        const count = queue.length;
         clearQueue();
-        if (window.CandyApp && window.CandyApp.toast) {
-          var count = queue.length;
-          window.CandyApp.toast.show(
-            count + " offline payment" + (count !== 1 ? "s" : "") + " synced successfully.",
-            "success",
-            4000
-          );
-        }
+        showToast(
+          count + " offline payment" + (count !== 1 ? "s" : "") + " synced successfully.",
+          "success"
+        );
         return data;
       })
-      .catch(function (err) {
+      .catch((err) => {
         console.error("[OfflineQueue] Sync error:", err);
-        if (window.CandyApp && window.CandyApp.toast) {
-          window.CandyApp.toast.show(
-            "Failed to sync offline payments. Will retry when connected.",
-            "error",
-            5000
-          );
-        }
+        showToast("Failed to sync offline payments. Will retry when connected.", "error");
       });
   }
 
-  /* ------------------------------------------
-     Internal helpers
-     ------------------------------------------ */
+  // ── Internal helpers ──────────────────────────────────────────────────
+
   function saveQueue(queue) {
     try {
       localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
@@ -124,9 +114,8 @@
   }
 
   function updateBadge() {
-    var count = getQueueCount();
-    var badges = document.querySelectorAll("[data-offline-badge]");
-    badges.forEach(function (badge) {
+    const count = getQueueCount();
+    document.querySelectorAll("[data-offline-badge]").forEach((badge) => {
       if (count > 0) {
         badge.textContent = count;
         badge.classList.remove("hidden");
@@ -137,36 +126,30 @@
     });
   }
 
-  /* ------------------------------------------
-     Event Listeners
-     ------------------------------------------ */
-  window.addEventListener("online", function () {
-    if (getQueueCount() > 0) {
-      syncPayments();
-    }
+  // ── Event Listeners ───────────────────────────────────────────────────
+
+  window.addEventListener("online", () => {
+    if (getQueueCount() > 0) syncPayments();
   });
 
-  // On load: if online and queue has items, sync immediately
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", function () {
-      updateBadge();
-      if (navigator.onLine && getQueueCount() > 0) {
-        syncPayments();
-      }
-    });
-  } else {
+  // On load: update badge and sync if online
+  const onReady = () => {
     updateBadge();
-    if (navigator.onLine && getQueueCount() > 0) {
-      syncPayments();
-    }
+    if (navigator.onLine && getQueueCount() > 0) syncPayments();
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", onReady);
+  } else {
+    onReady();
   }
 
   // Expose public API
   window.OfflineQueue = {
-    addToQueue: addToQueue,
-    getQueue: getQueue,
-    clearQueue: clearQueue,
-    syncPayments: syncPayments,
-    getQueueCount: getQueueCount,
+    addToQueue,
+    getQueue,
+    clearQueue,
+    syncPayments,
+    getQueueCount,
   };
 })();

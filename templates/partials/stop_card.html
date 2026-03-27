@@ -1,74 +1,82 @@
 {# HTMX partial: returned after complete/uncomplete #}
 <div id="stop-{{ stop.id }}" x-data="{ showPay: false }"
-     class="bg-gray-800 rounded-xl border {{ 'border-green-700/50 opacity-60' if stop.completed else 'border-gray-700' }} overflow-hidden">
+     class="bg-gray-800 rounded-xl border overflow-hidden
+            {{ 'border-green-700/40 animate-pop-in' if stop.completed else 'border-gray-700' }}">
   <div class="p-4">
 
-    {# Name + balance #}
-    <div class="flex items-start justify-between gap-3">
-      <div class="flex-1 min-w-0">
-        <div class="flex items-center gap-2">
-          {% if stop.completed %}
-          <svg class="w-5 h-5 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-          </svg>
-          {% else %}
-          <span class="flex-shrink-0 w-6 h-6 bg-indigo-500/20 text-indigo-400 rounded-full flex items-center justify-center text-xs font-bold">{{ stop.sequence }}</span>
-          {% endif %}
-          <span class="text-sm font-semibold {{ 'text-gray-500 line-through' if stop.completed else 'text-gray-100' }}">
-            {{ stop.customer.name }}
-          </span>
-        </div>
+    {# Name + balance row #}
+    <div class="flex items-center gap-2.5">
+      {% if stop.completed %}
+      <div class="w-7 h-7 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0 animate-check-bounce">
+        <svg class="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+        </svg>
       </div>
-      {% if stop.customer.balance and stop.customer.balance > 0 %}
+      {% else %}
+      <div class="w-7 h-7 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-xs font-bold flex-shrink-0">
+        {{ stop.sequence }}
+      </div>
+      {% endif %}
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-semibold {{ 'text-gray-500' if stop.completed else 'text-gray-100' }} truncate">
+          {{ stop.customer.name }}
+        </p>
+      </div>
+      {% if stop.customer.balance and stop.customer.balance > 0 and not stop.completed %}
       <span class="text-sm font-bold text-amber-400 flex-shrink-0">{{ stop.customer.balance|currency }}</span>
       {% endif %}
     </div>
 
-    {# Address — tap to navigate #}
-    {% if stop.customer.address %}
-    <a href="https://maps.google.com/?q={{ stop.customer.address|urlencode }}" target="_blank" rel="noopener"
-       class="flex items-center gap-1.5 mt-2 text-xs text-indigo-400 hover:text-indigo-300 min-h-[32px]">
-      <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-      </svg>
-      <span class="underline underline-offset-2">{{ stop.customer.address }}</span>
-    </a>
+    {% if not stop.completed %}
+    {# Contact links #}
+    <div class="ml-9 mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5">
+      {% if stop.customer.address %}
+      <a href="https://maps.google.com/?q={{ stop.customer.address|urlencode }}" target="_blank" rel="noopener"
+         class="inline-flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 min-h-[28px]">
+        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+        </svg>
+        <span class="underline underline-offset-2 truncate max-w-[200px]">{{ stop.customer.address }}</span>
+      </a>
+      {% endif %}
+      {% if stop.customer.phone %}
+      <a href="tel:{{ stop.customer.phone }}"
+         class="inline-flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 min-h-[28px]">
+        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+        </svg>
+        {{ stop.customer.phone }}
+      </a>
+      {% endif %}
+    </div>
     {% endif %}
 
-    {# Phone — click to call #}
-    {% if stop.customer.phone %}
-    <a href="tel:{{ stop.customer.phone }}"
-       class="flex items-center gap-1.5 mt-1 text-xs text-indigo-400 hover:text-indigo-300 min-h-[32px]">
-      <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-      </svg>
-      <span class="underline underline-offset-2">{{ stop.customer.phone }}</span>
-    </a>
-    {% endif %}
-
+    {# Notes #}
     {% if stop.notes %}
-    <div class="mt-2 px-3 py-2 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
-      <p class="text-xs text-yellow-400">{{ stop.notes }}</p>
+    <div class="mt-2 ml-9 px-2.5 py-1.5 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
+      <p class="text-2xs text-yellow-400">{{ stop.notes }}</p>
     </div>
     {% endif %}
 
+    {# Completed timestamp #}
     {% if stop.completed and stop.completed_at %}
-    <p class="text-xs text-green-400 mt-2">Completed {{ stop.completed_at|dateformat('%I:%M %p') }}</p>
+    <p class="text-2xs text-green-400/70 mt-1.5 ml-9">&#10003; {{ stop.completed_at|dateformat('%I:%M %p') }}</p>
     {% endif %}
 
-    {# Receipt confirmation #}
+    {# Receipt #}
     {% if receipt_number is defined and receipt_number %}
-    <div class="mt-2 px-3 py-2 bg-green-500/10 rounded-lg border border-green-500/20">
-      <p class="text-xs text-green-400">Payment recorded — {{ receipt_number }}</p>
+    <div class="mt-2 ml-9 px-2.5 py-1.5 bg-green-500/10 rounded-lg border border-green-500/20 animate-pop-in">
+      <p class="text-2xs text-green-400">&#127881; Payment recorded &mdash; {{ receipt_number }}</p>
     </div>
     {% endif %}
 
-    {# Action buttons #}
+    {# Actions #}
     <div class="mt-3 flex items-center gap-2">
       {% if not stop.completed %}
       <button hx-post="{{ url_for('route.complete_stop', id=stop.id) }}"
               hx-target="#stop-{{ stop.id }}" hx-swap="outerHTML"
-              class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-500 transition min-h-[44px]">
+              hx-disabled-elt="this"
+              class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-500 transition min-h-[44px] disabled:opacity-50 btn-press">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
         </svg>
@@ -76,21 +84,24 @@
       </button>
       {% if stop.customer.balance and stop.customer.balance > 0 %}
       <button @click="showPay = !showPay"
-              class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-500 transition min-h-[44px]">
-        Pay
+              :class="showPay ? 'bg-green-700 ring-2 ring-green-500/50' : 'bg-green-600 hover:bg-green-500'"
+              class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 text-white text-sm font-semibold rounded-xl transition min-h-[44px] btn-press">
+        Pay {{ stop.customer.balance|currency }}
       </button>
       {% endif %}
       {% else %}
       <button hx-post="{{ url_for('route.uncomplete_stop', id=stop.id) }}"
               hx-target="#stop-{{ stop.id }}" hx-swap="outerHTML"
-              class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 bg-gray-700 text-gray-400 text-sm font-medium rounded-lg hover:bg-gray-600 transition min-h-[44px]">
+              hx-disabled-elt="this"
+              hx-confirm="Undo this stop completion?"
+              class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 bg-gray-700 text-gray-400 text-xs font-medium rounded-xl hover:bg-gray-600 transition min-h-[40px] disabled:opacity-50 btn-press">
         Undo
       </button>
       {% endif %}
     </div>
 
-    {# Inline payment form #}
-    <div x-show="showPay" x-transition class="mt-3 pt-3 border-t border-gray-700">
+    {# Payment form #}
+    <div x-show="showPay" x-transition.duration.200ms x-cloak class="mt-3 pt-3 border-t border-gray-700">
       <form hx-post="{{ url_for('route.complete_stop', id=stop.id) }}"
             hx-target="#stop-{{ stop.id }}" hx-swap="outerHTML"
             class="flex flex-col gap-2">
@@ -98,13 +109,13 @@
         <div class="flex gap-2">
           <input type="number" name="amount" step="0.01" min="0.01" required
                  placeholder="Amount" value="{{ stop.customer.balance }}"
-                 class="flex-1 theme-input rounded-lg text-sm min-h-[44px]">
+                 class="flex-1 theme-input rounded-xl text-sm min-h-[44px]">
           <input type="text" name="payment_notes" placeholder="Notes"
-                 class="flex-1 theme-input rounded-lg text-sm min-h-[44px]">
+                 class="flex-1 theme-input rounded-xl text-sm min-h-[44px]">
         </div>
         <button type="submit"
-                class="w-full inline-flex items-center justify-center gap-2 px-3 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-500 transition min-h-[44px]">
-          Complete &amp; Record Payment
+                class="w-full inline-flex items-center justify-center gap-2 px-3 py-2.5 bg-green-600 text-white text-sm font-semibold rounded-xl hover:bg-green-500 transition min-h-[44px] btn-press">
+          Complete &amp; Pay
         </button>
       </form>
     </div>

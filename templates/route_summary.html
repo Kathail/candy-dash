@@ -1,153 +1,181 @@
 {% extends "base.html" %}
 
-{% block title %}Route Summary - {{ route_date | dateformat }}{% endblock %}
+{% block title %}Route Summary - {{ route_date|dateformat }}{% endblock %}
+{% block page_title %}Summary{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+{% set pct = (completed_stops / total_stops * 100)|int if total_stops else 0 %}
 
-  <!-- Page Header -->
-  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-    <div>
-      <h1 class="text-2xl font-bold text-gray-100">Route Summary</h1>
-      <p class="text-sm text-gray-500 mt-1">{{ route_date | dateformat('%A, %B %d, %Y') }}</p>
+<div class="max-w-2xl mx-auto space-y-6">
+
+  {# ── Celebration / Header ── #}
+  {% if completed_stops == total_stops and total_stops > 0 %}
+  <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-green-600 to-emerald-700 p-6 text-white text-center animate-pop-in">
+    <div class="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4"></div>
+    <div class="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/4"></div>
+    <div class="relative z-10">
+      <div class="text-5xl mb-2">&#127881;</div>
+      <h1 class="text-2xl font-bold">Route Complete!</h1>
+      <p class="text-green-200 text-sm mt-1">All {{ total_stops }} stops &middot; {{ payment_sum|currency }} collected</p>
     </div>
-    <a href="{{ url_for('route.receipts_zip', date_str=route_date.isoformat()) }}"
-       class="mt-3 sm:mt-0 inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
-      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-      </svg>
-      Download Receipts
-    </a>
   </div>
+  {% else %}
+  <div class="animate-fade-in-up">
+    <h1 class="text-2xl font-bold text-gray-100">Route Summary</h1>
+    <p class="text-xs text-gray-500 mt-0.5">{{ route_date|dateformat('%A, %B %d, %Y') }}</p>
+  </div>
+  {% endif %}
 
-  <!-- Summary Cards -->
-  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-    <!-- Stops Completed -->
-    <div class="bg-gray-800 rounded-lg shadow p-4">
-      <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Stops Completed</p>
-      <p class="mt-1 text-2xl font-bold text-gray-100">
-        {{ completed_stops }} / {{ total_stops }}
-      </p>
-      {% if total_stops > 0 %}
-      <div class="mt-2 w-full bg-gray-700 rounded-full h-2">
-        <div class="bg-indigo-600 h-2 rounded-full transition-all"
-             style="width: {{ (completed_stops / total_stops * 100) | int }}%"></div>
+  {# ── KPI Cards ── #}
+  <div class="grid grid-cols-3 gap-3">
+    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 animate-fade-in-up stagger-1">
+      <p class="text-2xs font-semibold text-gray-500 uppercase tracking-wider">Stops</p>
+      <p class="text-xl font-bold text-gray-100 mt-1">{{ completed_stops }}/{{ total_stops }}</p>
+      <div class="mt-2 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+        <div class="h-full rounded-full transition-all {{ 'bg-green-500' if pct == 100 else 'bg-indigo-500' }}" style="width: {{ pct }}%"></div>
       </div>
-      <p class="mt-1 text-xs text-gray-500">{{ (completed_stops / total_stops * 100) | int }}% completion</p>
-      {% else %}
-      <p class="mt-1 text-xs text-gray-500">No stops scheduled</p>
-      {% endif %}
     </div>
-
-    <!-- Payments Collected -->
-    <div class="bg-gray-800 rounded-lg shadow p-4">
-      <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Payments Collected</p>
-      <p class="mt-1 text-2xl font-bold text-green-400">{{ payment_sum | currency }}</p>
-      <p class="mt-1 text-xs text-gray-500">{{ payment_count }} payment(s)</p>
+    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 animate-fade-in-up stagger-2">
+      <p class="text-2xs font-semibold text-gray-500 uppercase tracking-wider">Collected</p>
+      <p class="text-xl font-bold text-green-400 mt-1">{{ payment_sum|currency }}</p>
+      <p class="text-2xs text-gray-500 mt-1">{{ payment_count }} payment{{ 's' if payment_count != 1 else '' }}</p>
     </div>
-
-    <!-- Next Day Preview -->
-    <div class="bg-gray-800 rounded-lg shadow p-4">
-      <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Tomorrow</p>
-      <p class="mt-1 text-2xl font-bold text-gray-100">{{ next_day_stops }}</p>
-      <p class="mt-1 text-xs text-gray-500">
-        stop(s) on {{ next_date | dateformat('%b %d') }}
-      </p>
-      <a href="{{ url_for('route.index', date=next_date.isoformat()) }}"
-         class="mt-2 inline-block text-xs text-indigo-400 hover:text-indigo-300 font-medium">
-        View tomorrow's route &rarr;
+    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 animate-fade-in-up stagger-3">
+      <p class="text-2xs font-semibold text-gray-500 uppercase tracking-wider">Tomorrow</p>
+      <p class="text-xl font-bold text-gray-100 mt-1">{{ next_day_stops }}</p>
+      <a href="{{ url_for('route.index', date=next_date.isoformat()) }}" class="text-2xs text-indigo-400 hover:text-indigo-300 mt-1 inline-block">
+        View &rarr;
       </a>
     </div>
   </div>
 
-  <!-- Completed Stops -->
-  <div class="bg-gray-800 rounded-lg shadow mb-6">
-    <div class="px-4 py-3 border-b border-gray-700">
-      <h2 class="text-sm font-semibold text-gray-300">
-        <span class="inline-flex items-center justify-center w-5 h-5 bg-green-500/20 text-green-400 rounded-full text-xs font-bold mr-1.5">{{ completed_stops }}</span>
-        Completed Stops
-      </h2>
-    </div>
-    <div class="divide-y divide-gray-700">
-      {% set completed_list = [] %}
-      {% for stop in stops if stop.completed %}
-      <div class="px-4 py-3 flex items-center justify-between">
-        <div>
-          <p class="font-medium text-gray-100">{{ stop.customer.name }}</p>
-          <p class="text-sm text-gray-500">{{ stop.customer.city or 'No city' }}</p>
-        </div>
-        <div class="text-right">
-          {% if stop.completed_at %}
-          <p class="text-xs text-gray-500">Completed {{ stop.completed_at | dateformat('%I:%M %p') }}</p>
-          {% endif %}
-          <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-500/20 text-green-400">
-            Done
-          </span>
-        </div>
+  {# ── Download Receipts ── #}
+  {% if payment_count > 0 %}
+  <a href="{{ url_for('route.receipts_zip', date_str=route_date.isoformat()) }}"
+     class="flex items-center justify-between bg-gray-800 rounded-xl border border-gray-700 px-4 py-3.5 hover:bg-gray-700/50 transition card-lift animate-fade-in-up stagger-4">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-lg bg-indigo-500/15 flex items-center justify-center">
+        <svg class="w-4.5 h-4.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
       </div>
-      {% else %}
-      <div class="px-4 py-6 text-center text-sm text-gray-500">No completed stops.</div>
-      {% endfor %}
-    </div>
-  </div>
-
-  <!-- Missed / Incomplete Stops -->
-  <div class="bg-gray-800 rounded-lg shadow mb-6">
-    <div class="px-4 py-3 border-b border-gray-700">
-      <h2 class="text-sm font-semibold text-gray-300">
-        <span class="inline-flex items-center justify-center w-5 h-5 bg-red-500/20 text-red-400 rounded-full text-xs font-bold mr-1.5">{{ total_stops - completed_stops }}</span>
-        Missed / Incomplete
-      </h2>
-    </div>
-    <div class="divide-y divide-gray-700">
-      {% for stop in stops if not stop.completed %}
-      <div class="px-4 py-3 flex items-center justify-between">
-        <div>
-          <p class="font-medium text-gray-100">{{ stop.customer.name }}</p>
-          <p class="text-sm text-gray-500">{{ stop.customer.city or 'No city' }}</p>
-        </div>
-        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-500/20 text-red-400">
-          Missed
-        </span>
+      <div>
+        <p class="text-sm font-semibold text-gray-100">Download Receipts</p>
+        <p class="text-2xs text-gray-500">{{ payment_count }} receipt{{ 's' if payment_count != 1 else '' }} as ZIP</p>
       </div>
-      {% else %}
-      <div class="px-4 py-6 text-center text-sm text-gray-500">All stops completed!</div>
-      {% endfor %}
     </div>
-  </div>
+    <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+    </svg>
+  </a>
+  {% endif %}
 
-  <!-- Next Day Preview Details -->
-  {% if next_day_stops_list %}
-  <div class="bg-gray-800 rounded-lg shadow mb-6">
-    <div class="px-4 py-3 border-b border-gray-700">
-      <h2 class="text-sm font-semibold text-gray-300">
-        Tomorrow's Stops ({{ next_date | dateformat('%b %d') }})
-      </h2>
+  {# ── Completed Stops ── #}
+  {% set completed_list = stops|selectattr('completed')|list %}
+  {% if completed_list %}
+  <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden animate-fade-in-up stagger-5">
+    <div class="px-4 py-3 border-b border-gray-700 flex items-center gap-2">
+      <div class="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center">
+        <svg class="w-3 h-3 text-green-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+      </div>
+      <h2 class="text-sm font-semibold text-gray-100">Completed</h2>
+      <span class="text-2xs text-gray-500 ml-auto">{{ completed_list|length }}</span>
     </div>
-    <div class="divide-y divide-gray-700">
-      {% for stop in next_day_stops_list %}
-      <div class="px-4 py-2 flex items-center justify-between">
-        <div>
-          <p class="text-sm font-medium text-gray-100">{{ stop.customer.name }}</p>
-          <p class="text-xs text-gray-500">{{ stop.customer.city or 'No city' }}</p>
+    <div class="divide-y divide-gray-700/50">
+      {% for stop in completed_list %}
+      <div class="flex items-center gap-3 px-4 py-2.5">
+        {% set colors = ['bg-indigo-500/20 text-indigo-400', 'bg-purple-500/20 text-purple-400', 'bg-blue-500/20 text-blue-400', 'bg-emerald-500/20 text-emerald-400', 'bg-amber-500/20 text-amber-400', 'bg-rose-500/20 text-rose-400'] %}
+        <div class="w-7 h-7 rounded-full flex items-center justify-center text-2xs font-bold flex-shrink-0 {{ colors[stop.customer_id % 6] }}">
+          {{ stop.customer.name[:2] }}
         </div>
-        <span class="text-xs text-gray-500">#{{ stop.sequence }}</span>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-medium text-gray-100 truncate">{{ stop.customer.name }}</p>
+          <p class="text-2xs text-gray-500">{{ stop.customer.city or 'No city' }}</p>
+        </div>
+        {% if stop.completed_at %}
+        <span class="text-2xs text-gray-500 flex-shrink-0">{{ stop.completed_at|dateformat('%I:%M %p') }}</span>
+        {% endif %}
       </div>
       {% endfor %}
     </div>
   </div>
   {% endif %}
 
-  <!-- Back to Route -->
-  <div class="flex gap-3">
+  {# ── Missed Stops ── #}
+  {% set missed_list = stops|rejectattr('completed')|list %}
+  {% if missed_list %}
+  <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden animate-fade-in-up stagger-6">
+    <div class="px-4 py-3 border-b border-gray-700 flex items-center gap-2">
+      <div class="w-5 h-5 rounded-full bg-red-500/20 flex items-center justify-center">
+        <svg class="w-3 h-3 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </div>
+      <h2 class="text-sm font-semibold text-gray-100">Missed</h2>
+      <span class="text-2xs text-gray-500 ml-auto">{{ missed_list|length }}</span>
+    </div>
+    <div class="divide-y divide-gray-700/50">
+      {% for stop in missed_list %}
+      <div class="flex items-center gap-3 px-4 py-2.5">
+        {% set colors = ['bg-indigo-500/20 text-indigo-400', 'bg-purple-500/20 text-purple-400', 'bg-blue-500/20 text-blue-400', 'bg-emerald-500/20 text-emerald-400', 'bg-amber-500/20 text-amber-400', 'bg-rose-500/20 text-rose-400'] %}
+        <div class="w-7 h-7 rounded-full flex items-center justify-center text-2xs font-bold flex-shrink-0 {{ colors[stop.customer_id % 6] }}">
+          {{ stop.customer.name[:2] }}
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-medium text-gray-100 truncate">{{ stop.customer.name }}</p>
+          <p class="text-2xs text-gray-500">{{ stop.customer.city or 'No city' }}</p>
+        </div>
+        <span class="text-2xs font-medium text-red-400 bg-red-500/10 px-2 py-0.5 rounded-full flex-shrink-0">Missed</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {# ── Tomorrow Preview ── #}
+  {% if next_day_stops_list %}
+  <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden animate-fade-in-up stagger-7">
+    <div class="px-4 py-3 border-b border-gray-700 flex items-center gap-2">
+      <div class="w-5 h-5 rounded-full bg-purple-500/20 flex items-center justify-center">
+        <svg class="w-3 h-3 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+        </svg>
+      </div>
+      <h2 class="text-sm font-semibold text-gray-100">Tomorrow &middot; {{ next_date|dateformat('%b %d') }}</h2>
+      <span class="text-2xs text-gray-500 ml-auto">{{ next_day_stops_list|length }}</span>
+    </div>
+    <div class="divide-y divide-gray-700/50">
+      {% for stop in next_day_stops_list %}
+      <div class="flex items-center gap-3 px-4 py-2.5">
+        <div class="w-6 h-6 rounded-full bg-gray-700 text-gray-400 flex items-center justify-center text-2xs font-bold flex-shrink-0">
+          {{ stop.sequence }}
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-medium text-gray-200 truncate">{{ stop.customer.name }}</p>
+          <p class="text-2xs text-gray-500">{{ stop.customer.city or 'No city' }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {# ── Navigation ── #}
+  <div class="flex flex-wrap gap-2 animate-fade-in-up stagger-8">
+    <a href="{{ url_for('dashboard.index') }}"
+       class="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-500 transition min-h-[44px] btn-press">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0h4"/>
+      </svg>
+      Dashboard
+    </a>
     <a href="{{ url_for('route.index', date=route_date.isoformat()) }}"
-       class="inline-flex items-center px-4 py-2 bg-gray-800 border border-gray-600 text-sm font-medium rounded-md text-gray-300 hover:bg-gray-700 transition-colors">
-      &larr; Back to Route
+       class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-gray-800 border border-gray-600 text-sm font-medium rounded-xl text-gray-300 hover:bg-gray-700 transition min-h-[44px] btn-press">
+      &larr; Route
     </a>
     <a href="{{ url_for('planner.index', date=route_date.isoformat()) }}"
-       class="inline-flex items-center px-4 py-2 bg-gray-800 border border-gray-600 text-sm font-medium rounded-md text-gray-300 hover:bg-gray-700 transition-colors">
-      Edit in Planner
+       class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-gray-800 border border-gray-600 text-sm font-medium rounded-xl text-gray-300 hover:bg-gray-700 transition min-h-[44px] btn-press">
+      Planner
     </a>
   </div>
 

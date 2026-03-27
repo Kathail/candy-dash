@@ -6,52 +6,64 @@
 {% block content %}
 {% set completed_count = stops|selectattr('completed')|list|length %}
 {% set total_count = stops|length %}
+{% set pct = ((collected_today / collection_target * 100)|int) if collection_target > 0 else 0 %}
 
-<div class="space-y-4 max-w-2xl mx-auto">
+<div class="max-w-2xl mx-auto space-y-3">
 
   {# ── Date Selector ── #}
-  <div class="flex items-center justify-between bg-gray-800 rounded-xl border border-gray-700 px-4 py-3">
-    <a href="#" class="p-2 rounded-lg hover:bg-gray-700 text-gray-500 min-w-[44px] min-h-[44px] flex items-center justify-center"
-       onclick="event.preventDefault(); var d=new Date('{{ route_date.isoformat() }}'); d.setDate(d.getDate()-1); window.location.href='{{ url_for('route.index') }}?date='+d.toISOString().slice(0,10);">
+  <div class="flex items-center justify-between bg-gray-800 rounded-xl border border-gray-700 px-3 py-2 animate-fade-in-up">
+    <a href="{{ url_for('route.index', date=prev_date.isoformat()) }}"
+       class="p-2 rounded-lg hover:bg-gray-700 text-gray-500 min-w-[44px] min-h-[44px] flex items-center justify-center btn-press">
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
       </svg>
     </a>
-    <span class="text-base font-semibold text-gray-100">{{ route_date|dateformat('%A, %b %d') }}</span>
-    <a href="#" class="p-2 rounded-lg hover:bg-gray-700 text-gray-500 min-w-[44px] min-h-[44px] flex items-center justify-center"
-       onclick="event.preventDefault(); var d=new Date('{{ route_date.isoformat() }}'); d.setDate(d.getDate()+1); window.location.href='{{ url_for('route.index') }}?date='+d.toISOString().slice(0,10);">
+    <div class="text-center">
+      <span class="text-sm font-bold text-gray-100">{{ route_date|dateformat('%A, %b %d') }}</span>
+      {% if not is_today %}
+      <div class="mt-0.5">
+        <a href="{{ url_for('route.index') }}" class="text-2xs text-indigo-400 hover:text-indigo-300 font-medium">Go to Today</a>
+      </div>
+      {% endif %}
+    </div>
+    <a href="{{ url_for('route.index', date=next_date.isoformat()) }}"
+       class="p-2 rounded-lg hover:bg-gray-700 text-gray-500 min-w-[44px] min-h-[44px] flex items-center justify-center btn-press">
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
       </svg>
     </a>
   </div>
 
-  {# ── Hero: Collection Target ── #}
+  {# ── Collection Hero ── #}
   {% if total_count > 0 %}
-  <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-700 p-5 text-white">
+  <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-700 p-5 text-white animate-fade-in-up stagger-1">
     <div class="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4"></div>
 
     <div class="relative z-10">
       <div class="flex items-baseline justify-between">
         <div>
-          <p class="text-indigo-200 text-xs font-medium uppercase tracking-wide">Collected Today</p>
+          <p class="text-indigo-200 text-2xs font-semibold uppercase tracking-wider">Collected</p>
           <p class="text-2xl font-bold mt-0.5">{{ collected_today|currency }}</p>
         </div>
         <div class="text-right">
-          <p class="text-indigo-200 text-xs font-medium uppercase tracking-wide">Target</p>
+          <p class="text-indigo-200 text-2xs font-semibold uppercase tracking-wider">Target</p>
           <p class="text-2xl font-bold mt-0.5">{{ collection_target|currency }}</p>
         </div>
       </div>
 
-      {# Collection progress bar #}
-      {% set pct = ((collected_today / collection_target * 100)|int) if collection_target > 0 else 0 %}
       <div class="mt-3 bg-white/20 rounded-full h-2.5 overflow-hidden">
-        <div class="bg-white rounded-full h-2.5 transition-all duration-500" style="width: {{ pct }}%"></div>
+        <div class="bg-white rounded-full h-2.5 transition-all duration-700 ease-out" style="width: {{ pct }}%"></div>
       </div>
 
       <div class="flex items-center justify-between mt-2">
-        <span class="text-indigo-200 text-xs">{{ pct }}% collected</span>
-        <span class="text-indigo-200 text-xs">{{ completed_count }}/{{ total_count }} stops</span>
+        <span class="text-indigo-200 text-xs font-medium">{{ pct }}%</span>
+        <span class="text-indigo-200 text-xs">
+          {% if completed_count == total_count %}
+          &#127881; All {{ total_count }} stops done!
+          {% else %}
+          {{ completed_count }}/{{ total_count }} stops
+          {% endif %}
+        </span>
       </div>
     </div>
   </div>
@@ -65,132 +77,138 @@
       {# City Group Header #}
       {% if stop.customer.city != ns.current_city %}
         {% set ns.current_city = stop.customer.city %}
-        <div class="flex items-center gap-2 pt-3">
-          <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-          </svg>
-          <h2 class="text-sm font-bold text-indigo-400 uppercase tracking-wide">{{ stop.customer.city or 'No City' }}</h2>
-          <div class="flex-1 h-px bg-indigo-500/30"></div>
+        <div class="flex items-center gap-2 pt-2">
+          <div class="w-5 h-5 rounded-md bg-indigo-500/15 flex items-center justify-center">
+            <svg class="w-3 h-3 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+            </svg>
+          </div>
+          <h2 class="text-xs font-bold text-indigo-400 uppercase tracking-wider">{{ stop.customer.city or 'No City' }}</h2>
+          <div class="flex-1 h-px bg-gray-700"></div>
         </div>
       {% endif %}
 
-      {# "Next Stop" badge on first incomplete stop #}
+      {# "Next Stop" badge #}
       {% if not stop.completed and ns.first_incomplete %}
         {% set ns.first_incomplete = false %}
         <div id="next-stop" class="flex items-center gap-2 -mb-2">
-          <span class="text-xs font-bold text-indigo-400 bg-indigo-500/15 px-2.5 py-1 rounded-full">NEXT STOP</span>
+          <span class="text-2xs font-bold text-indigo-300 bg-indigo-500/20 px-2.5 py-1 rounded-full animate-pulse-glow flex items-center gap-1">
+            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clip-rule="evenodd"/></svg>
+            NEXT
+          </span>
         </div>
       {% endif %}
 
       {# Stop Card #}
       <div id="stop-{{ stop.id }}" x-data="{ showPay: false }"
-           class="bg-gray-800 rounded-xl border {{ 'border-green-700/50 opacity-60' if stop.completed else 'border-gray-700' }} overflow-hidden">
+           class="bg-gray-800 rounded-xl border overflow-hidden animate-fade-in-up stagger-{{ loop.index0 % 8 + 1 }}
+                  {{ 'border-green-700/40 animate-pop-in' if stop.completed else 'border-gray-700' }}">
         <div class="p-4">
 
-          {# Customer name + balance #}
-          <div class="flex items-start justify-between gap-3">
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-2">
-                {% if stop.completed %}
-                <svg class="w-5 h-5 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                </svg>
-                {% else %}
-                <span class="flex-shrink-0 w-6 h-6 bg-indigo-500/20 text-indigo-400 rounded-full flex items-center justify-center text-xs font-bold">{{ stop.sequence }}</span>
-                {% endif %}
-                <span class="text-sm font-semibold {{ 'text-gray-500 line-through' if stop.completed else 'text-gray-100' }}">
-                  {{ stop.customer.name }}
-                </span>
-              </div>
+          {# Name + balance row #}
+          <div class="flex items-center gap-2.5">
+            {% if stop.completed %}
+            <div class="w-7 h-7 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0 animate-check-bounce">
+              <svg class="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
             </div>
-            {% if stop.customer.balance and stop.customer.balance > 0 %}
+            {% else %}
+            <div class="w-7 h-7 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-xs font-bold flex-shrink-0">
+              {{ stop.sequence }}
+            </div>
+            {% endif %}
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-semibold {{ 'text-gray-500' if stop.completed else 'text-gray-100' }} truncate">
+                {{ stop.customer.name }}
+              </p>
+            </div>
+            {% if stop.customer.balance and stop.customer.balance > 0 and not stop.completed %}
             <span class="text-sm font-bold text-amber-400 flex-shrink-0">{{ stop.customer.balance|currency }}</span>
             {% endif %}
           </div>
 
-          {# Address — tap to navigate #}
-          {% if stop.customer.address %}
-          <a href="https://maps.google.com/?q={{ stop.customer.address|urlencode }}"
-             target="_blank" rel="noopener"
-             class="flex items-center gap-1.5 mt-2 text-xs text-indigo-400 hover:text-indigo-300 active:text-indigo-200 min-h-[32px]">
-            <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-            </svg>
-            <span class="underline underline-offset-2">{{ stop.customer.address }}</span>
-          </a>
-          {% endif %}
+          {% if not stop.completed %}
+          {# Contact links #}
+          <div class="ml-9 mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5">
+            {% if stop.customer.address %}
+            <a href="https://maps.google.com/?q={{ stop.customer.address|urlencode }}" target="_blank" rel="noopener"
+               class="inline-flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 min-h-[28px]">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+              </svg>
+              <span class="underline underline-offset-2 truncate max-w-[200px]">{{ stop.customer.address }}</span>
+            </a>
+            {% endif %}
+            {% if stop.customer.phone %}
+            <a href="tel:{{ stop.customer.phone }}"
+               class="inline-flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 min-h-[28px]">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+              </svg>
+              {{ stop.customer.phone }}
+            </a>
+            {% endif %}
+          </div>
 
-          {# Phone — click to call #}
-          {% if stop.customer.phone %}
-          <a href="tel:{{ stop.customer.phone }}"
-             class="flex items-center gap-1.5 mt-1 text-xs text-indigo-400 hover:text-indigo-300 active:text-indigo-200 min-h-[32px]">
-            <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-            </svg>
-            <span class="underline underline-offset-2">{{ stop.customer.phone }}</span>
-          </a>
-          {% endif %}
-
-          {# Last visit context #}
+          {# Context #}
           {% set lv = last_visits.get(stop.customer_id) %}
           {% set lp = last_payments.get(stop.customer_id) %}
           {% if lv or lp %}
-          <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
-            {% if lv %}
-            <span>Last visit: {{ lv|dateformat('%b %d') }}</span>
-            {% endif %}
-            {% if lp %}
-            <span>Last payment: {{ lp.amount|currency }} on {{ lp.payment_date|dateformat('%b %d') }}</span>
-            {% endif %}
+          <div class="ml-9 mt-1 flex flex-wrap gap-x-3 text-2xs text-gray-500">
+            {% if lv %}<span>Visited {{ lv|dateformat('%b %d') }}</span>{% endif %}
+            {% if lp %}<span>Paid {{ lp.amount|currency }} on {{ lp.payment_date|dateformat('%b %d') }}</span>{% endif %}
           </div>
           {% endif %}
+          {% endif %}
 
-          {# Stop notes #}
+          {# Notes #}
           {% if stop.notes %}
-          <div class="mt-2 px-3 py-2 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
-            <p class="text-xs text-yellow-400">{{ stop.notes }}</p>
+          <div class="mt-2 ml-9 px-2.5 py-1.5 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
+            <p class="text-2xs text-yellow-400">{{ stop.notes }}</p>
           </div>
           {% endif %}
 
+          {# Completed timestamp #}
           {% if stop.completed and stop.completed_at %}
-          <p class="text-xs text-green-400 mt-2">Completed {{ stop.completed_at|dateformat('%I:%M %p') }}</p>
+          <p class="text-2xs text-green-400/70 mt-1.5 ml-9">&#10003; {{ stop.completed_at|dateformat('%I:%M %p') }}</p>
           {% endif %}
 
-          {# Action buttons #}
+          {# Actions #}
           <div class="mt-3 flex items-center gap-2">
             {% if not stop.completed %}
-            {# Complete (no payment) #}
             <button hx-post="{{ url_for('route.complete_stop', id=stop.id) }}"
                     hx-target="#stop-{{ stop.id }}" hx-swap="outerHTML"
-                    class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-500 transition min-h-[44px]">
+                    hx-disabled-elt="this"
+                    class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-500 transition min-h-[44px] disabled:opacity-50 btn-press">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               Done
             </button>
-            {# Complete + Pay #}
             {% if stop.customer.balance and stop.customer.balance > 0 %}
             <button @click="showPay = !showPay"
-                    class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-500 transition min-h-[44px]">
+                    :class="showPay ? 'bg-green-700 ring-2 ring-green-500/50' : 'bg-green-600 hover:bg-green-500'"
+                    class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 text-white text-sm font-semibold rounded-xl transition min-h-[44px] btn-press">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
               </svg>
-              Pay
+              Pay {{ stop.customer.balance|currency }}
             </button>
             {% endif %}
             {% else %}
             <button hx-post="{{ url_for('route.uncomplete_stop', id=stop.id) }}"
                     hx-target="#stop-{{ stop.id }}" hx-swap="outerHTML"
-                    class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 bg-gray-700 text-gray-400 text-sm font-medium rounded-lg hover:bg-gray-600 transition min-h-[44px]">
+                    hx-disabled-elt="this"
+                    hx-confirm="Undo this stop completion?"
+                    class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 bg-gray-700 text-gray-400 text-xs font-medium rounded-xl hover:bg-gray-600 transition min-h-[40px] disabled:opacity-50 btn-press">
               Undo
             </button>
             {% endif %}
           </div>
 
-          {# Inline payment form (hidden by default) #}
-          <div x-show="showPay" x-transition class="mt-3 pt-3 border-t border-gray-700">
+          {# Payment form #}
+          <div x-show="showPay" x-transition.duration.200ms x-cloak class="mt-3 pt-3 border-t border-gray-700">
             <form hx-post="{{ url_for('route.complete_stop', id=stop.id) }}"
                   hx-target="#stop-{{ stop.id }}" hx-swap="outerHTML"
                   class="flex flex-col gap-2">
@@ -198,16 +216,16 @@
               <div class="flex gap-2">
                 <input type="number" name="amount" step="0.01" min="0.01" required
                        placeholder="Amount" value="{{ stop.customer.balance }}"
-                       class="flex-1 theme-input rounded-lg text-sm min-h-[44px]">
+                       class="flex-1 theme-input rounded-xl text-sm min-h-[44px]">
                 <input type="text" name="payment_notes" placeholder="Notes"
-                       class="flex-1 theme-input rounded-lg text-sm min-h-[44px]">
+                       class="flex-1 theme-input rounded-xl text-sm min-h-[44px]">
               </div>
               <button type="submit"
-                      class="w-full inline-flex items-center justify-center gap-2 px-3 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-500 transition min-h-[44px]">
+                      class="w-full inline-flex items-center justify-center gap-2 px-3 py-2.5 bg-green-600 text-white text-sm font-semibold rounded-xl hover:bg-green-500 transition min-h-[44px] btn-press">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                 </svg>
-                Complete &amp; Record Payment
+                Complete &amp; Pay
               </button>
             </form>
           </div>
@@ -217,29 +235,44 @@
     {% endfor %}
 
   {% else %}
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-10 text-center">
-      <svg class="w-12 h-12 mx-auto text-gray-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
-      </svg>
-      <p class="text-sm font-medium text-gray-500">No stops scheduled for this date.</p>
-      <a href="{{ url_for('planner.index') }}" class="text-xs text-indigo-400 hover:text-indigo-300 mt-2 inline-block">Plan a route</a>
+    <div class="bg-gray-800 rounded-xl border border-gray-700 p-10 text-center animate-fade-in-up">
+      <div class="text-4xl mb-3">&#128506;</div>
+      <p class="text-sm font-medium text-gray-400">No stops scheduled for this date.</p>
+      <a href="{{ url_for('planner.index') }}" class="inline-flex items-center gap-1.5 mt-3 text-sm text-indigo-400 hover:text-indigo-300 font-medium btn-press">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+        </svg>
+        Plan a route
+      </a>
     </div>
   {% endif %}
 
-  {# Spacer for bottom bar #}
-  {% if stops %}<div class="h-20"></div>{% endif %}
+  {# Spacer #}
+  {% if stops %}<div class="h-24 lg:h-20"></div>{% endif %}
 </div>
 
-{# ── Bottom Bar ── #}
+{# ── Sticky Bottom Bar ── #}
 {% if stops %}
-<div class="fixed bottom-0 left-0 right-0 lg:pl-64 bg-gray-900/95 backdrop-blur border-t border-gray-700 px-4 py-3 z-20">
+<div class="fixed bottom-16 lg:bottom-0 left-0 right-0 lg:pl-64 bg-gray-900/95 backdrop-blur-sm border-t border-gray-700 px-4 py-2.5 z-30">
   <div class="max-w-2xl mx-auto flex items-center gap-3">
+    {# Mini progress #}
     <div class="flex-1 min-w-0">
-      <p class="text-xs text-gray-400">{{ completed_count }}/{{ total_count }} stops &middot; {{ collected_today|currency }} collected</p>
+      <div class="flex items-center gap-2">
+        <div class="flex-1 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+          <div class="h-full rounded-full transition-all duration-500
+                      {{ 'bg-green-500' if completed_count == total_count else 'bg-indigo-500' }}"
+               style="width: {{ (completed_count / total_count * 100)|int if total_count else 0 }}%"></div>
+        </div>
+        <span class="text-2xs font-semibold text-gray-400 whitespace-nowrap">{{ completed_count }}/{{ total_count }}</span>
+      </div>
+      <p class="text-2xs text-gray-500 mt-0.5">{{ collected_today|currency }} collected</p>
     </div>
     <a href="{{ url_for('route.summary', date=route_date.isoformat()) }}"
-       class="inline-flex items-center px-5 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-500 transition min-h-[44px]">
-      End Route
+       class="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-500 transition min-h-[40px] btn-press">
+      Summary
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+      </svg>
     </a>
   </div>
 </div>
@@ -249,14 +282,24 @@
 
 {% block scripts %}
 <script>
-// Auto-scroll to next incomplete stop on page load
 document.addEventListener('DOMContentLoaded', function() {
   var next = document.getElementById('next-stop');
   if (next) {
     setTimeout(function() {
       next.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 300);
+    }, 400);
   }
+
+  // Pull-to-refresh
+  var touchStartY = 0, pulling = false;
+  document.addEventListener('touchstart', function(e) {
+    if (window.scrollY === 0) { touchStartY = e.touches[0].clientY; pulling = true; }
+  }, { passive: true });
+  document.addEventListener('touchmove', function(e) {
+    if (!pulling) return;
+    if (e.touches[0].clientY - touchStartY > 120 && window.scrollY === 0) { pulling = false; window.location.reload(); }
+  }, { passive: true });
+  document.addEventListener('touchend', function() { pulling = false; }, { passive: true });
 });
 </script>
 {% endblock %}

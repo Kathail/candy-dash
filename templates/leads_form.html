@@ -1,9 +1,10 @@
 {% extends "base.html" %}
 
 {% block title %}{% if lead %}Edit Lead{% else %}New Lead{% endif %} - Candy Dash{% endblock %}
+{% block page_title %}{% if lead %}Edit Lead{% else %}New Lead{% endif %}{% endblock %}
 
 {% block content %}
-<div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+<div class="max-w-2xl mx-auto space-y-6">
 
   <!-- Page Header -->
   <div class="mb-6">
@@ -15,7 +16,7 @@
   </div>
 
   <!-- Form -->
-  <div class="bg-gray-800 rounded-lg shadow p-6">
+  <div class="bg-gray-800 rounded-xl border border-gray-700 p-6 animate-fade-in-up">
     <form method="post" class="space-y-5">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
@@ -24,7 +25,7 @@
         <label for="name" class="block text-sm font-medium text-gray-300 mb-1">Name <span class="text-red-500">*</span></label>
         <input type="text" name="name" id="name" required
                value="{{ lead.name if lead else '' }}"
-               class="block w-full rounded-md border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+               class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm min-h-[44px]"
                placeholder="Lead name">
       </div>
 
@@ -33,7 +34,7 @@
         <label for="address" class="block text-sm font-medium text-gray-300 mb-1">Address</label>
         <input type="text" name="address" id="address"
                value="{{ lead.address if lead and lead.address else '' }}"
-               class="block w-full rounded-md border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+               class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm min-h-[44px]"
                placeholder="Street address">
       </div>
 
@@ -42,7 +43,7 @@
         <label for="city" class="block text-sm font-medium text-gray-300 mb-1">City</label>
         <input type="text" name="city" id="city"
                value="{{ lead.city if lead and lead.city else '' }}"
-               class="block w-full rounded-md border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+               class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm min-h-[44px]"
                placeholder="City">
       </div>
 
@@ -51,7 +52,7 @@
         <label for="phone" class="block text-sm font-medium text-gray-300 mb-1">Phone</label>
         <input type="text" name="phone" id="phone"
                value="{{ lead.phone if lead and lead.phone else '' }}"
-               class="block w-full rounded-md border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+               class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm min-h-[44px]"
                placeholder="Phone number">
       </div>
 
@@ -59,7 +60,7 @@
       <div>
         <label for="notes" class="block text-sm font-medium text-gray-300 mb-1">Notes</label>
         <textarea name="notes" id="notes" rows="3"
-                  class="block w-full rounded-md border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+                  class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm min-h-[44px]"
                   placeholder="Any additional notes...">{{ lead.notes if lead and lead.notes else '' }}</textarea>
       </div>
 
@@ -67,7 +68,7 @@
       <div>
         <label for="lead_source" class="block text-sm font-medium text-gray-300 mb-1">Lead Source</label>
         <select name="lead_source" id="lead_source"
-                class="block w-full rounded-md border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm min-h-[44px]">
           <option value="">-- Select Source --</option>
           {% for value, label in [('referral', 'Referral'), ('walk-in', 'Walk-in'), ('cold-call', 'Cold Call'), ('website', 'Website'), ('social', 'Social Media'), ('other', 'Other')] %}
           <option value="{{ value }}" {% if lead and lead.lead_source == value %}selected{% endif %}>{{ label }}</option>
@@ -78,11 +79,11 @@
       <!-- Submit -->
       <div class="flex gap-3 pt-4 border-t border-gray-700">
         <button type="submit"
-                class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
+                class="btn-press inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
           {% if lead %}Update Lead{% else %}Create Lead{% endif %}
         </button>
         <a href="{{ url_for('leads.index') }}"
-           class="inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 text-sm font-medium rounded-md text-gray-300 hover:bg-gray-700 transition-colors">
+           class="btn-press inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-700 transition-colors">
           Cancel
         </a>
       </div>
