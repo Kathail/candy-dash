@@ -82,28 +82,18 @@
                     </div>
                     <div x-show="open && results.length > 0" @click.outside="open = false" x-transition x-cloak
                          class="absolute top-full mt-1 w-full theme-card max-h-72 overflow-y-auto z-50 shadow-lg">
-                        <template x-for="(c, idx) in results" :key="c.type + '-' + (c.receipt_number || c.id) + '-' + idx">
+                        <template x-for="(c, idx) in results" :key="(c.receipt_number || '') + c.id + '-' + idx">
                             <a :href="'/customers/' + c.id"
                                class="flex items-center justify-between px-4 py-3 hover:bg-panel-hover border-b border-app last:border-0">
-                                <template x-if="c.type === 'receipt'">
-                                    <div class="flex items-center justify-between w-full">
-                                        <div>
-                                            <div class="text-sm font-medium font-mono text-emerald-400" x-text="c.receipt_number"></div>
-                                            <div class="text-xs text-muted" x-text="c.name + ' · ' + c.date"></div>
-                                        </div>
-                                        <span class="text-sm font-semibold text-green-400" x-text="'$' + Number(c.amount).toFixed(2)"></span>
-                                    </div>
-                                </template>
-                                <template x-if="c.type !== 'receipt'">
-                                    <div class="flex items-center justify-between w-full">
-                                        <div>
-                                            <div class="text-sm font-medium" x-text="c.name"></div>
-                                            <div class="text-xs text-muted" x-text="c.city || 'No city'"></div>
-                                        </div>
-                                        <span class="text-sm font-semibold" :class="c.balance > 0 ? 'text-amber-400' : 'text-green-400'"
-                                              x-text="'$' + Number(c.balance).toFixed(2)"></span>
-                                    </div>
-                                </template>
+                                <div>
+                                    <div class="text-sm font-medium" :class="c.type === 'receipt' ? 'font-mono text-emerald-400' : ''"
+                                         x-text="c.type === 'receipt' ? c.receipt_number : c.name"></div>
+                                    <div class="text-xs text-muted"
+                                         x-text="c.type === 'receipt' ? (c.name + ' · ' + c.date) : (c.city || 'No city')"></div>
+                                </div>
+                                <span class="text-sm font-semibold"
+                                      :class="c.type === 'receipt' ? 'text-green-400' : (c.balance > 0 ? 'text-amber-400' : 'text-green-400')"
+                                      x-text="'$' + Number(c.type === 'receipt' ? c.amount : c.balance).toFixed(2)"></span>
                             </a>
                         </template>
                     </div>
@@ -131,28 +121,18 @@
                 </div>
                 <div x-show="open && results.length > 0" @click.outside="open = false" x-transition x-cloak
                      class="absolute left-4 right-4 mt-1 theme-card max-h-72 overflow-y-auto z-50 shadow-lg">
-                    <template x-for="(c, idx) in results" :key="c.type + '-' + (c.receipt_number || c.id) + '-' + idx">
+                    <template x-for="(c, idx) in results" :key="(c.receipt_number || '') + c.id + '-' + idx">
                         <a :href="'/customers/' + c.id"
                            class="flex items-center justify-between px-4 py-3 hover:bg-panel-hover border-b border-app last:border-0 min-h-[44px]">
-                            <template x-if="c.type === 'receipt'">
-                                <div class="flex items-center justify-between w-full">
-                                    <div>
-                                        <div class="text-sm font-medium font-mono text-emerald-400" x-text="c.receipt_number"></div>
-                                        <div class="text-xs text-muted" x-text="c.name + ' · ' + c.date"></div>
-                                    </div>
-                                    <span class="text-sm font-semibold text-green-400" x-text="'$' + Number(c.amount).toFixed(2)"></span>
-                                </div>
-                            </template>
-                            <template x-if="c.type !== 'receipt'">
-                                <div class="flex items-center justify-between w-full">
-                                    <div>
-                                        <div class="text-sm font-medium" x-text="c.name"></div>
-                                        <div class="text-xs text-muted" x-text="c.city || 'No city'"></div>
-                                    </div>
-                                    <span class="text-sm font-semibold" :class="c.balance > 0 ? 'text-amber-400' : 'text-green-400'"
-                                          x-text="'$' + Number(c.balance).toFixed(2)"></span>
-                                </div>
-                            </template>
+                            <div>
+                                <div class="text-sm font-medium" :class="c.type === 'receipt' ? 'font-mono text-emerald-400' : ''"
+                                     x-text="c.type === 'receipt' ? c.receipt_number : c.name"></div>
+                                <div class="text-xs text-muted"
+                                     x-text="c.type === 'receipt' ? (c.name + ' · ' + c.date) : (c.city || 'No city')"></div>
+                            </div>
+                            <span class="text-sm font-semibold"
+                                  :class="c.type === 'receipt' ? 'text-green-400' : (c.balance > 0 ? 'text-amber-400' : 'text-green-400')"
+                                  x-text="'$' + Number(c.type === 'receipt' ? c.amount : c.balance).toFixed(2)"></span>
                         </a>
                     </template>
                 </div>
