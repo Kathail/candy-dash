@@ -14,7 +14,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto space-y-6">
+<div class="max-w-6xl mx-auto space-y-6" x-data>
 
   <!-- Breadcrumb -->
   <nav class="flex items-center gap-1.5 text-sm" aria-label="Breadcrumb">
@@ -99,19 +99,47 @@
     </div>
 
     <!-- Balance Card -->
-    <div class="bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-5 flex flex-col">
+    <div class="bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-5 flex flex-col" x-data="{ showPayment: false }">
       <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Balance</h3>
       <p class="text-3xl font-bold {{ 'text-amber-400' if customer.balance and customer.balance > 0 else 'text-green-400' }} mb-4">
         {{ customer.balance|currency }}
       </p>
       <div class="mt-auto space-y-2">
-        <button type="button" @click="$dispatch('open-payment-modal', { customerId: {{ customer.id }}, customerName: {{ customer.name|tojson }}, customerBalance: {{ customer.balance or 0 }} })"
+        <button type="button" @click="showPayment = !showPayment"
                 class="btn-press w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-500 transition-colors">
           <svg class="w-4 h-4" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V7m0 10v1"/>
           </svg>
           Record Payment
         </button>
+      </div>
+
+      <!-- Inline Payment Form -->
+      <div x-show="showPayment" x-transition class="mt-4 pt-4 border-t border-gray-700">
+        <form method="post" action="{{ url_for('customers.record_payment', id=customer.id) }}" class="space-y-3">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label for="profile-amount-sold" class="block text-xs font-medium text-gray-500 mb-1">Amount Sold ($)</label>
+              <input type="number" id="profile-amount-sold" name="amount_sold" step="0.01" min="0" placeholder="0.00"
+                     class="block w-full rounded-lg bg-gray-700 border-gray-600 text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm min-h-[44px]">
+            </div>
+            <div>
+              <label for="profile-amount-paid" class="block text-xs font-medium text-gray-500 mb-1">Amount Paid ($)</label>
+              <input type="number" id="profile-amount-paid" name="amount_paid" step="0.01" min="0" placeholder="0.00"
+                     class="block w-full rounded-lg bg-gray-700 border-gray-600 text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm min-h-[44px]">
+            </div>
+          </div>
+          <div>
+            <label for="profile-payment-notes" class="block text-xs font-medium text-gray-500 mb-1">Notes</label>
+            <input type="text" id="profile-payment-notes" name="notes" placeholder="Optional"
+                   class="block w-full rounded-lg bg-gray-700 border-gray-600 text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm min-h-[44px]">
+          </div>
+          <button type="submit"
+                  class="btn-press w-full inline-flex items-center justify-center px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-500 transition-colors min-h-[44px]">
+            Record
+          </button>
+        </form>
       </div>
     </div>
   </div>

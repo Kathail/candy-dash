@@ -7,7 +7,7 @@ from flask import Blueprint, jsonify, request
 from flask_login import login_required, current_user
 
 from app import db
-from app.helpers import generate_receipt_number
+from app.helpers import generate_receipt_number, audit
 from app.models import Customer, Payment, RouteStop, ActivityLog
 
 bp = Blueprint("api", __name__, url_prefix="/api")
@@ -168,6 +168,7 @@ def sync():
 
             db.session.add(payment)
             db.session.add(log)
+            audit("offline_sync", f"Synced offline payment ${amount:,.2f} for customer #{customer_id} '{customer.name}'. Receipt #{receipt_number}")
             db.session.commit()
 
             result["status"] = "ok"

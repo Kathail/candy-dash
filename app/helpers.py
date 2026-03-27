@@ -2,7 +2,10 @@
 
 import io
 from decimal import Decimal
-from datetime import datetime, timezone, date
+from datetime import datetime, timezone, timedelta, date
+
+# GMT-5 (Central Daylight / Eastern Standard)
+TZ_DISPLAY = timezone(timedelta(hours=-5))
 from functools import wraps
 from urllib.parse import urlparse, urljoin
 
@@ -25,6 +28,22 @@ def admin_required(f):
     return decorated_function
 
 
+def audit(action, details="", user_id=None):
+    """Record an entry in the audit log. Can be called from any blueprint."""
+    from app import db
+    from app.models import AdminAuditLog
+
+    if user_id is None:
+        user_id = current_user.id if current_user.is_authenticated else None
+
+    if user_id is not None:
+        db.session.add(AdminAuditLog(
+            user_id=user_id,
+            action=action,
+            details=details,
+        ))
+
+
 def safe_redirect(target):
     """Validate redirect URL to prevent open redirect attacks."""
     if not target:
@@ -44,7 +63,7 @@ def format_currency(value):
 
 
 def format_date(value, fmt="%b %d, %Y"):
-    """Template filter: format a datetime or date object."""
+    """Template filter: format a datetime or date object in GMT-5."""
     if value is None:
         return ""
     if isinstance(value, str):
@@ -54,6 +73,10 @@ def format_date(value, fmt="%b %d, %Y"):
             return value
     if isinstance(value, date) and not isinstance(value, datetime):
         return value.strftime(fmt)
+    # Convert UTC datetimes to GMT-5 for display
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    value = value.astimezone(TZ_DISPLAY)
     return value.strftime(fmt)
 
 

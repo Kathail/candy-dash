@@ -391,6 +391,25 @@ function plannerApp() {
     },
     get monthYearLabel() { return new Date(this.currentYear, this.currentMonth).toLocaleString('default', { month: 'long', year: 'numeric' }); },
     get selectedDateFormatted() { return new Date(this.selectedDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }); },
+    recurringCountForDate(dateStr) {
+      // Count how many recurring schedules match this date
+      // that aren't already materialized in allStops
+      const target = new Date(dateStr + 'T00:00:00');
+      const existingCustomerIds = new Set((this.allStops[dateStr] || []).map(s => s.customer_id));
+      let count = 0;
+      for (const r of this.recurring) {
+        if (existingCustomerIds.has(r.customer_id)) continue;
+        const start = new Date(r.start_date + 'T00:00:00');
+        const delta = Math.round((target - start) / 86400000);
+        if (delta < 0) continue;
+        if (r.end_date) {
+          const end = new Date(r.end_date + 'T00:00:00');
+          if (target > end) continue;
+        }
+        if (delta % r.interval_days === 0) count++;
+      }
+      return count;
+    },
     get calendarCells() {
       const firstDay = new Date(this.currentYear, this.currentMonth, 1).getDay();
       const daysInMonth = new Date(this.currentYear, this.currentMonth + 1, 0).getDate();
@@ -398,7 +417,9 @@ function plannerApp() {
       for (let i = 0; i < firstDay; i++) cells.push({ key: 'empty-' + i, day: '', date: null, stopCount: 0 });
       for (let d = 1; d <= daysInMonth; d++) {
         const ds = `${this.currentYear}-${String(this.currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-        cells.push({ key: ds, day: d, date: ds, isToday: ds === todayStr, stopCount: this.allStops[ds] ? this.allStops[ds].length : 0 });
+        const materializedCount = this.allStops[ds] ? this.allStops[ds].length : 0;
+        const recurringCount = this.recurringCountForDate(ds);
+        cells.push({ key: ds, day: d, date: ds, isToday: ds === todayStr, stopCount: materializedCount + recurringCount });
       }
       return cells;
     },

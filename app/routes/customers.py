@@ -10,7 +10,7 @@ from flask_login import login_required, current_user
 
 from app import db
 from app.models import Customer, Payment, ActivityLog, RouteStop, AdminAuditLog, VALID_CUSTOMER_STATUSES
-from app.helpers import admin_required, generate_receipt_number
+from app.helpers import admin_required, generate_receipt_number, audit
 
 bp = Blueprint("customers", __name__, url_prefix="/customers")
 
@@ -188,6 +188,7 @@ def new():
             action="customer_created",
             description=f"Customer '{customer.name}' created.",
         ))
+        audit("customer_created", f"Created customer '{customer.name}' (status: {status})")
         db.session.commit()
 
         flash(f"Customer '{customer.name}' created.", "success")
@@ -239,6 +240,7 @@ def edit(id):
             action="customer_edited",
             description=f"Customer '{customer.name}' updated.",
         ))
+        audit("customer_edited", f"Edited customer '{customer.name}'")
         db.session.commit()
 
         flash(f"Customer '{customer.name}' updated.", "success")
@@ -254,38 +256,60 @@ def edit(id):
 @bp.route("/<int:id>/payment", methods=["POST"])
 @login_required
 def record_payment(id):
-    """Record a payment against the customer balance – fully atomic."""
+    """Record a sale and/or payment for a customer – fully atomic.
+
+    Accepts amount_sold (increases balance) and amount_paid (decreases balance).
+    Falls back to legacy 'amount' field as amount_paid for backwards compat.
+    """
+    from flask import jsonify
+
     customer = Customer.query.get_or_404(id)
+    is_fetch = request.headers.get("X-Requested-With") == "fetch"
 
-    raw_amount = request.form.get("amount", "").strip()
+    redirect_to = request.form.get("next") or url_for("customers.profile", id=customer.id)
+
+    def _error(msg):
+        if is_fetch:
+            return jsonify({"ok": False, "error": msg}), 400
+        flash(msg, "error")
+        return redirect(redirect_to)
+
+    # Parse amounts
+    raw_sold = request.form.get("amount_sold", "").strip()
+    raw_paid = request.form.get("amount_paid", "").strip() or request.form.get("amount", "").strip()
+
     try:
-        amount = Decimal(raw_amount)
+        amount_sold = Decimal(raw_sold) if raw_sold else Decimal("0")
     except (InvalidOperation, ValueError):
-        flash("Invalid payment amount.", "error")
-        return redirect(url_for("customers.profile", id=customer.id))
+        return _error("Invalid sold amount.")
 
-    if amount <= 0:
-        flash("Payment amount must be greater than zero.", "error")
-        return redirect(url_for("customers.profile", id=customer.id))
+    try:
+        amount_paid = Decimal(raw_paid) if raw_paid else Decimal("0")
+    except (InvalidOperation, ValueError):
+        return _error("Invalid paid amount.")
+
+    if amount_sold < 0 or amount_paid < 0:
+        return _error("Amounts cannot be negative.")
+
+    if amount_sold == 0 and amount_paid == 0:
+        return _error("Enter an amount sold or paid.")
 
     notes = request.form.get("notes", "").strip() or None
 
     try:
-        # Lock the customer row to prevent concurrent balance updates
         customer = db.session.query(Customer).filter_by(id=id).with_for_update().one()
-        # Re-validate against locked balance
-        if amount > customer.balance:
-            db.session.rollback()
-            flash("Payment amount cannot exceed the outstanding balance.", "error")
-            return redirect(url_for("customers.profile", id=id))
-        # Snapshot current balance
         previous_balance = customer.balance
+
+        # Apply sale (increases balance) then payment (decreases balance)
+        new_balance = previous_balance + amount_sold - amount_paid
+        customer.balance = new_balance
 
         receipt_number = generate_receipt_number()
 
+        # Record the payment entry (amount = net paid)
         payment = Payment(
             customer_id=customer.id,
-            amount=amount,
+            amount=amount_paid,
             receipt_number=receipt_number,
             previous_balance=previous_balance,
             notes=notes,
@@ -293,30 +317,32 @@ def record_payment(id):
         )
         db.session.add(payment)
 
-        customer.balance = previous_balance - amount
+        # Build description
+        parts = []
+        if amount_sold > 0:
+            parts.append(f"Sold ${amount_sold:,.2f}")
+        if amount_paid > 0:
+            parts.append(f"Paid ${amount_paid:,.2f}")
+        desc = ". ".join(parts) + f". Receipt #{receipt_number}. Balance: ${previous_balance:,.2f} → ${new_balance:,.2f}."
 
         db.session.add(ActivityLog(
             customer_id=customer.id,
             user_id=current_user.id,
             action="payment_recorded",
-            description=(
-                f"Payment of ${amount:,.2f} recorded. "
-                f"Receipt #{receipt_number}. "
-                f"Balance: ${previous_balance:,.2f} → ${customer.balance:,.2f}."
-            ),
+            description=desc,
         ))
+        audit("payment_recorded", f"{desc} Customer: {customer.name}")
 
         db.session.commit()
     except Exception:
         db.session.rollback()
-        flash("An error occurred while recording the payment.", "error")
-        return redirect(url_for("customers.profile", id=customer.id))
+        return _error("An error occurred while recording the transaction.")
 
-    flash(
-        f"Payment of ${amount:,.2f} recorded successfully. Receipt #{receipt_number}.",
-        "success",
-    )
-    return redirect(url_for("customers.profile", id=customer.id))
+    if is_fetch:
+        return jsonify({"ok": True, "receipt_number": receipt_number, "new_balance": float(new_balance)})
+
+    flash(f"Transaction recorded. Receipt #{receipt_number}.", "success")
+    return redirect(redirect_to)
 
 
 # ---------------------------------------------------------------------------
@@ -349,11 +375,7 @@ def delete_payment(id, payment_id):
         ))
 
         db.session.delete(payment)
-        db.session.add(AdminAuditLog(
-            user_id=current_user.id,
-            action="payment_deleted",
-            details=f"Deleted payment #{payment.receipt_number} (${payment.amount:,.2f}) for customer #{id}. Balance restored to ${customer.balance:,.2f}.",
-        ))
+        audit("payment_deleted", f"Deleted payment #{payment.receipt_number} (${payment.amount:,.2f}) for '{customer.name}'. Balance restored to ${customer.balance:,.2f}.")
         db.session.commit()
     except Exception:
         db.session.rollback()
@@ -389,6 +411,7 @@ def add_note(id):
         action="note_added",
         description=note,
     ))
+    audit("note_added", f"Note added to '{customer.name}'")
     db.session.commit()
 
     flash("Note added.", "success")
@@ -413,6 +436,7 @@ def toggle_status(id):
         action="status_changed",
         description=f"Status changed from {old_status} to {customer.status}.",
     ))
+    audit("status_changed", f"'{customer.name}' status: {old_status} → {customer.status}")
     db.session.commit()
 
     flash(f"Customer status changed to {customer.status}.", "success")

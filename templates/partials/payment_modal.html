@@ -14,7 +14,7 @@
          x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
          class="relative theme-card rounded-xl shadow-2xl w-full max-w-md p-6">
 
-        <h2 class="text-lg font-bold mb-4">Record Payment</h2>
+        <h2 class="text-lg font-bold mb-4">Record Transaction</h2>
 
         <form @submit.prevent="submit()">
             <div class="mb-4">
@@ -37,17 +37,34 @@
                 </div>
             </div>
 
-            <div x-show="selectedCustomer && selectedCustomer.balance > 0" x-cloak class="mb-4 px-3 py-2 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+            <div x-show="selectedCustomer" x-cloak class="mb-4 px-3 py-2 bg-amber-500/10 border border-amber-500/20 rounded-lg">
                 <div class="flex items-center justify-between">
                     <span class="text-xs text-amber-400">Current Balance</span>
                     <span class="text-sm font-bold text-amber-400" x-text="'$' + Number(selectedCustomer?.balance || 0).toFixed(2)"></span>
                 </div>
             </div>
 
-            <div class="mb-4">
-                <label for="payment-amount" class="block text-sm font-medium text-muted mb-1">Amount ($)</label>
-                <input type="number" id="payment-amount" step="0.01" min="0.01" x-model="amount" required
-                       class="theme-input rounded-lg min-h-[44px]" />
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <div>
+                    <label for="payment-sold" class="block text-sm font-medium text-muted mb-1">Amount Sold ($)</label>
+                    <input type="number" id="payment-sold" step="0.01" min="0" x-model="amountSold"
+                           placeholder="0.00"
+                           class="theme-input rounded-lg min-h-[44px]" />
+                </div>
+                <div>
+                    <label for="payment-paid" class="block text-sm font-medium text-muted mb-1">Amount Paid ($)</label>
+                    <input type="number" id="payment-paid" step="0.01" min="0" x-model="amountPaid"
+                           placeholder="0.00"
+                           class="theme-input rounded-lg min-h-[44px]" />
+                </div>
+            </div>
+
+            <div x-show="amountSold || amountPaid" x-cloak class="mb-4 px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-sm">
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-400">New Balance</span>
+                    <span class="font-bold" :class="newBalance > 0 ? 'text-amber-400' : 'text-green-400'"
+                          x-text="'$' + newBalance.toFixed(2)"></span>
+                </div>
             </div>
 
             <div class="mb-5">
@@ -59,9 +76,9 @@
                 <button type="button" @click="close()" class="btn-press theme-btn-secondary flex-1 rounded-lg min-h-[44px]">
                     Cancel
                 </button>
-                <button type="submit" :disabled="submitting || !selectedCustomer"
+                <button type="submit" :disabled="submitting || !selectedCustomer || (!amountSold && !amountPaid)"
                         class="btn-press theme-btn-primary flex-1 rounded-lg min-h-[44px] disabled:opacity-50">
-                    <span x-show="!submitting">Record Payment</span>
+                    <span x-show="!submitting">Record</span>
                     <span x-show="submitting">Saving...</span>
                 </button>
             </div>

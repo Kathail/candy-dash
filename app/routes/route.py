@@ -13,7 +13,7 @@ from sqlalchemy import func
 
 from app import db
 from app.models import Customer, RouteStop, Payment, ActivityLog
-from app.helpers import generate_receipt_pdf, generate_receipt_number
+from app.helpers import generate_receipt_pdf, generate_receipt_number, audit
 
 bp = Blueprint("route", __name__, url_prefix="/route")
 
@@ -159,8 +159,11 @@ def complete_stop(id):
                     action="payment_recorded",
                     description=f"Payment of {amount} recorded. Receipt: {receipt_number}",
                 ))
+                audit("payment_recorded", f"Route payment ${amount:,.2f} for '{customer.name}'. Receipt #{receipt_number}")
         except (InvalidOperation, ValueError):
             pass  # ignore invalid amount, still complete the stop
+
+    audit("stop_completed", f"Completed route stop for customer #{stop.customer_id} on {stop.route_date}")
 
     try:
         db.session.commit()

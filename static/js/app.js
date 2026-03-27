@@ -103,10 +103,18 @@
       customerQuery: "",
       custResults: [],
       custDropdown: false,
-      amount: "",
+      amountSold: "",
+      amountPaid: "",
       notes: "",
       submitting: false,
       _controller: null,
+
+      get newBalance() {
+        const bal = Number(this.selectedCustomer?.balance || 0);
+        const sold = Number(this.amountSold) || 0;
+        const paid = Number(this.amountPaid) || 0;
+        return bal + sold - paid;
+      },
 
       openModal(detail) {
         this.isOpen = true;
@@ -121,7 +129,8 @@
         this.selectedCustomer = null;
         this.customerQuery = "";
         this.custResults = [];
-        this.amount = "";
+        this.amountSold = "";
+        this.amountPaid = "";
         this.notes = "";
       },
 
@@ -154,28 +163,32 @@
       },
 
       async submit() {
-        if (!this.selectedCustomer || !this.amount) return;
+        if (!this.selectedCustomer || (!this.amountSold && !this.amountPaid)) return;
         this.submitting = true;
         try {
           const res = await fetch("/customers/" + this.selectedCustomer.id + "/payment", {
             method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded", "X-CSRFToken": csrfToken() },
-            body: new URLSearchParams({ amount: this.amount, notes: this.notes }),
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+              "X-CSRFToken": csrfToken(),
+              "X-Requested-With": "fetch",
+            },
+            body: new URLSearchParams({
+              amount_sold: this.amountSold || "0",
+              amount_paid: this.amountPaid || "0",
+              notes: this.notes,
+            }),
           });
-          if (res.ok) {
+          const data = await res.json();
+          if (data.ok) {
             document.dispatchEvent(new CustomEvent("show-toast", {
-              detail: { message: "Payment recorded successfully.", category: "success" },
+              detail: { message: "Transaction recorded. Receipt #" + data.receipt_number, category: "success" },
             }));
             this.close();
-            // Refresh page data to reflect updated balance
-            if (typeof htmx !== "undefined") {
-              htmx.trigger(document.body, "paymentRecorded");
-            }
-            // Reload after delay so the success toast is readable
             setTimeout(() => window.location.reload(), 1500);
           } else {
             document.dispatchEvent(new CustomEvent("show-toast", {
-              detail: { message: "Failed to record payment.", category: "error" },
+              detail: { message: data.error || "Failed to record transaction.", category: "error" },
             }));
           }
         } catch (_) {

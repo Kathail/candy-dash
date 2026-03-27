@@ -4,7 +4,7 @@ from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required, login_user, logout_user
 
 from app import db, limiter
-from app.helpers import safe_redirect
+from app.helpers import safe_redirect, audit
 from app.models import User
 
 bp = Blueprint("auth", __name__, url_prefix="")
@@ -25,10 +25,16 @@ def login():
         user = User.query.filter_by(username=username).first()
 
         if user is None or not user.check_password(password) or not user.is_active:
+            # Log failed attempt with the user_id if user exists but password/active check failed
+            if user:
+                audit("login_failed", f"Failed login attempt for '{username}'", user_id=user.id)
+                db.session.commit()
             flash("Invalid username or password.", "error")
             return render_template("auth/login.html"), 401
 
         login_user(user, remember=remember)
+        audit("login", f"'{user.username}' logged in", user_id=user.id)
+        db.session.commit()
         flash(f"Welcome back, {user.username}!", "success")
 
         next_page = request.args.get("next")
@@ -109,6 +115,7 @@ def change_password():
             return render_template("auth/change_password.html"), 400
 
         current_user.set_password(new_password)
+        audit("password_changed", f"'{current_user.username}' changed their password")
         db.session.commit()
         flash("Your password has been updated.", "success")
         return redirect(url_for("auth.profile"))

@@ -7,19 +7,10 @@ from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import login_required, current_user
 
 from app import db
-from app.helpers import admin_required
+from app.helpers import admin_required, audit
 from app.models import User, AdminAuditLog, VALID_ROLES
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
-
-
-def _audit(action, details=""):
-    """Record an admin audit log entry."""
-    db.session.add(AdminAuditLog(
-        user_id=current_user.id,
-        action=action,
-        details=details,
-    ))
 
 
 @bp.before_request
@@ -34,13 +25,43 @@ def before_request():
 def index():
     """List all users and recent audit log."""
     users = User.query.order_by(User.username).all()
+
+    # Audit log with optional filtering
+    filter_action = request.args.get("action", "").strip()
+    filter_user = request.args.get("user", "").strip()
+    page = request.args.get("page", 1, type=int)
+
+    audit_query = AdminAuditLog.query
+
+    if filter_action:
+        audit_query = audit_query.filter(AdminAuditLog.action == filter_action)
+    if filter_user:
+        audit_query = audit_query.join(User).filter(User.username == filter_user)
+
     audit_logs = (
-        AdminAuditLog.query
+        audit_query
         .order_by(AdminAuditLog.created_at.desc())
-        .limit(50)
+        .limit(200)
         .all()
     )
-    return render_template("admin/index.html", users=users, audit_logs=audit_logs)
+
+    # Distinct action types for filter dropdown
+    action_types = (
+        db.session.query(AdminAuditLog.action)
+        .distinct()
+        .order_by(AdminAuditLog.action)
+        .all()
+    )
+    action_types = [a[0] for a in action_types]
+
+    return render_template(
+        "admin/index.html",
+        users=users,
+        audit_logs=audit_logs,
+        action_types=action_types,
+        filter_action=filter_action,
+        filter_user=filter_user,
+    )
 
 
 @bp.route("/users/new", methods=["GET", "POST"])
@@ -76,7 +97,7 @@ def create_user():
         user = User(username=username, email=email, role=role)
         user.set_password(password)
         db.session.add(user)
-        _audit("user_created", f"Created user '{username}' with role '{role}'")
+        audit("user_created", f"Created user '{username}' with role '{role}'")
         db.session.commit()
 
         flash(f"User '{username}' created successfully.", "success")
@@ -133,7 +154,7 @@ def edit_user(id):
         user.is_active = is_active
 
         if changes:
-            _audit("user_edited", f"Edited user '{username}': {', '.join(changes)}")
+            audit("user_edited", f"Edited user '{username}': {', '.join(changes)}")
 
         db.session.commit()
 
@@ -159,7 +180,7 @@ def reset_password(id):
         return redirect(url_for("admin.edit_user", id=user.id))
 
     user.set_password(new_password)
-    _audit("password_reset", f"Reset password for '{user.username}'")
+    audit("password_reset", f"Reset password for '{user.username}'")
     db.session.commit()
 
     flash(f"Password for '{user.username}' has been reset.", "success")
@@ -300,7 +321,7 @@ def import_csv():
         if errors: parts.append(f"{errors} errors")
 
         summary = f"CSV import ({import_as}): {', '.join(parts)}"
-        _audit("csv_import", summary)
+        audit("csv_import", summary)
         db.session.commit()
 
         flash(f"CSV import complete: {', '.join(parts)}.", "success" if imported or updated else "warning")
