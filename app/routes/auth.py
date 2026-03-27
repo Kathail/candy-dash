@@ -37,6 +37,22 @@ def login():
     return render_template("auth/login.html")
 
 
+@bp.route("/demo")
+def demo():
+    """Log in as the read-only demo user."""
+    if current_user.is_authenticated:
+        return redirect(url_for("dashboard.index"))
+
+    user = User.query.filter_by(username="demo", role="demo").first()
+    if not user or not user.is_active:
+        flash("Demo account is not available.", "error")
+        return redirect(url_for("auth.login"))
+
+    login_user(user, remember=False)
+    flash("Welcome to the demo! Browse freely — all changes are disabled.", "info")
+    return redirect(url_for("dashboard.index"))
+
+
 @bp.route("/logout", methods=["POST"])
 @login_required
 def logout():

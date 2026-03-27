@@ -6,7 +6,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from app import db
 
 VALID_CUSTOMER_STATUSES = ("active", "inactive", "lead")
-VALID_ROLES = ("owner", "admin")
+VALID_ROLES = ("owner", "admin", "demo")
 
 
 class User(UserMixin, db.Model):
@@ -32,6 +32,10 @@ class User(UserMixin, db.Model):
     @property
     def is_admin(self):
         return self.role == "admin"
+
+    @property
+    def is_demo(self):
+        return self.role == "demo"
 
     def __repr__(self):
         return f"<User {self.username}>"

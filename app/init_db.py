@@ -97,5 +97,18 @@ def init_database():
         else:
             print("  Default admin user created with ADMIN_PASSWORD from environment.")
 
+    # Create demo user if it doesn't exist
+    if not User.query.filter_by(username="demo").first():
+        demo = User(
+            username="demo",
+            email="demo@candyroute.local",
+            role="demo",
+            is_active=True,
+        )
+        demo.set_password("demo")
+        db.session.add(demo)
+        db.session.commit()
+        print("  Demo user created (username: demo, password: demo)")
+
     # Seed customers/leads from seed_data.json if table is empty
     _seed_customers()
