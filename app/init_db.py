@@ -56,6 +56,15 @@ def init_database():
 
     db.create_all()
 
+    # Migrate old roles (sales, manager) to owner
+    try:
+        db.session.execute(db.text(
+            "UPDATE users SET role = 'owner' WHERE role IN ('sales', 'manager')"
+        ))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
     # Create default admin if no users exist
     if User.query.count() == 0:
         admin_password = os.environ.get("ADMIN_PASSWORD")

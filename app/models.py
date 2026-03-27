@@ -6,6 +6,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from app import db
 
 VALID_CUSTOMER_STATUSES = ("active", "inactive", "lead")
+VALID_ROLES = ("owner", "admin")
 
 
 class User(UserMixin, db.Model):
@@ -15,7 +16,7 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=True)
     password_hash = db.Column(db.String(256), nullable=False)
-    role = db.Column(db.String(20), nullable=False, default="sales")
+    role = db.Column(db.String(20), nullable=False, default="owner")
     is_active = db.Column(db.Boolean, default=True)
 
     route_stops = db.relationship("RouteStop", backref="creator", lazy="dynamic", foreign_keys="RouteStop.created_by")
@@ -161,3 +162,18 @@ class ActivityLog(db.Model):
 
     def __repr__(self):
         return f"<ActivityLog {self.action} for customer {self.customer_id}>"
+
+
+class AdminAuditLog(db.Model):
+    __tablename__ = "admin_audit_logs"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    action = db.Column(db.String(50), nullable=False)
+    details = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    user = db.relationship("User", foreign_keys=[user_id])
+
+    def __repr__(self):
+        return f"<AdminAuditLog {self.action} by user {self.user_id}>"

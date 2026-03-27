@@ -24,7 +24,6 @@
       {% endif %}
     </div>
     <div class="flex gap-2">
-      {% if current_user.is_admin %}
       <button @click="showImportModal = true"
               class="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-700 border border-gray-600 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-600 transition-colors btn-press min-h-[44px]">
         <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -32,7 +31,6 @@
         </svg>
         <span class="hidden sm:inline">Import</span>
       </button>
-      {% endif %}
       <a href="{{ url_for('leads.new') }}"
          class="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-500 transition-colors btn-press min-h-[44px]">
         <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -186,7 +184,6 @@
   {% endif %}
 
   {# ── CSV Import Modal ── #}
-  {% if current_user.is_admin %}
   <div x-show="showImportModal" x-cloak
        class="fixed inset-0 z-[70] flex items-center justify-center p-4">
     <div x-show="showImportModal"
@@ -217,7 +214,6 @@
       </form>
     </div>
   </div>
-  {% endif %}
 
 </div>
 {% endblock %}

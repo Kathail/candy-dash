@@ -7,7 +7,6 @@ from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import login_required, current_user
 
 from app import db
-from app.helpers import admin_required
 from app.models import Customer, ActivityLog
 
 bp = Blueprint("leads", __name__, url_prefix="/leads")
@@ -174,7 +173,6 @@ def convert(id):
 
 
 @bp.route("/import-csv", methods=["POST"])
-@admin_required
 def import_csv():
     """Import leads from a CSV file upload (admin only)."""
     csv_file = request.files.get("csv_file")

@@ -10,7 +10,7 @@ from flask_login import login_required
 from sqlalchemy import func
 
 from app import db
-from app.helpers import format_currency, format_date, admin_required
+from app.helpers import format_currency, format_date
 from app.models import Customer, Payment, User
 
 bp = Blueprint("reports", __name__, url_prefix="/reports")
@@ -104,14 +104,12 @@ def _xlsx_response(rows, headers, filename):
 
 
 @bp.route("/")
-@admin_required
 def index():
     """Reports landing page with date range picker."""
     return render_template("reports.html")
 
 
 @bp.route("/financial")
-@admin_required
 def financial():
     """Financial report: payment summary, by city, by customer for date range."""
     start, end = _parse_date_range()
@@ -179,7 +177,6 @@ def financial():
 
 
 @bp.route("/tax")
-@admin_required
 def tax():
     """Tax report: payments grouped by tax-exempt vs taxable customers."""
     start, end = _parse_date_range()
@@ -227,7 +224,6 @@ def tax():
 
 
 @bp.route("/collections")
-@admin_required
 def collections():
     """Collections report by sales rep (recorded_by) for date range."""
     start, end = _parse_date_range()

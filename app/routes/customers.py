@@ -9,7 +9,7 @@ from flask import (
 from flask_login import login_required, current_user
 
 from app import db
-from app.models import Customer, Payment, ActivityLog, RouteStop, VALID_CUSTOMER_STATUSES
+from app.models import Customer, Payment, ActivityLog, RouteStop, AdminAuditLog, VALID_CUSTOMER_STATUSES
 from app.helpers import admin_required, generate_receipt_number
 
 bp = Blueprint("customers", __name__, url_prefix="/customers")
@@ -349,6 +349,11 @@ def delete_payment(id, payment_id):
         ))
 
         db.session.delete(payment)
+        db.session.add(AdminAuditLog(
+            user_id=current_user.id,
+            action="payment_deleted",
+            details=f"Deleted payment #{payment.receipt_number} (${payment.amount:,.2f}) for customer #{id}. Balance restored to ${customer.balance:,.2f}.",
+        ))
         db.session.commit()
     except Exception:
         db.session.rollback()

@@ -52,11 +52,9 @@
             </td>
             <td class="px-5 py-3 whitespace-nowrap">
               {% if user.role == 'admin' %}
-              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-500/20 text-indigo-400">Admin</span>
-              {% elif user.role == 'manager' %}
-              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-500/20 text-blue-400">Manager</span>
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-500/20 text-red-400">Admin</span>
               {% else %}
-              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-600 text-gray-300">Sales</span>
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-500/20 text-indigo-400">Owner</span>
               {% endif %}
             </td>
             <td class="px-5 py-3 whitespace-nowrap">
@@ -105,11 +103,9 @@
           <p class="font-medium text-gray-100">{{ user.username }}</p>
           <div class="flex items-center gap-2">
             {% if user.role == 'admin' %}
-            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-500/20 text-indigo-400">Admin</span>
-            {% elif user.role == 'manager' %}
-            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-500/20 text-blue-400">Manager</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-500/20 text-red-400">Admin</span>
             {% else %}
-            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-600 text-gray-300">Sales</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-500/20 text-indigo-400">Owner</span>
             {% endif %}
             {% if user.is_active %}
             <span class="w-2 h-2 bg-green-500 rounded-full"></span>
@@ -129,6 +125,49 @@
 
     {% if not users %}
     <div class="p-8 text-center text-gray-500">No users found.</div>
+    {% endif %}
+  </div>
+
+  {# ── Audit Log ── #}
+  <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden animate-fade-in-up mt-6">
+    <div class="px-5 py-4 border-b border-gray-700">
+      <h2 class="text-base font-semibold text-gray-100">Audit Log</h2>
+    </div>
+    {% if audit_logs %}
+    <div class="divide-y divide-gray-700 max-h-[400px] overflow-y-auto custom-scroll">
+      {% for entry in audit_logs %}
+      <div class="px-5 py-3 flex items-start gap-3">
+        <div class="shrink-0 mt-0.5">
+          {% if entry.action == 'user_created' %}
+          <div class="w-7 h-7 rounded-full bg-green-500/20 flex items-center justify-center">
+            <svg aria-hidden="true" class="w-3.5 h-3.5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+          </div>
+          {% elif entry.action == 'payment_deleted' %}
+          <div class="w-7 h-7 rounded-full bg-red-500/20 flex items-center justify-center">
+            <svg aria-hidden="true" class="w-3.5 h-3.5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          </div>
+          {% elif entry.action == 'csv_import' %}
+          <div class="w-7 h-7 rounded-full bg-blue-500/20 flex items-center justify-center">
+            <svg aria-hidden="true" class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+          </div>
+          {% else %}
+          <div class="w-7 h-7 rounded-full bg-indigo-500/20 flex items-center justify-center">
+            <svg aria-hidden="true" class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          {% endif %}
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm text-gray-100">{{ entry.details }}</p>
+          <p class="text-2xs text-gray-500 mt-0.5">
+            {{ entry.created_at|dateformat('%b %d, %Y %I:%M %p') }}
+            {% if entry.user %} &middot; {{ entry.user.username }}{% endif %}
+          </p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="px-5 py-8 text-center text-sm text-gray-500">No audit log entries yet.</div>
     {% endif %}
   </div>
 

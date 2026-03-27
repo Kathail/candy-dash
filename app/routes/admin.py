@@ -1,16 +1,25 @@
-"""Admin routes: user management and system operations."""
+"""Admin routes: user management, audit log, and system operations."""
 
 import csv
 import io
 
 from flask import Blueprint, flash, redirect, render_template, request, url_for
-from flask_login import login_required
+from flask_login import login_required, current_user
 
 from app import db
 from app.helpers import admin_required
-from app.models import User
+from app.models import User, AdminAuditLog, VALID_ROLES
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
+
+
+def _audit(action, details=""):
+    """Record an admin audit log entry."""
+    db.session.add(AdminAuditLog(
+        user_id=current_user.id,
+        action=action,
+        details=details,
+    ))
 
 
 @bp.before_request
@@ -23,9 +32,15 @@ def before_request():
 @bp.route("/")
 @admin_required
 def index():
-    """List all users."""
+    """List all users and recent audit log."""
     users = User.query.order_by(User.username).all()
-    return render_template("admin/index.html", users=users)
+    audit_logs = (
+        AdminAuditLog.query
+        .order_by(AdminAuditLog.created_at.desc())
+        .limit(50)
+        .all()
+    )
+    return render_template("admin/index.html", users=users, audit_logs=audit_logs)
 
 
 @bp.route("/users/new", methods=["GET", "POST"])
@@ -36,7 +51,7 @@ def create_user():
         username = request.form.get("username", "").strip()
         email = request.form.get("email", "").strip() or None
         password = request.form.get("password", "")
-        role = request.form.get("role", "sales")
+        role = request.form.get("role", "owner")
 
         if not username:
             flash("Username is required.", "error")
@@ -54,13 +69,14 @@ def create_user():
             flash("A user with that email already exists.", "error")
             return render_template("admin/user_form.html", editing=False), 400
 
-        if role not in ("admin", "sales", "manager"):
+        if role not in VALID_ROLES:
             flash("Invalid role selected.", "error")
             return render_template("admin/user_form.html", editing=False), 400
 
         user = User(username=username, email=email, role=role)
         user.set_password(password)
         db.session.add(user)
+        _audit("user_created", f"Created user '{username}' with role '{role}'")
         db.session.commit()
 
         flash(f"User '{username}' created successfully.", "success")
@@ -88,7 +104,7 @@ def edit_user(id):
             flash("Username is required.", "error")
             return render_template("admin/user_form.html", user=user, editing=True), 400
 
-        if role not in ("admin", "sales", "manager"):
+        if role not in VALID_ROLES:
             flash("Invalid role selected.", "error")
             return render_template("admin/user_form.html", user=user, editing=True), 400
 
@@ -103,10 +119,22 @@ def edit_user(id):
                 flash("A user with that email already exists.", "error")
                 return render_template("admin/user_form.html", user=user, editing=True), 400
 
+        changes = []
+        if user.role != role:
+            changes.append(f"role: {user.role} -> {role}")
+        if user.is_active != is_active:
+            changes.append(f"active: {user.is_active} -> {is_active}")
+        if user.username != username:
+            changes.append(f"username: {user.username} -> {username}")
+
         user.username = username
         user.email = email
         user.role = role
         user.is_active = is_active
+
+        if changes:
+            _audit("user_edited", f"Edited user '{username}': {', '.join(changes)}")
+
         db.session.commit()
 
         flash(f"User '{username}' updated successfully.", "success")
@@ -131,6 +159,7 @@ def reset_password(id):
         return redirect(url_for("admin.edit_user", id=user.id))
 
     user.set_password(new_password)
+    _audit("password_reset", f"Reset password for '{user.username}'")
     db.session.commit()
 
     flash(f"Password for '{user.username}' has been reset.", "success")
@@ -140,13 +169,7 @@ def reset_password(id):
 @bp.route("/import-csv", methods=["GET", "POST"])
 @admin_required
 def import_csv():
-    """Import customers or leads from a CSV file.
-
-    Auto-detects column names and maps them. Supports:
-    - Customer CSVs: Name/name, Address/address, Phone/phone, City/city, etc.
-    - Lead CSVs: name, phone, address, city, category (-> notes), source (-> lead_source)
-    - Duplicate detection by normalized name (skip or update).
-    """
+    """Import customers or leads from a CSV file."""
     if request.method == "GET":
         return render_template("admin/import_csv.html")
 
@@ -163,15 +186,14 @@ def import_csv():
         flash("Uploaded file must be a .csv file.", "error")
         return redirect(url_for("admin.import_csv"))
 
-    import_as = request.form.get("import_as", "customer")  # "customer" or "lead"
-    mode = request.form.get("mode", "skip")  # "skip" or "update" duplicates
+    import_as = request.form.get("import_as", "customer")
+    mode = request.form.get("mode", "skip")
 
     try:
         stream = io.TextIOWrapper(csv_file.stream, encoding="utf-8-sig")
         reader = csv.DictReader(stream)
         raw_headers = [h.strip() for h in (reader.fieldnames or [])]
 
-        # Build column mapping (our field -> original CSV header name)
         col_map = {}
         for h in raw_headers:
             hl = h.lower()
@@ -209,7 +231,6 @@ def import_csv():
             raw = (raw or "").strip()
             return raw.replace("Get directions", "").strip() or None
 
-        # Build existing name set
         existing = {}
         for c in Customer.query.all():
             existing[normalize(c.name)] = c
@@ -225,12 +246,9 @@ def import_csv():
                 continue
 
             norm = normalize(raw_name)
-
-            # Parse fields
             address = clean_address(row.get(col_map.get("address", ""), ""))
             city_val = row.get(col_map.get("city", ""), "").strip() or None
 
-            # Try to extract city from address if no city column
             if not city_val and address and "," in address:
                 parts = [p.strip() for p in address.split(",")]
                 if len(parts) >= 2:
@@ -265,13 +283,8 @@ def import_csv():
             try:
                 status = "lead" if import_as == "lead" else "active"
                 customer = Customer(
-                    name=raw_name,
-                    address=address,
-                    city=city_val,
-                    phone=phone,
-                    notes=notes,
-                    balance=balance,
-                    status=status,
+                    name=raw_name, address=address, city=city_val, phone=phone,
+                    notes=notes, balance=balance, status=status,
                     lead_source=lead_source if import_as == "lead" else None,
                 )
                 db.session.add(customer)
@@ -280,13 +293,16 @@ def import_csv():
             except Exception:
                 errors += 1
 
-        db.session.commit()
-
         parts = []
         if imported: parts.append(f"{imported} imported")
         if updated: parts.append(f"{updated} updated")
         if skipped: parts.append(f"{skipped} skipped (duplicates)")
         if errors: parts.append(f"{errors} errors")
+
+        summary = f"CSV import ({import_as}): {', '.join(parts)}"
+        _audit("csv_import", summary)
+        db.session.commit()
+
         flash(f"CSV import complete: {', '.join(parts)}.", "success" if imported or updated else "warning")
 
     except Exception:

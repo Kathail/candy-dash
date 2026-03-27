@@ -8,7 +8,6 @@ from flask_login import login_required
 from sqlalchemy import func, extract, case
 
 from app import db
-from app.helpers import admin_required
 from app.models import Customer, Payment, RouteStop
 
 bp = Blueprint("analytics", __name__, url_prefix="/analytics")
@@ -22,7 +21,6 @@ def before_request():
 
 
 @bp.route("/")
-@admin_required
 def index():
     """Analytics dashboard with charts data."""
     today = date.today()
