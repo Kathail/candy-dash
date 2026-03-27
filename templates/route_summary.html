@@ -55,7 +55,7 @@
      class="flex items-center justify-between bg-gray-800 rounded-xl border border-gray-700 px-4 py-3.5 hover:bg-gray-700/50 transition card-lift animate-fade-in-up stagger-4">
     <div class="flex items-center gap-3">
       <div class="w-9 h-9 rounded-lg bg-indigo-500/15 flex items-center justify-center">
-        <svg class="w-4.5 h-4.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg aria-hidden="true" class="w-4.5 h-4.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
         </svg>
       </div>
@@ -64,7 +64,7 @@
         <p class="text-2xs text-gray-500">{{ payment_count }} receipt{{ 's' if payment_count != 1 else '' }} as ZIP</p>
       </div>
     </div>
-    <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg aria-hidden="true" class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
     </svg>
   </a>
@@ -76,7 +76,7 @@
   <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden animate-fade-in-up stagger-5">
     <div class="px-4 py-3 border-b border-gray-700 flex items-center gap-2">
       <div class="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center">
-        <svg class="w-3 h-3 text-green-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+        <svg aria-hidden="true" class="w-3 h-3 text-green-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
       </div>
       <h2 class="text-sm font-semibold text-gray-100">Completed</h2>
       <span class="text-2xs text-gray-500 ml-auto">{{ completed_list|length }}</span>
@@ -89,7 +89,7 @@
           {{ stop.customer.name[:2] }}
         </div>
         <div class="flex-1 min-w-0">
-          <p class="text-sm font-medium text-gray-100 truncate">{{ stop.customer.name }}</p>
+          <a href="{{ url_for('customers.profile', id=stop.customer.id) }}" class="text-sm font-medium text-gray-100 hover:text-indigo-400 transition truncate block">{{ stop.customer.name }}</a>
           <p class="text-2xs text-gray-500">{{ stop.customer.city or 'No city' }}</p>
         </div>
         {% if stop.completed_at %}
@@ -107,7 +107,7 @@
   <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden animate-fade-in-up stagger-6">
     <div class="px-4 py-3 border-b border-gray-700 flex items-center gap-2">
       <div class="w-5 h-5 rounded-full bg-red-500/20 flex items-center justify-center">
-        <svg class="w-3 h-3 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg aria-hidden="true" class="w-3 h-3 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
         </svg>
       </div>
@@ -122,7 +122,7 @@
           {{ stop.customer.name[:2] }}
         </div>
         <div class="flex-1 min-w-0">
-          <p class="text-sm font-medium text-gray-100 truncate">{{ stop.customer.name }}</p>
+          <a href="{{ url_for('customers.profile', id=stop.customer.id) }}" class="text-sm font-medium text-gray-100 hover:text-indigo-400 transition truncate block">{{ stop.customer.name }}</a>
           <p class="text-2xs text-gray-500">{{ stop.customer.city or 'No city' }}</p>
         </div>
         <span class="text-2xs font-medium text-red-400 bg-red-500/10 px-2 py-0.5 rounded-full flex-shrink-0">Missed</span>
@@ -137,7 +137,7 @@
   <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden animate-fade-in-up stagger-7">
     <div class="px-4 py-3 border-b border-gray-700 flex items-center gap-2">
       <div class="w-5 h-5 rounded-full bg-purple-500/20 flex items-center justify-center">
-        <svg class="w-3 h-3 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg aria-hidden="true" class="w-3 h-3 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
         </svg>
       </div>
@@ -150,10 +150,10 @@
         <div class="w-6 h-6 rounded-full bg-gray-700 text-gray-400 flex items-center justify-center text-2xs font-bold flex-shrink-0">
           {{ stop.sequence }}
         </div>
-        <div class="flex-1 min-w-0">
+        <a href="{{ url_for('customers.profile', id=stop.customer.id) }}" class="flex-1 min-w-0 hover:opacity-80 transition">
           <p class="text-sm font-medium text-gray-200 truncate">{{ stop.customer.name }}</p>
           <p class="text-2xs text-gray-500">{{ stop.customer.city or 'No city' }}</p>
-        </div>
+        </a>
       </div>
       {% endfor %}
     </div>
@@ -164,7 +164,7 @@
   <div class="flex flex-wrap gap-2 animate-fade-in-up stagger-8">
     <a href="{{ url_for('dashboard.index') }}"
        class="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-500 transition min-h-[44px] btn-press">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0h4"/>
       </svg>
       Dashboard

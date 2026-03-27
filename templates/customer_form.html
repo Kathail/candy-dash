@@ -55,10 +55,33 @@
       <!-- Phone -->
       <div>
         <label for="phone" class="block text-sm font-medium text-gray-300 mb-1">Phone</label>
-        <input type="text" name="phone" id="phone"
+        <input type="tel" name="phone" id="phone"
                value="{{ customer.phone if customer and customer.phone else '' }}"
                class="block w-full min-h-[44px] rounded-lg border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
                placeholder="Phone number">
+      </div>
+
+      <!-- Status -->
+      <div>
+        <label for="status" class="block text-sm font-medium text-gray-300 mb-1">Status</label>
+        <select name="status" id="status"
+                class="block w-full min-h-[44px] rounded-lg border-gray-600 bg-gray-700 text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+          {% set current_status = customer.status if customer else 'active' %}
+          <option value="active" {{ 'selected' if current_status == 'active' }}>Active</option>
+          <option value="inactive" {{ 'selected' if current_status == 'inactive' }}>Inactive</option>
+          <option value="lead" {{ 'selected' if current_status == 'lead' }}>Lead</option>
+        </select>
+      </div>
+
+      <!-- Lead Source (shown when status is lead) -->
+      <div x-data="{ status: '{{ customer.status if customer else 'active' }}' }"
+           x-init="$watch('status', v => {}); document.getElementById('status').addEventListener('change', e => status = e.target.value)"
+           x-show="status === 'lead'" x-transition x-cloak>
+        <label for="lead_source" class="block text-sm font-medium text-gray-300 mb-1">Lead Source</label>
+        <input type="text" name="lead_source" id="lead_source"
+               value="{{ customer.lead_source if customer and customer.lead_source else '' }}"
+               class="block w-full min-h-[44px] rounded-lg border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+               placeholder="e.g., Referral, Walk-in, Google Maps">
       </div>
 
       <!-- Notes -->
@@ -89,17 +112,17 @@
       <!-- Submit -->
       <div class="flex gap-3 pt-4 border-t border-gray-700">
         <button type="submit"
-                class="btn-press inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
+                class="btn-press inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors min-h-[44px]">
           {% if customer %}Update Customer{% else %}Create Customer{% endif %}
         </button>
         {% if customer %}
         <a href="{{ url_for('customers.profile', id=customer.id) }}"
-           class="btn-press inline-flex items-center px-4 py-2 bg-gray-800 border border-gray-600 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-700 transition-colors">
+           class="btn-press inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-600 transition-colors min-h-[44px]">
           Cancel
         </a>
         {% else %}
         <a href="{{ url_for('customers.index') }}"
-           class="btn-press inline-flex items-center px-4 py-2 bg-gray-800 border border-gray-600 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-700 transition-colors">
+           class="btn-press inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-600 transition-colors min-h-[44px]">
           Cancel
         </a>
         {% endif %}

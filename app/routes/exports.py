@@ -27,10 +27,11 @@ def _csv_response(rows, headers, filename):
     writer = csv.writer(output)
     writer.writerow(headers)
     writer.writerows(rows)
+    safe_filename = filename.replace('"', "").replace("\r", "").replace("\n", "")
     return Response(
         output.getvalue(),
         mimetype="text/csv",
-        headers={"Content-Disposition": f"attachment; filename={filename}"},
+        headers={"Content-Disposition": f'attachment; filename="{safe_filename}"'},
     )
 
 

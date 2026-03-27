@@ -2,7 +2,7 @@
 
 import csv
 import io
-from datetime import datetime, timezone, date
+from datetime import datetime, timezone, date, timedelta
 from decimal import Decimal
 
 from flask import Blueprint, render_template, request, Response, flash
@@ -10,10 +10,13 @@ from flask_login import login_required
 from sqlalchemy import func
 
 from app import db
-from app.helpers import format_currency, format_date
+from app.helpers import format_currency, format_date, admin_required
 from app.models import Customer, Payment, User
 
 bp = Blueprint("reports", __name__, url_prefix="/reports")
+
+# Maximum report range to prevent full-table scans
+MAX_REPORT_DAYS = 366
 
 
 @bp.before_request
@@ -24,14 +27,16 @@ def before_request():
 
 
 def _parse_date_range():
-    """Parse start_date and end_date from query params. Returns (start, end) datetimes."""
+    """Parse start_date and end_date from query params. Returns (start, end) datetimes.
+
+    Enforces start <= end and caps range at MAX_REPORT_DAYS.
+    """
     start_str = request.args.get("start_date", "")
     end_str = request.args.get("end_date", "")
 
     try:
         start = datetime.strptime(start_str, "%Y-%m-%d").replace(tzinfo=timezone.utc)
     except (ValueError, TypeError):
-        # Default to first of current month
         today = date.today()
         start = datetime(today.year, today.month, 1, tzinfo=timezone.utc)
 
@@ -42,6 +47,21 @@ def _parse_date_range():
     except (ValueError, TypeError):
         end = datetime.now(timezone.utc)
 
+    # Don't allow future end dates
+    now = datetime.now(timezone.utc)
+    if end > now:
+        end = now
+
+    # Swap if reversed
+    if start > end:
+        start, end = end.replace(hour=0, minute=0, second=0, microsecond=0), \
+                     start.replace(hour=23, minute=59, second=59, microsecond=999999)
+
+    # Cap range
+    max_start = end - timedelta(days=MAX_REPORT_DAYS)
+    if start < max_start:
+        start = max_start.replace(hour=0, minute=0, second=0, microsecond=0)
+
     return start, end
 
 
@@ -51,10 +71,11 @@ def _csv_response(rows, headers, filename):
     writer = csv.writer(output)
     writer.writerow(headers)
     writer.writerows(rows)
+    safe_filename = filename.replace('"', "").replace("\r", "").replace("\n", "")
     return Response(
         output.getvalue(),
         mimetype="text/csv",
-        headers={"Content-Disposition": f"attachment; filename={filename}"},
+        headers={"Content-Disposition": f'attachment; filename="{safe_filename}"'},
     )
 
 
@@ -74,20 +95,23 @@ def _xlsx_response(rows, headers, filename):
     output = io.BytesIO()
     wb.save(output)
     output.seek(0)
+    safe_filename = filename.replace('"', "").replace("\r", "").replace("\n", "")
     return Response(
         output.getvalue(),
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f"attachment; filename={filename}"},
+        headers={"Content-Disposition": f'attachment; filename="{safe_filename}"'},
     )
 
 
 @bp.route("/")
+@admin_required
 def index():
     """Reports landing page with date range picker."""
     return render_template("reports.html")
 
 
 @bp.route("/financial")
+@admin_required
 def financial():
     """Financial report: payment summary, by city, by customer for date range."""
     start, end = _parse_date_range()
@@ -128,6 +152,7 @@ def financial():
         .filter(Payment.payment_date >= start, Payment.payment_date <= end)
         .group_by(Customer.id, Customer.name, Customer.city)
         .order_by(func.sum(Payment.amount).desc())
+        .limit(500)
         .all()
     )
 
@@ -154,6 +179,7 @@ def financial():
 
 
 @bp.route("/tax")
+@admin_required
 def tax():
     """Tax report: payments grouped by tax-exempt vs taxable customers."""
     start, end = _parse_date_range()
@@ -171,6 +197,7 @@ def tax():
         .filter(Payment.payment_date >= start, Payment.payment_date <= end)
         .group_by(Customer.id, Customer.name, Customer.city, Customer.tax_exempt)
         .order_by(Customer.tax_exempt.desc(), func.sum(Payment.amount).desc())
+        .limit(500)
         .all()
     )
 
@@ -200,6 +227,7 @@ def tax():
 
 
 @bp.route("/collections")
+@admin_required
 def collections():
     """Collections report by sales rep (recorded_by) for date range."""
     start, end = _parse_date_range()

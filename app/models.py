@@ -5,6 +5,8 @@ from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import db
 
+VALID_CUSTOMER_STATUSES = ("active", "inactive", "lead")
+
 
 class User(UserMixin, db.Model):
     __tablename__ = "users"
@@ -89,6 +91,62 @@ class Payment(db.Model):
 
     def __repr__(self):
         return f"<Payment {self.receipt_number} ${self.amount}>"
+
+
+class RecurringStop(db.Model):
+    __tablename__ = "recurring_stops"
+
+    id = db.Column(db.Integer, primary_key=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=False)
+    interval_days = db.Column(db.Integer, nullable=False)
+    start_date = db.Column(db.Date, nullable=False)
+    end_date = db.Column(db.Date, nullable=True)
+    is_active = db.Column(db.Boolean, default=True)
+    created_by = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    customer = db.relationship("Customer", backref=db.backref("recurring_stops", lazy="dynamic"))
+    creator = db.relationship("User", foreign_keys=[created_by])
+
+    def matches(self, target_date):
+        """Return True if this schedule falls on target_date."""
+        if not self.is_active:
+            return False
+        delta = (target_date - self.start_date).days
+        if delta < 0:
+            return False
+        if self.end_date and target_date > self.end_date:
+            return False
+        return delta % self.interval_days == 0
+
+    @property
+    def frequency_label(self):
+        d = self.interval_days
+        if d == 1:
+            return "Daily"
+        if d == 7:
+            return "Weekly"
+        if d == 14:
+            return "Biweekly"
+        if d in (28, 30, 31):
+            return "Monthly"
+        return f"Every {d} days"
+
+    def __repr__(self):
+        return f"<RecurringStop customer={self.customer_id} every {self.interval_days}d>"
+
+
+class RecurringSkip(db.Model):
+    __tablename__ = "recurring_skips"
+
+    id = db.Column(db.Integer, primary_key=True)
+    recurring_stop_id = db.Column(db.Integer, db.ForeignKey("recurring_stops.id"), nullable=False)
+    skip_date = db.Column(db.Date, nullable=False)
+
+    recurring_stop = db.relationship("RecurringStop", backref=db.backref("skips", lazy="dynamic"))
+
+    def __repr__(self):
+        return f"<RecurringSkip recurring={self.recurring_stop_id} date={self.skip_date}>"
 
 
 class ActivityLog(db.Model):

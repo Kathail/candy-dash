@@ -8,9 +8,9 @@
 
   {# ── Header ── #}
   <div class="animate-fade-in-up">
-    <nav class="flex items-center gap-1.5 text-sm mb-2">
+    <nav class="flex items-center gap-1.5 text-sm mb-2" aria-label="Breadcrumb">
       <a href="{{ url_for('reports.index') }}" class="text-indigo-400 hover:text-indigo-300">Reports</a>
-      <svg class="w-3.5 h-3.5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg class="w-3.5 h-3.5 text-gray-600" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
       </svg>
       <span class="text-gray-400">Tax</span>
@@ -22,13 +22,15 @@
       </div>
       <div class="flex gap-1.5">
         <a href="{{ url_for('reports.tax', start_date=start.strftime('%Y-%m-%d'), end_date=end.strftime('%Y-%m-%d'), format='csv') }}"
+           aria-label="Download tax report as CSV"
            class="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-700 border border-gray-600 text-xs font-medium rounded-lg text-gray-300 hover:bg-gray-600 transition btn-press min-h-[40px]">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          <svg class="w-3.5 h-3.5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
           CSV
         </a>
         <a href="{{ url_for('reports.tax', start_date=start.strftime('%Y-%m-%d'), end_date=end.strftime('%Y-%m-%d'), format='xlsx') }}"
+           aria-label="Download tax report as Excel"
            class="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-700 border border-gray-600 text-xs font-medium rounded-lg text-gray-300 hover:bg-gray-600 transition btn-press min-h-[40px]">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          <svg class="w-3.5 h-3.5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
           Excel
         </a>
       </div>
@@ -52,16 +54,20 @@
   </div>
 
   {# ── Taxable Customers ── #}
+  {% set taxable_rows = [] %}
+  {% for row in rows if not row.tax_exempt %}
+    {% if taxable_rows.append(row) %}{% endif %}
+  {% endfor %}
+
   <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden animate-fade-in-up stagger-4">
     <div class="px-5 py-4 border-b border-gray-700 flex items-center gap-2">
-      <div class="w-2 h-2 rounded-full bg-indigo-500"></div>
+      <div class="w-2 h-2 rounded-full bg-indigo-500" aria-hidden="true"></div>
       <h2 class="text-sm font-semibold text-gray-100">Taxable</h2>
       <span class="text-2xs text-gray-500 ml-auto">{{ taxable_total|currency }}</span>
     </div>
-    {% set taxable_rows = rows|selectattr('tax_exempt', 'false')|list %}
     {% if taxable_rows %}
     <div class="divide-y divide-gray-700">
-      {% for row in rows if not row.tax_exempt %}
+      {% for row in taxable_rows %}
       <div class="flex items-center justify-between px-5 py-3 hover:bg-gray-700/50 transition">
         <div class="flex items-center gap-3">
           {% set colors = ['bg-indigo-500/20 text-indigo-400', 'bg-purple-500/20 text-purple-400', 'bg-blue-500/20 text-blue-400', 'bg-emerald-500/20 text-emerald-400', 'bg-amber-500/20 text-amber-400', 'bg-rose-500/20 text-rose-400'] %}
@@ -85,16 +91,24 @@
   </div>
 
   {# ── Exempt Customers ── #}
+  {% set exempt_rows = [] %}
+  {% for row in rows if row.tax_exempt %}
+    {% if exempt_rows.append(row) %}{% endif %}
+  {% endfor %}
+
   <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden animate-fade-in-up stagger-5">
     <div class="px-5 py-4 border-b border-gray-700 flex items-center gap-2">
-      <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+      <div class="w-4 h-4 flex items-center justify-center text-blue-400" aria-hidden="true">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+        </svg>
+      </div>
       <h2 class="text-sm font-semibold text-gray-100">Tax Exempt</h2>
       <span class="text-2xs text-gray-500 ml-auto">{{ exempt_total|currency }}</span>
     </div>
-    {% set exempt_rows = rows|selectattr('tax_exempt')|list %}
     {% if exempt_rows %}
     <div class="divide-y divide-gray-700">
-      {% for row in rows if row.tax_exempt %}
+      {% for row in exempt_rows %}
       <div class="flex items-center justify-between px-5 py-3 hover:bg-gray-700/50 transition">
         <div class="flex items-center gap-3">
           {% set colors = ['bg-blue-500/20 text-blue-400', 'bg-cyan-500/20 text-cyan-400', 'bg-indigo-500/20 text-indigo-400', 'bg-purple-500/20 text-purple-400', 'bg-emerald-500/20 text-emerald-400', 'bg-amber-500/20 text-amber-400'] %}

@@ -8,9 +8,9 @@
 
   {# ── Header ── #}
   <div class="animate-fade-in-up">
-    <nav class="flex items-center gap-1.5 text-sm mb-2">
+    <nav class="flex items-center gap-1.5 text-sm mb-2" aria-label="Breadcrumb">
       <a href="{{ url_for('reports.index') }}" class="text-indigo-400 hover:text-indigo-300">Reports</a>
-      <svg class="w-3.5 h-3.5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg class="w-3.5 h-3.5 text-gray-600" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
       </svg>
       <span class="text-gray-400">Financial</span>
@@ -22,15 +22,17 @@
       </div>
       <div class="flex gap-1.5">
         <a href="{{ url_for('reports.financial', start_date=start.strftime('%Y-%m-%d'), end_date=end.strftime('%Y-%m-%d'), format='csv') }}"
+           aria-label="Download financial report as CSV"
            class="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-700 border border-gray-600 text-xs font-medium rounded-lg text-gray-300 hover:bg-gray-600 transition btn-press min-h-[40px]">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-3.5 h-3.5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
           </svg>
           CSV
         </a>
         <a href="{{ url_for('reports.financial', start_date=start.strftime('%Y-%m-%d'), end_date=end.strftime('%Y-%m-%d'), format='xlsx') }}"
+           aria-label="Download financial report as Excel"
            class="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-700 border border-gray-600 text-xs font-medium rounded-lg text-gray-300 hover:bg-gray-600 transition btn-press min-h-[40px]">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-3.5 h-3.5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
           </svg>
           Excel
@@ -89,10 +91,10 @@
         <div class="flex items-center gap-3">
           {% set colors = ['bg-indigo-500/20 text-indigo-400', 'bg-purple-500/20 text-purple-400', 'bg-blue-500/20 text-blue-400', 'bg-emerald-500/20 text-emerald-400', 'bg-amber-500/20 text-amber-400', 'bg-rose-500/20 text-rose-400'] %}
           <div class="avatar-initials {{ colors[loop.index0 % 6] }}">
-            {{ (row.customer_name or row.name or '?')[:2] }}
+            {{ (row.name or '?')[:2] }}
           </div>
           <div>
-            <p class="text-sm font-medium text-gray-100">{{ row.customer_name or row.name or 'Unknown' }}</p>
+            <p class="text-sm font-medium text-gray-100">{{ row.name or 'Unknown' }}</p>
             <p class="text-2xs text-gray-500">{{ row.count }} payment{{ 's' if row.count != 1 else '' }}</p>
           </div>
         </div>

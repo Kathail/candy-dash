@@ -6,10 +6,17 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 db = SQLAlchemy()
 migrate = Migrate()
 csrf = CSRFProtect()
+limiter = Limiter(
+    key_func=get_remote_address,
+    default_limits=[],
+    storage_uri=os.environ.get("RATELIMIT_STORAGE_URI", "memory://"),
+)
 login_manager = LoginManager()
 login_manager.login_view = "auth.login"
 login_manager.login_message_category = "warning"
@@ -23,7 +30,14 @@ def create_app():
     )
 
     # Configuration
-    app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret-key-change-in-production")
+    flask_env = os.environ.get("FLASK_ENV", "production")
+    secret_key = os.environ.get("SECRET_KEY")
+    if not secret_key and flask_env != "development":
+        raise RuntimeError(
+            "SECRET_KEY environment variable is required in production. "
+            "Set FLASK_ENV=development to use the dev fallback."
+        )
+    app.config["SECRET_KEY"] = secret_key or "dev-secret-key-change-in-production"
 
     database_url = os.environ.get("DATABASE_URL", "sqlite:///candy_route.db")
     # Render provides postgres:// but SQLAlchemy needs postgresql://
@@ -32,12 +46,19 @@ def create_app():
     app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-    app.config["PERMANENT_SESSION_LIFETIME"] = 60 * 60 * 24 * 31  # 31 days
+    app.config["PERMANENT_SESSION_LIFETIME"] = 60 * 60 * 24 * 7  # 7 days
+
+    # Secure cookie settings
+    app.config["SESSION_COOKIE_HTTPONLY"] = True
+    app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+    if flask_env != "development":
+        app.config["SESSION_COOKIE_SECURE"] = True
 
     # Initialize extensions
     db.init_app(app)
     migrate.init_app(app, db)
     csrf.init_app(app)
+    limiter.init_app(app)
     login_manager.init_app(app)
 
     # User loader
@@ -45,7 +66,10 @@ def create_app():
 
     @login_manager.user_loader
     def load_user(user_id):
-        return db.session.get(User, int(user_id))
+        user = db.session.get(User, int(user_id))
+        if user and not user.is_active:
+            return None
+        return user
 
     # Register blueprints
     from app.routes import register_blueprints
@@ -86,6 +110,15 @@ def create_app():
             }
         except Exception:
             return {}
+
+    # Serve service worker from root so its scope covers the whole app
+    @app.route("/sw.js")
+    def service_worker():
+        from flask import send_from_directory
+        return send_from_directory(
+            app.static_folder, "sw.js",
+            mimetype="application/javascript",
+        )
 
     # Error handlers
     @app.errorhandler(404)

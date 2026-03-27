@@ -57,11 +57,14 @@ def format_date(value, fmt="%b %d, %Y"):
     return value.strftime(fmt)
 
 
-def generate_receipt_number(payment_date=None):
-    """Generate a unique receipt number in format RCP-YYYYMMDD-XXXX."""
+def generate_receipt_number(payment_date=None, max_retries=5):
+    """Generate a unique receipt number in format RCP-YYYYMMDD-XXXX.
+
+    Uses SELECT ... FOR UPDATE (Postgres) to prevent race conditions.
+    Falls back to retry-on-conflict for SQLite.
+    """
     from app.models import Payment
     from app import db
-    from sqlalchemy import func as sa_func
 
     if payment_date is None:
         payment_date = datetime.now(timezone.utc)
@@ -69,11 +72,12 @@ def generate_receipt_number(payment_date=None):
     date_str = payment_date.strftime("%Y%m%d")
     prefix = f"RCP-{date_str}-"
 
-    # Find the highest existing sequence for this day
+    # Use FOR UPDATE to lock the row and prevent concurrent duplicates
     last = (
         Payment.query
         .filter(Payment.receipt_number.like(f"{prefix}%"))
         .order_by(Payment.receipt_number.desc())
+        .with_for_update()
         .first()
     )
 

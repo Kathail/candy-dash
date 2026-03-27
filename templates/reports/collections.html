@@ -8,9 +8,9 @@
 
   {# ── Header ── #}
   <div class="animate-fade-in-up">
-    <nav class="flex items-center gap-1.5 text-sm mb-2">
+    <nav class="flex items-center gap-1.5 text-sm mb-2" aria-label="Breadcrumb">
       <a href="{{ url_for('reports.index') }}" class="text-indigo-400 hover:text-indigo-300">Reports</a>
-      <svg class="w-3.5 h-3.5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg class="w-3.5 h-3.5 text-gray-600" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
       </svg>
       <span class="text-gray-400">Collections</span>
@@ -22,13 +22,15 @@
       </div>
       <div class="flex gap-1.5">
         <a href="{{ url_for('reports.collections', start_date=start.strftime('%Y-%m-%d'), end_date=end.strftime('%Y-%m-%d'), format='csv') }}"
+           aria-label="Download collections report as CSV"
            class="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-700 border border-gray-600 text-xs font-medium rounded-lg text-gray-300 hover:bg-gray-600 transition btn-press min-h-[40px]">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          <svg class="w-3.5 h-3.5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
           CSV
         </a>
         <a href="{{ url_for('reports.collections', start_date=start.strftime('%Y-%m-%d'), end_date=end.strftime('%Y-%m-%d'), format='xlsx') }}"
+           aria-label="Download collections report as Excel"
            class="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-700 border border-gray-600 text-xs font-medium rounded-lg text-gray-300 hover:bg-gray-600 transition btn-press min-h-[40px]">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          <svg class="w-3.5 h-3.5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
           Excel
         </a>
       </div>
@@ -62,8 +64,9 @@
       <div class="flex items-center gap-4 px-5 py-4 hover:bg-gray-700/50 transition">
         {# Rank #}
         <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0
-                    {{ 'bg-amber-500/20 text-amber-400' if loop.index == 1 else 'bg-gray-700 text-gray-400' }}">
-          {% if loop.index == 1 %}&#127942;{% else %}{{ loop.index }}{% endif %}
+                    {{ 'bg-amber-500/20 text-amber-400' if loop.index == 1 else 'bg-gray-700 text-gray-400' }}"
+             aria-label="Rank {{ loop.index }}">
+          {% if loop.index == 1 %}<span aria-hidden="true">&#127942;</span>{% else %}{{ loop.index }}{% endif %}
         </div>
 
         {# Info #}
@@ -73,7 +76,7 @@
         </div>
 
         {# Bar visual #}
-        <div class="hidden sm:block flex-1 max-w-[200px]">
+        <div class="hidden sm:block flex-1 max-w-[200px]" aria-hidden="true">
           {% set pct = (row.total / grand_total * 100)|int if grand_total else 0 %}
           <div class="h-2 bg-gray-700 rounded-full overflow-hidden">
             <div class="h-full rounded-full {{ 'bg-amber-500' if loop.index == 1 else 'bg-indigo-500' }}" style="width: {{ pct }}%"></div>
@@ -94,7 +97,7 @@
 
   {% else %}
   <div class="bg-gray-800 rounded-xl border border-gray-700 p-10 text-center animate-fade-in-up">
-    <div class="text-4xl mb-3">&#128202;</div>
+    <div class="text-4xl mb-3" aria-hidden="true">&#128202;</div>
     <p class="text-sm text-gray-400">No collections for this period.</p>
   </div>
   {% endif %}

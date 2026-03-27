@@ -21,31 +21,48 @@ def before_request():
     pass
 
 
-def _aging_bucket(customer):
-    """Return the aging bucket label for a customer based on last payment or creation date."""
-    last_payment = (
-        Payment.query
-        .filter(Payment.customer_id == customer.id)
-        .order_by(Payment.payment_date.desc())
-        .first()
+def _compute_aging_buckets(customers):
+    """Compute aging bucket labels for a list of customers in a single query."""
+    if not customers:
+        return {}
+
+    customer_ids = [c.id for c in customers]
+
+    # Get last payment date per customer in one query
+    from sqlalchemy import func as sa_func
+    last_payments = (
+        db.session.query(
+            Payment.customer_id,
+            sa_func.max(Payment.payment_date).label("last_date"),
+        )
+        .filter(Payment.customer_id.in_(customer_ids))
+        .group_by(Payment.customer_id)
+        .all()
     )
-    reference_date = last_payment.payment_date if last_payment else customer.created_at
-    if reference_date is None:
-        return "90+"
+    last_payment_map = {row.customer_id: row.last_date for row in last_payments}
 
     now = datetime.now(timezone.utc)
-    if isinstance(reference_date, datetime) and reference_date.tzinfo is None:
-        reference_date = reference_date.replace(tzinfo=timezone.utc)
-    delta = (now - reference_date).days
+    result = {}
+    for c in customers:
+        reference_date = last_payment_map.get(c.id) or c.created_at
+        if reference_date is None:
+            result[c.id] = "90+"
+            continue
 
-    if delta <= 30:
-        return "0-30"
-    elif delta <= 60:
-        return "31-60"
-    elif delta <= 90:
-        return "61-90"
-    else:
-        return "90+"
+        if isinstance(reference_date, datetime) and reference_date.tzinfo is None:
+            reference_date = reference_date.replace(tzinfo=timezone.utc)
+        delta = (now - reference_date).days
+
+        if delta <= 30:
+            result[c.id] = "0-30"
+        elif delta <= 60:
+            result[c.id] = "31-60"
+        elif delta <= 90:
+            result[c.id] = "61-90"
+        else:
+            result[c.id] = "90+"
+
+    return result
 
 
 @bp.route("/")
@@ -71,11 +88,12 @@ def index():
 
     customers = query.all()
 
-    # Compute aging buckets
+    # Compute aging buckets (single query instead of N+1)
     bucket_filter = request.args.get("bucket", "").strip()
+    aging_map = _compute_aging_buckets(customers)
     customers_with_aging = []
     for c in customers:
-        bucket = _aging_bucket(c)
+        bucket = aging_map.get(c.id, "90+")
         if bucket_filter and bucket != bucket_filter:
             continue
         customers_with_aging.append({"customer": c, "bucket": bucket})
@@ -137,6 +155,13 @@ def quick_payment(id):
     notes = request.form.get("notes", "").strip()
 
     try:
+        # Lock the customer row to prevent concurrent balance updates
+        customer = db.session.query(Customer).filter_by(id=id).with_for_update().one()
+        # Re-validate against locked balance
+        if amount > customer.balance:
+            db.session.rollback()
+            flash("Payment amount cannot exceed the outstanding balance.", "error")
+            return redirect(url_for("balances.index"))
         previous_balance = customer.balance
         receipt_number = generate_receipt_number()
 

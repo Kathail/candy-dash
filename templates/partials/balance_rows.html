@@ -16,7 +16,7 @@
 
       <!-- Balance -->
       <div class="text-right flex-shrink-0">
-        <p class="text-lg font-bold text-gray-100">{{ customer.balance | currency }}</p>
+        <p class="text-lg font-bold text-amber-400">{{ customer.balance | currency }}</p>
       </div>
 
       <!-- Aging Badge -->
@@ -34,8 +34,8 @@
 
       <!-- Quick Payment Toggle -->
       <button @click="showPayment = !showPayment"
-              class="btn-press flex-shrink-0 inline-flex items-center px-3 py-2.5 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700 transition-colors min-h-[44px]">
-        <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              class="btn-press flex-shrink-0 inline-flex items-center px-3 py-2.5 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-500 transition-colors min-h-[44px]">
+        <svg aria-hidden="true" class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
         </svg>
@@ -50,7 +50,7 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="flex-1">
           <input type="number" name="amount" step="0.01" min="0.01" required
-                 placeholder="Amount" value="{{ customer.balance }}"
+                 placeholder="Amount" value="{{ '%.2f'|format(customer.balance|float) }}"
                  class="block w-full rounded-lg bg-gray-700 border-gray-600 text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm min-h-[44px]">
         </div>
         <div class="flex-1">
@@ -58,7 +58,7 @@
                  class="block w-full rounded-lg bg-gray-700 border-gray-600 text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm min-h-[44px]">
         </div>
         <button type="submit"
-                class="btn-press inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors min-h-[44px]">
+                class="btn-press inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-500 transition-colors min-h-[44px]">
           Record Payment
         </button>
       </form>
@@ -68,11 +68,8 @@
 
   {% if not customers %}
   <div class="text-center py-12 bg-gray-800 rounded-xl border border-gray-700">
-    <svg class="mx-auto h-12 w-12 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-    </svg>
-    <p class="mt-2 text-gray-500">No outstanding balances found.</p>
+    <div class="text-4xl mb-3" aria-hidden="true">&#9989;</div>
+    <p class="text-sm text-gray-500">No outstanding balances found.</p>
   </div>
   {% endif %}
 </div>

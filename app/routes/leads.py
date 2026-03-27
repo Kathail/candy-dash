@@ -230,8 +230,8 @@ def import_csv():
 
         flash(f"Successfully imported {imported} leads.", "success")
 
-    except Exception as exc:
+    except Exception:
         db.session.rollback()
-        flash(f"Import failed: {exc}", "error")
+        flash("Import failed. Please check the CSV format and try again.", "error")
 
     return redirect(url_for("leads.index"))

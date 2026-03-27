@@ -8,7 +8,7 @@ from flask_login import login_required, current_user
 from sqlalchemy import func, case
 
 from app import db
-from app.models import Customer, RouteStop, Payment, ActivityLog
+from app.models import Customer, RouteStop, Payment
 
 bp = Blueprint("dashboard", __name__, url_prefix="")
 
@@ -87,29 +87,28 @@ def index():
         .all()
     )
 
-    # Recent activity (last 10)
-    recent_activity = (
-        ActivityLog.query
-        .order_by(ActivityLog.created_at.desc())
-        .limit(10)
+    # Weekly collection trend (last 7 days) — single query
+    week_start = today - timedelta(days=6)
+    week_start_dt = datetime(week_start.year, week_start.month, week_start.day, tzinfo=timezone.utc)
+
+    daily_totals_rows = (
+        db.session.query(
+            func.date(Payment.payment_date).label("pay_date"),
+            func.coalesce(func.sum(Payment.amount), Decimal("0")).label("total"),
+        )
+        .filter(Payment.payment_date >= week_start_dt)
+        .group_by(func.date(Payment.payment_date))
         .all()
     )
+    daily_totals_map = {str(row.pay_date): float(row.total) for row in daily_totals_rows}
 
-    # Weekly collection trend (last 7 days)
     week_data = []
     for i in range(6, -1, -1):
         d = today - timedelta(days=i)
-        ds = datetime(d.year, d.month, d.day, tzinfo=timezone.utc)
-        de = datetime(d.year, d.month, d.day, 23, 59, 59, 999999, tzinfo=timezone.utc)
-        total = db.session.query(
-            func.coalesce(func.sum(Payment.amount), Decimal("0"))
-        ).filter(
-            Payment.payment_date >= ds, Payment.payment_date <= de
-        ).scalar() or Decimal("0")
         week_data.append({
             "day": d.strftime("%a"),
             "date": d.isoformat(),
-            "total": float(total),
+            "total": daily_totals_map.get(d.isoformat(), 0.0),
         })
 
     # Greeting based on time of day
@@ -137,6 +136,5 @@ def index():
         todays_stops=todays_stops,
         tomorrow_stops=tomorrow_stops,
         recent_payments=recent_payments,
-        recent_activity=recent_activity,
         week_data=week_data,
     )

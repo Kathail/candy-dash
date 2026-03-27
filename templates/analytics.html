@@ -15,7 +15,7 @@
     </div>
     <div class="flex items-center gap-2 mt-3 sm:mt-0">
       {% for val, label in [('3', '3M'), ('6', '6M'), ('12', '1Y')] %}
-      <button @click="range = '{{ val }}'; navigate()"
+      <button type="button" @click="range = '{{ val }}'; navigate()"
               class="px-3 py-1.5 text-xs font-semibold rounded-lg transition btn-press
                      {{ 'bg-indigo-600 text-white' if months == val|int else 'bg-gray-700 text-gray-400 hover:bg-gray-600' }}">
         {{ label }}
@@ -111,7 +111,7 @@ function analyticsRange() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-  const charts = JSON.parse('{{ charts_json | safe }}');
+  const charts = {{ charts|tojson }};
   if (typeof Chart === 'undefined') return;
 
   // Shared dark theme for all charts

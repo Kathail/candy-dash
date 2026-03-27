@@ -1,6 +1,6 @@
 {# Global Payment Modal #}
 <div x-data="paymentModal()" @open-payment-modal.window="openModal($event.detail)"
-     x-show="isOpen" x-cloak class="fixed inset-0 z-[70] flex items-center justify-center p-4">
+     x-show="isOpen" x-cloak role="dialog" aria-modal="true" aria-label="Record Payment" class="fixed inset-0 z-[70] flex items-center justify-center p-4">
 
     {# Backdrop #}
     <div x-show="isOpen"
@@ -18,9 +18,9 @@
 
         <form @submit.prevent="submit()">
             <div class="mb-4">
-                <label class="block text-sm font-medium text-muted mb-1">Customer</label>
+                <label for="payment-customer" class="block text-sm font-medium text-muted mb-1">Customer</label>
                 <div class="relative">
-                    <input type="text" x-model="customerQuery" @input.debounce.300ms="searchCustomers()"
+                    <input type="text" id="payment-customer" x-model="customerQuery" @input.debounce.300ms="searchCustomers()"
                            @focus="custDropdown = customerQuery.length > 0"
                            :placeholder="selectedCustomer ? selectedCustomer.name : 'Search customer...'"
                            class="theme-input rounded-lg min-h-[44px]" />
@@ -45,14 +45,14 @@
             </div>
 
             <div class="mb-4">
-                <label class="block text-sm font-medium text-muted mb-1">Amount ($)</label>
-                <input type="number" step="0.01" min="0.01" x-model="amount" required
+                <label for="payment-amount" class="block text-sm font-medium text-muted mb-1">Amount ($)</label>
+                <input type="number" id="payment-amount" step="0.01" min="0.01" x-model="amount" required
                        class="theme-input rounded-lg min-h-[44px]" />
             </div>
 
             <div class="mb-5">
-                <label class="block text-sm font-medium text-muted mb-1">Notes</label>
-                <textarea x-model="notes" rows="2" class="theme-input rounded-lg"></textarea>
+                <label for="payment-notes" class="block text-sm font-medium text-muted mb-1">Notes</label>
+                <textarea id="payment-notes" x-model="notes" rows="2" class="theme-input rounded-lg"></textarea>
             </div>
 
             <div class="flex gap-3">

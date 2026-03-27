@@ -3,7 +3,7 @@
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required, login_user, logout_user
 
-from app import db
+from app import db, limiter
 from app.helpers import safe_redirect
 from app.models import User
 
@@ -11,6 +11,7 @@ bp = Blueprint("auth", __name__, url_prefix="")
 
 
 @bp.route("/login", methods=["GET", "POST"])
+@limiter.limit("10 per minute", methods=["POST"])
 def login():
     """Show login form and authenticate user."""
     if current_user.is_authenticated:
@@ -23,13 +24,9 @@ def login():
 
         user = User.query.filter_by(username=username).first()
 
-        if user is None or not user.check_password(password):
+        if user is None or not user.check_password(password) or not user.is_active:
             flash("Invalid username or password.", "error")
             return render_template("auth/login.html"), 401
-
-        if not user.is_active:
-            flash("Your account has been deactivated. Contact an administrator.", "error")
-            return render_template("auth/login.html"), 403
 
         login_user(user, remember=remember)
         flash(f"Welcome back, {user.username}!", "success")
@@ -40,7 +37,7 @@ def login():
     return render_template("auth/login.html")
 
 
-@bp.route("/logout")
+@bp.route("/logout", methods=["POST"])
 @login_required
 def logout():
     """Log the current user out."""

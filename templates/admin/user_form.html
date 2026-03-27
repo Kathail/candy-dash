@@ -22,7 +22,7 @@
 
       <!-- Username -->
       <div>
-        <label for="username" class="block text-sm font-medium text-gray-300 mb-1">Username</label>
+        <label for="username" class="block text-sm font-medium text-gray-300 mb-1">Username <span class="text-red-500">*</span></label>
         <input type="text" name="username" id="username" required
                value="{{ user.username if editing and user else '' }}"
                class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm min-h-[44px]"
@@ -41,7 +41,7 @@
       <!-- Password (only on create) -->
       {% if not editing %}
       <div>
-        <label for="password" class="block text-sm font-medium text-gray-300 mb-1">Password</label>
+        <label for="password" class="block text-sm font-medium text-gray-300 mb-1">Password <span class="text-red-500">*</span></label>
         <input type="password" name="password" id="password" required minlength="12"
                class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm min-h-[44px]"
                placeholder="Minimum 12 characters">
@@ -77,7 +77,7 @@
           {% if editing %}Update User{% else %}Create User{% endif %}
         </button>
         <a href="{{ url_for('admin.index') }}"
-           class="btn-press inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-700 transition-colors min-h-[44px]">
+           class="btn-press inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-600 transition-colors min-h-[44px]">
           Cancel
         </a>
       </div>

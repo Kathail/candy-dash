@@ -6,7 +6,7 @@
 {% block header_actions %}
 <a href="{{ url_for('customers.new') }}"
    class="hidden md:inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-500 transition-colors btn-press">
-  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <svg class="w-4 h-4" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
   </svg>
   Add Customer
@@ -19,80 +19,101 @@
   {# ── Search + Filter Toggle ── #}
   <div class="flex gap-2">
     <div class="relative flex-1">
-      <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 pointer-events-none" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
       </svg>
       <input type="search" name="q" value="{{ q }}"
              placeholder="Search customers..."
+             aria-label="Search customers"
              hx-get="{{ url_for('customers.index') }}"
              hx-trigger="keyup changed delay:300ms"
              hx-target="#customer-list"
              hx-push-url="true"
              hx-include="[name='status'], [name='city'], [name='sort']"
+             hx-indicator="#list-loading"
              class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-600 bg-gray-700 text-sm text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 placeholder:text-gray-500 min-h-[44px]">
     </div>
-    <button @click="showFilters = !showFilters"
+    <button type="button" @click="showFilters = !showFilters"
             :class="showFilters ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-gray-700 text-gray-400 border-gray-600'"
-            class="flex items-center gap-1.5 px-3 min-h-[44px] rounded-xl border text-sm font-medium transition-colors btn-press">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            class="flex items-center gap-1.5 px-3 min-h-[44px] rounded-xl border text-sm font-medium transition-colors btn-press"
+            :aria-expanded="showFilters.toString()"
+            aria-controls="filter-panel">
+      <svg class="w-4 h-4" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
       </svg>
       <span class="hidden sm:inline">Filters</span>
       {% if status_filter or city_filter %}
-      <span class="w-2 h-2 rounded-full bg-indigo-400"></span>
+      <span class="w-2 h-2 rounded-full bg-indigo-400" aria-hidden="true"></span>
+      <span class="sr-only">(filters active)</span>
       {% endif %}
     </button>
   </div>
 
   {# ── Collapsible Filters ── #}
-  <div x-show="showFilters" x-transition x-cloak
+  <div x-show="showFilters" x-transition x-cloak id="filter-panel"
        class="bg-gray-800 rounded-xl border border-gray-700 p-4 animate-fade-in-up">
     <div class="flex flex-wrap gap-3">
-      <select name="status"
-              hx-get="{{ url_for('customers.index') }}"
-              hx-trigger="change"
-              hx-target="#customer-list"
-              hx-push-url="true"
-              hx-include="[name='q'], [name='city'], [name='sort']"
-              class="min-h-[44px] rounded-lg border-gray-600 text-sm bg-gray-700 text-gray-200">
-        <option value="" {{ 'selected' if not status_filter }}>All Statuses</option>
-        <option value="active" {{ 'selected' if status_filter == 'active' }}>Active</option>
-        <option value="inactive" {{ 'selected' if status_filter == 'inactive' }}>Inactive</option>
-        <option value="lead" {{ 'selected' if status_filter == 'lead' }}>Lead</option>
-      </select>
+      <div>
+        <label for="filter-status" class="sr-only">Filter by status</label>
+        <select name="status" id="filter-status"
+                hx-get="{{ url_for('customers.index') }}"
+                hx-trigger="change"
+                hx-target="#customer-list"
+                hx-push-url="true"
+                hx-include="[name='q'], [name='city'], [name='sort']"
+                hx-indicator="#list-loading"
+                class="min-h-[44px] rounded-lg border-gray-600 text-sm bg-gray-700 text-gray-200">
+          <option value="" {{ 'selected' if not status_filter }}>All Statuses</option>
+          <option value="active" {{ 'selected' if status_filter == 'active' }}>Active</option>
+          <option value="inactive" {{ 'selected' if status_filter == 'inactive' }}>Inactive</option>
+        </select>
+      </div>
 
-      <select name="city"
-              hx-get="{{ url_for('customers.index') }}"
-              hx-trigger="change"
-              hx-target="#customer-list"
-              hx-push-url="true"
-              hx-include="[name='q'], [name='status'], [name='sort']"
-              class="min-h-[44px] rounded-lg border-gray-600 text-sm bg-gray-700 text-gray-200">
-        <option value="" {{ 'selected' if not city_filter }}>All Cities</option>
-        {% for city in cities %}
-        <option value="{{ city }}" {{ 'selected' if city_filter == city }}>{{ city }}</option>
-        {% endfor %}
-      </select>
+      <div>
+        <label for="filter-city" class="sr-only">Filter by city</label>
+        <select name="city" id="filter-city"
+                hx-get="{{ url_for('customers.index') }}"
+                hx-trigger="change"
+                hx-target="#customer-list"
+                hx-push-url="true"
+                hx-include="[name='q'], [name='status'], [name='sort']"
+                hx-indicator="#list-loading"
+                class="min-h-[44px] rounded-lg border-gray-600 text-sm bg-gray-700 text-gray-200">
+          <option value="" {{ 'selected' if not city_filter }}>All Cities</option>
+          {% for city in cities %}
+          <option value="{{ city }}" {{ 'selected' if city_filter == city }}>{{ city }}</option>
+          {% endfor %}
+        </select>
+      </div>
 
-      <select name="sort"
-              hx-get="{{ url_for('customers.index') }}"
-              hx-trigger="change"
-              hx-target="#customer-list"
-              hx-push-url="true"
-              hx-include="[name='q'], [name='status'], [name='city']"
-              class="min-h-[44px] rounded-lg border-gray-600 text-sm bg-gray-700 text-gray-200">
-        <option value="name" {{ 'selected' if sort == 'name' and direction == 'asc' }}>Name A-Z</option>
-        <option value="name_desc" {{ 'selected' if sort == 'name' and direction == 'desc' }}>Name Z-A</option>
-        <option value="balance_desc" {{ 'selected' if sort == 'balance' and direction == 'desc' }}>Balance High-Low</option>
-        <option value="balance" {{ 'selected' if sort == 'balance' and direction == 'asc' }}>Balance Low-High</option>
-        <option value="city" {{ 'selected' if sort == 'city' }}>City</option>
-      </select>
+      <div>
+        <label for="filter-sort" class="sr-only">Sort by</label>
+        <select name="sort" id="filter-sort"
+                hx-get="{{ url_for('customers.index') }}"
+                hx-trigger="change"
+                hx-target="#customer-list"
+                hx-push-url="true"
+                hx-include="[name='q'], [name='status'], [name='city']"
+                hx-indicator="#list-loading"
+                class="min-h-[44px] rounded-lg border-gray-600 text-sm bg-gray-700 text-gray-200">
+          <option value="name" {{ 'selected' if sort == 'name' and direction == 'asc' }}>Name A-Z</option>
+          <option value="name_desc" {{ 'selected' if sort == 'name' and direction == 'desc' }}>Name Z-A</option>
+          <option value="balance_desc" {{ 'selected' if sort == 'balance' and direction == 'desc' }}>Balance High-Low</option>
+          <option value="balance" {{ 'selected' if sort == 'balance' and direction == 'asc' }}>Balance Low-High</option>
+          <option value="city" {{ 'selected' if sort == 'city' }}>City</option>
+        </select>
+      </div>
 
       <a href="{{ url_for('leads.index') }}"
          class="inline-flex items-center gap-1.5 px-3 min-h-[44px] rounded-lg text-sm font-medium text-indigo-400 hover:bg-indigo-500/10 transition-colors">
         View Leads &rarr;
       </a>
     </div>
+  </div>
+
+  {# ── Loading indicator ── #}
+  <div id="list-loading" class="htmx-indicator text-center py-2">
+    <span class="text-sm text-gray-500">Loading...</span>
   </div>
 
   {# ── Customer count ── #}
@@ -109,8 +130,9 @@
 
 {# ── Mobile FAB ── #}
 <a href="{{ url_for('customers.new') }}"
-   class="md:hidden fixed bottom-20 right-4 w-14 h-14 bg-indigo-600 text-white rounded-full shadow-lg shadow-indigo-500/25 flex items-center justify-center hover:bg-indigo-500 transition-all btn-press z-30 hover:shadow-xl hover:shadow-indigo-500/30">
-  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+   aria-label="Add new customer"
+   class="md:hidden fixed bottom-24 right-4 w-14 h-14 bg-indigo-600 text-white rounded-full shadow-lg shadow-indigo-500/25 flex items-center justify-center hover:bg-indigo-500 transition-all btn-press z-30 hover:shadow-xl hover:shadow-indigo-500/30">
+  <svg class="w-6 h-6" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
   </svg>
 </a>

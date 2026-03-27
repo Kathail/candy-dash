@@ -1,6 +1,5 @@
 """Analytics dashboard routes with Chart.js data."""
 
-import json
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 
@@ -9,6 +8,7 @@ from flask_login import login_required
 from sqlalchemy import func, extract, case
 
 from app import db
+from app.helpers import admin_required
 from app.models import Customer, Payment, RouteStop
 
 bp = Blueprint("analytics", __name__, url_prefix="/analytics")
@@ -21,15 +21,8 @@ def before_request():
     pass
 
 
-class _DecimalEncoder(json.JSONEncoder):
-    """JSON encoder that handles Decimal values."""
-    def default(self, o):
-        if isinstance(o, Decimal):
-            return float(o)
-        return super().default(o)
-
-
 @bp.route("/")
+@admin_required
 def index():
     """Analytics dashboard with charts data."""
     today = date.today()
@@ -61,7 +54,7 @@ def index():
     for row in monthly_revenue_rows:
         label = date(int(row.year), int(row.month), 1).strftime("%b %Y")
         revenue_labels.append(label)
-        revenue_data.append(row.total)
+        revenue_data.append(float(row.total))
 
     # --- Collections by city ---
     collections_by_city = (
@@ -76,7 +69,7 @@ def index():
         .all()
     )
     city_labels = [row.city or "Unknown" for row in collections_by_city]
-    city_data = [row.total for row in collections_by_city]
+    city_data = [float(row.total) for row in collections_by_city]
 
     # --- Customer status distribution ---
     status_dist = (
@@ -132,8 +125,6 @@ def index():
             "completed": efficiency_completed,
         },
     }
-    charts_json = json.dumps(charts, cls=_DecimalEncoder)
-
     # KPI summaries for the selected period
     total_revenue = sum(revenue_data) if revenue_data else Decimal("0")
     total_payments = db.session.query(func.count(Payment.id)).filter(
@@ -146,7 +137,7 @@ def index():
 
     return render_template(
         "analytics.html",
-        charts_json=charts_json,
+        charts=charts,
         months=months,
         total_revenue=total_revenue,
         total_payments=total_payments,

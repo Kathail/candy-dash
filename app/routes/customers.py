@@ -9,7 +9,7 @@ from flask import (
 from flask_login import login_required, current_user
 
 from app import db
-from app.models import Customer, Payment, ActivityLog, RouteStop
+from app.models import Customer, Payment, ActivityLog, RouteStop, VALID_CUSTOMER_STATUSES
 from app.helpers import admin_required, generate_receipt_number
 
 bp = Blueprint("customers", __name__, url_prefix="/customers")
@@ -24,7 +24,7 @@ bp = Blueprint("customers", __name__, url_prefix="/customers")
 def index():
     """Paginated, searchable, filterable customer list."""
     page = request.args.get("page", 1, type=int)
-    per_page = request.args.get("per_page", 25, type=int)
+    per_page = min(request.args.get("per_page", 25, type=int), 100)
     q = request.args.get("q", "").strip()
     status_filter = request.args.get("status", "").strip()
     city_filter = request.args.get("city", "").strip()
@@ -40,7 +40,8 @@ def index():
     else:
         sort = sort_param
 
-    query = Customer.query
+    # Only show customers (active/inactive), not leads — leads have their own page
+    query = Customer.query.filter(Customer.status.in_(("active", "inactive")))
 
     if q:
         like = f"%{q}%"
@@ -113,6 +114,7 @@ def profile(id):
         Payment.query
         .filter_by(customer_id=customer.id)
         .order_by(Payment.payment_date.desc())
+        .limit(200)
         .all()
     )
 
@@ -155,14 +157,25 @@ def new():
             flash("Customer name is required.", "error")
             return render_template("customer_form.html", customer=None)
 
+        status = request.form.get("status", "active")
+        if status not in VALID_CUSTOMER_STATUSES:
+            flash("Invalid status.", "error")
+            return render_template("customer_form.html", customer=None), 400
+
+        try:
+            balance = Decimal(request.form.get("balance", "0") or "0")
+        except (InvalidOperation, ValueError):
+            flash("Invalid balance amount.", "error")
+            return render_template("customer_form.html", customer=None), 400
+
         customer = Customer(
             name=name,
             address=request.form.get("address", "").strip(),
             city=request.form.get("city", "").strip(),
             phone=request.form.get("phone", "").strip(),
             notes=request.form.get("notes", "").strip(),
-            balance=Decimal(request.form.get("balance", "0") or "0"),
-            status=request.form.get("status", "active"),
+            balance=balance,
+            status=status,
             tax_exempt=bool(request.form.get("tax_exempt")),
             lead_source=request.form.get("lead_source", "").strip() or None,
         )
@@ -199,13 +212,24 @@ def edit(id):
             flash("Customer name is required.", "error")
             return render_template("customer_form.html", customer=customer)
 
+        status = request.form.get("status", "active")
+        if status not in VALID_CUSTOMER_STATUSES:
+            flash("Invalid status.", "error")
+            return render_template("customer_form.html", customer=customer), 400
+
+        try:
+            balance = Decimal(request.form.get("balance", "0") or "0")
+        except (InvalidOperation, ValueError):
+            flash("Invalid balance amount.", "error")
+            return render_template("customer_form.html", customer=customer), 400
+
         customer.name = name
         customer.address = request.form.get("address", "").strip()
         customer.city = request.form.get("city", "").strip()
         customer.phone = request.form.get("phone", "").strip()
         customer.notes = request.form.get("notes", "").strip()
-        customer.balance = Decimal(request.form.get("balance", "0") or "0")
-        customer.status = request.form.get("status", "active")
+        customer.balance = balance
+        customer.status = status
         customer.tax_exempt = bool(request.form.get("tax_exempt"))
         customer.lead_source = request.form.get("lead_source", "").strip() or None
 
@@ -247,6 +271,13 @@ def record_payment(id):
     notes = request.form.get("notes", "").strip() or None
 
     try:
+        # Lock the customer row to prevent concurrent balance updates
+        customer = db.session.query(Customer).filter_by(id=id).with_for_update().one()
+        # Re-validate against locked balance
+        if amount > customer.balance:
+            db.session.rollback()
+            flash("Payment amount cannot exceed the outstanding balance.", "error")
+            return redirect(url_for("customers.profile", id=id))
         # Snapshot current balance
         previous_balance = customer.balance
 
@@ -297,13 +328,14 @@ def record_payment(id):
 @admin_required
 def delete_payment(id, payment_id):
     """Admin-only: reverse and delete a payment."""
-    customer = Customer.query.get_or_404(id)
     payment = Payment.query.get_or_404(payment_id)
 
-    if payment.customer_id != customer.id:
+    if payment.customer_id != id:
         abort(404)
 
     try:
+        # Lock the customer row to prevent concurrent balance updates
+        customer = db.session.query(Customer).filter_by(id=id).with_for_update().one()
         customer.balance = customer.balance + payment.amount
 
         db.session.add(ActivityLog(
@@ -321,10 +353,10 @@ def delete_payment(id, payment_id):
     except Exception:
         db.session.rollback()
         flash("An error occurred while deleting the payment.", "error")
-        return redirect(url_for("customers.profile", id=customer.id))
+        return redirect(url_for("customers.profile", id=id))
 
     flash(f"Payment #{payment.receipt_number} deleted and balance restored.", "success")
-    return redirect(url_for("customers.profile", id=customer.id))
+    return redirect(url_for("customers.profile", id=id))
 
 
 # ---------------------------------------------------------------------------

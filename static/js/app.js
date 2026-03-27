@@ -258,9 +258,9 @@
       updateBanner();
     }
 
-    // Service worker
+    // Service worker (served from root for full-app scope)
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/static/sw.js")
+      navigator.serviceWorker.register("/sw.js")
         .then((reg) => console.log("SW registered:", reg.scope))
         .catch((err) => console.warn("SW failed:", err));
     }

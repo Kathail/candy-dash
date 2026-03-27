@@ -32,7 +32,7 @@
                 <a href="{{ url_for(endpoint) }}"
                    class="nav-link flex items-center gap-3 min-h-[44px]
                           {{ 'active' if request.endpoint and request.endpoint.startswith(endpoint.split('.')[0]) else '' }}">
-                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg aria-hidden="true" class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ icon_path }}"/>
                     </svg>
                     {{ label }}
@@ -46,7 +46,7 @@
                 <a href="{{ url_for('admin.index') }}"
                    class="nav-link flex items-center gap-3 min-h-[44px]
                           {{ 'active' if request.endpoint and request.endpoint.startswith('admin') else '' }}">
-                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg aria-hidden="true" class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                               d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -62,12 +62,12 @@
     <div class="shrink-0 border-t border-app p-3" x-data="{ userMenu: false }">
         <button @click="userMenu = !userMenu"
                 class="nav-link flex items-center gap-3 w-full min-h-[44px]">
-            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                       d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z"/>
             </svg>
             <span class="truncate">{{ current_user.username }}</span>
-            <svg class="w-4 h-4 ml-auto shrink-0 transition-transform" :class="userMenu && 'rotate-180'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" class="w-4 h-4 ml-auto shrink-0 transition-transform" :class="userMenu && 'rotate-180'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
             </svg>
         </button>
@@ -75,18 +75,21 @@
              class="mt-1 theme-card rounded-lg py-1 shadow-lg">
             <a href="{{ url_for('auth.change_password') }}"
                class="nav-link flex items-center gap-2 px-4 min-h-[44px]">
-                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg aria-hidden="true" class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
                 </svg>
                 Change Password
             </a>
-            <a href="{{ url_for('auth.logout') }}"
-               class="nav-link flex items-center gap-2 px-4 min-h-[44px]">
-                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                </svg>
-                Logout
-            </a>
+            <form method="POST" action="{{ url_for('auth.logout') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit"
+                   class="nav-link flex items-center gap-2 px-4 min-h-[44px] w-full text-left">
+                    <svg aria-hidden="true" class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                    </svg>
+                    Logout
+                </button>
+            </form>
         </div>
     </div>
 </aside>

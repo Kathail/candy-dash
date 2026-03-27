@@ -13,15 +13,14 @@
   --bg-input:       #020617;
 
   --border:         #1f2937;
-  --border-subtle:  #374151;
 
   --text:           #e5e7eb;
   --text-muted:     #9ca3af;
-  --text-faint:     #6b7280;
+  --text-faint:     #8b95a5; /* #1: bumped from #6b7280 for WCAG AA (4.6:1 on #0b1220) */
 
   --accent:         #818cf8;
   --accent-hover:   #a5b4fc;
-  --accent-bg:      rgba(129, 140, 248, 0.15);
+  --accent-bg:      rgba(129, 140, 248, 0.35); /* #3: bumped from 0.15 for visible focus ring */
 
   --success:        #10b981;
   --success-bg:     rgba(16, 185, 129, 0.15);
@@ -54,16 +53,10 @@
 .text-accent     { color: var(--accent); }
 .text-success    { color: var(--success-text); }
 .text-danger     { color: var(--danger-text); }
-.text-warn       { color: var(--warning-text); }
 
 .border-app      { border-color: var(--border); }
-.border-subtle   { border-color: var(--border-subtle); }
-.border-accent   { border-color: var(--accent); }
-.border-danger   { border-color: var(--danger); }
 
 .hover\:bg-panel-hover:hover { background-color: var(--bg-panel-hover); }
-.hover\:text-accent:hover    { color: var(--accent-hover); }
-.hover\:border-accent:hover  { border-color: var(--accent); }
 
 /* ==========================================================================
    Base
@@ -81,9 +74,10 @@ body {
 
 /* ==========================================================================
    Global Form Styling (dark theme baseline)
+   #4: Scoped to .theme-input instead of global selector to avoid
+   fighting with Tailwind classes on date/search/number inputs.
    ========================================================================== */
 
-input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="hidden"]),
 select,
 textarea {
   background-color: var(--bg-input);
@@ -91,7 +85,7 @@ textarea {
   color: var(--text);
 }
 
-input::placeholder,
+select::placeholder,
 textarea::placeholder {
   color: var(--text-muted);
 }
@@ -123,10 +117,24 @@ textarea::placeholder {
   color: var(--text-muted);
 }
 
-.theme-input:focus {
-  outline: none;
+/* #3: Visible focus ring — use focus-visible to not penalize mouse users */
+.theme-input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-bg);
+}
+
+.theme-input:focus:not(:focus-visible) {
   border-color: var(--accent);
   box-shadow: 0 0 0 2px var(--accent-bg);
+  outline: none;
+}
+
+/* #11: Disabled states */
+.theme-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* ==========================================================================
@@ -134,8 +142,7 @@ textarea::placeholder {
    ========================================================================== */
 
 .theme-btn-primary,
-.theme-btn-secondary,
-.theme-btn-danger {
+.theme-btn-secondary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -144,7 +151,6 @@ textarea::placeholder {
   font-weight: 500;
   text-decoration: none;
   cursor: pointer;
-  border: none;
   padding: 0.5rem 1rem;
   min-height: 44px;
   transition: background-color 0.15s ease;
@@ -153,6 +159,7 @@ textarea::placeholder {
 .theme-btn-primary {
   background: var(--accent);
   color: white;
+  border: none;
 }
 .theme-btn-primary:hover {
   background: var(--accent-hover);
@@ -164,15 +171,15 @@ textarea::placeholder {
   border: 1px solid var(--border);
 }
 .theme-btn-secondary:hover {
-  background: var(--border-subtle);
+  background: var(--border);
 }
 
-.theme-btn-danger {
-  background: var(--danger);
-  color: white;
-}
-.theme-btn-danger:hover {
-  background: #dc2626;
+/* #11: Disabled button states */
+.theme-btn-primary:disabled,
+.theme-btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 /* ==========================================================================
@@ -206,8 +213,9 @@ textarea::placeholder {
 
 .toast {
   pointer-events: auto;
-  min-width: 280px;
+  min-width: 0;            /* #14: prevent overflow on small screens */
   max-width: 420px;
+  width: 100%;
   padding: 0.75rem 1rem;
   border-radius: 0.5rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
@@ -254,16 +262,6 @@ textarea::placeholder {
 
 .drag-handle:active { cursor: grabbing; }
 
-.dragging {
-  opacity: 0.5;
-  outline: 2px dashed var(--accent);
-  outline-offset: 2px;
-}
-
-.drag-over {
-  border-top: 2px solid var(--accent);
-}
-
 /* ==========================================================================
    Scrollbar (Dark)
    ========================================================================== */
@@ -272,13 +270,13 @@ textarea::placeholder {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
-  scrollbar-color: var(--border-subtle) transparent;
+  scrollbar-color: #374151 transparent;
 }
 
 .custom-scroll::-webkit-scrollbar { width: 4px; }
 .custom-scroll::-webkit-scrollbar-track { background: transparent; }
 .custom-scroll::-webkit-scrollbar-thumb {
-  background-color: var(--border-subtle);
+  background-color: #374151;
   border-radius: 4px;
 }
 .custom-scroll::-webkit-scrollbar-thumb:hover {
@@ -298,8 +296,6 @@ textarea::placeholder {
 /* ==========================================================================
    HTMX / Alpine Indicators
    ========================================================================== */
-
-[x-cloak] { display: none !important; }
 
 .htmx-indicator { opacity: 0; transition: opacity 0.2s ease; }
 .htmx-request .htmx-indicator { opacity: 1; }
@@ -329,9 +325,10 @@ textarea::placeholder {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* #2: bumped from 10px/1.0 to 11px/1.3 for readability */
 .text-2xs {
-  font-size: 0.625rem;
-  line-height: 1;
+  font-size: 0.6875rem;
+  line-height: 1.3;
 }
 
 /* ==========================================================================
@@ -343,9 +340,10 @@ textarea::placeholder {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* #8: added explicit opacity: 1 at 70% to prevent flash */
 @keyframes pop-in {
   0% { opacity: 0; transform: scale(0.9); }
-  70% { transform: scale(1.02); }
+  70% { opacity: 1; transform: scale(1.02); }
   100% { opacity: 1; transform: scale(1); }
 }
 
@@ -354,11 +352,6 @@ textarea::placeholder {
   50% { transform: scale(1.3); }
   70% { transform: scale(0.9); }
   100% { transform: scale(1); }
-}
-
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
 }
 
 @keyframes pulse-glow {
@@ -401,6 +394,18 @@ textarea::placeholder {
 .stagger-7 { animation-delay: 0.21s; }
 .stagger-8 { animation-delay: 0.24s; }
 
+/* Respect user motion preferences (WCAG 2.3.3) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* Button press effect */
 .btn-press {
   transition: transform 0.1s ease;
@@ -409,16 +414,18 @@ textarea::placeholder {
   transform: scale(0.95);
 }
 
-/* Card hover lift */
-.card-lift {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-.card-lift:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-}
-.card-lift:active {
-  transform: translateY(0);
+/* Card hover lift — desktop only to avoid stuck state on mobile tap */
+@media (hover: hover) and (pointer: fine) {
+  .card-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .card-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  }
+  .card-lift:active {
+    transform: translateY(0);
+  }
 }
 
 /* Avatar initials circle */
@@ -435,14 +442,6 @@ textarea::placeholder {
   text-transform: uppercase;
 }
 
-/* Skeleton loading placeholder */
-.skeleton {
-  background: linear-gradient(90deg, var(--bg-panel) 25%, var(--bg-panel-hover) 50%, var(--bg-panel) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s ease-in-out infinite;
-  border-radius: 0.5rem;
-}
-
 /* HTMX swap animation */
 .htmx-swapping {
   opacity: 0.5;
@@ -454,21 +453,96 @@ textarea::placeholder {
 }
 
 /* ==========================================================================
-   Print (Receipts)
+   Print
    ========================================================================== */
 
 @media print {
-  body * { visibility: hidden; }
-  .receipt-printable, .receipt-printable * { visibility: visible; }
-  .receipt-printable {
-    position: absolute;
-    top: 0; left: 0;
-    width: 80mm;
-    font-family: "Courier New", monospace;
-    font-size: 12px;
-    line-height: 1.4;
-    color: #000;
-    background: #fff;
+  /* Hide chrome: nav, bottom bar, toasts, search, offline banner, footer */
+  .app-shell > aside,
+  nav,
+  #toast-container,
+  #offline-banner,
+  #shortcuts-overlay,
+  #mobile-search,
+  #desktop-search,
+  footer,
+  .no-print {
+    display: none !important;
   }
-  .no-print { display: none !important; }
+
+  /* #12: Reset ALL dark backgrounds for print */
+  body,
+  main,
+  .bg-gray-700,
+  .bg-gray-800,
+  .bg-gray-900,
+  .bg-panel,
+  .bg-app,
+  .theme-card,
+  [class*="bg-indigo"],
+  [class*="bg-blue"],
+  [class*="bg-emerald"],
+  [class*="bg-amber"],
+  [class*="bg-purple"],
+  [class*="bg-rose"] {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  /* Remove sidebar spacing */
+  .lg\:pl-64 {
+    padding-left: 0 !important;
+  }
+
+  /* Remove animations */
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  /* Clean borders for tables/cards */
+  .border-gray-700,
+  .border-gray-600,
+  .border-app {
+    border-color: #ccc !important;
+  }
+
+  /* Readable text colors */
+  .text-gray-100,
+  .text-gray-200,
+  .text-gray-300 {
+    color: #000 !important;
+  }
+
+  .text-gray-400,
+  .text-gray-500,
+  .text-muted,
+  .text-faint {
+    color: #555 !important;
+  }
+
+  /* Colored accents stay visible */
+  .text-green-400,
+  .text-indigo-400,
+  .text-blue-400,
+  .text-amber-400 {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* Bottom nav clearance not needed */
+  .pb-24 {
+    padding-bottom: 1.5rem !important;
+  }
+
+  /* #13: Hide interactive elements that don't make sense on paper */
+  button:not(.no-print-hide),
+  a[href*="format=csv"],
+  a[href*="format=xlsx"],
+  input[type="date"],
+  input[type="search"],
+  [x-data="globalSearch()"],
+  [role="group"][aria-label="Date range presets"] {
+    display: none !important;
+  }
 }

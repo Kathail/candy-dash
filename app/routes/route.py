@@ -60,35 +60,44 @@ def index():
         Payment.payment_date <= day_end,
     ).scalar() or Decimal("0")
 
-    # Last visit info per customer (most recent completed stop before today)
+    # Last visit info per customer (single query instead of N+1)
     last_visits = {}
     if customer_ids:
-        for cid in set(customer_ids):
-            last_stop = (
-                RouteStop.query
-                .filter(
-                    RouteStop.customer_id == cid,
-                    RouteStop.completed.is_(True),
-                    RouteStop.route_date < route_date,
-                )
-                .order_by(RouteStop.route_date.desc())
-                .first()
+        unique_ids = list(set(customer_ids))
+        visit_rows = (
+            db.session.query(
+                RouteStop.customer_id,
+                func.max(RouteStop.route_date).label("last_date"),
             )
-            if last_stop:
-                last_visits[cid] = last_stop.route_date
+            .filter(
+                RouteStop.customer_id.in_(unique_ids),
+                RouteStop.completed.is_(True),
+                RouteStop.route_date < route_date,
+            )
+            .group_by(RouteStop.customer_id)
+            .all()
+        )
+        last_visits = {row.customer_id: row.last_date for row in visit_rows}
 
-    # Last payment per customer
+    # Last payment per customer (single query instead of N+1)
     last_payments = {}
     if customer_ids:
-        for cid in set(customer_ids):
-            last_pay = (
-                Payment.query
-                .filter(Payment.customer_id == cid)
-                .order_by(Payment.payment_date.desc())
-                .first()
+        unique_ids = list(set(customer_ids))
+        latest_payment_date = (
+            db.session.query(
+                Payment.customer_id,
+                func.max(Payment.id).label("max_id"),
             )
-            if last_pay:
-                last_payments[cid] = last_pay
+            .filter(Payment.customer_id.in_(unique_ids))
+            .group_by(Payment.customer_id)
+            .subquery()
+        )
+        payment_rows = (
+            Payment.query
+            .join(latest_payment_date, Payment.id == latest_payment_date.c.max_id)
+            .all()
+        )
+        last_payments = {p.customer_id: p for p in payment_rows}
 
     prev_date = route_date - timedelta(days=1)
     next_date = route_date + timedelta(days=1)
@@ -127,7 +136,8 @@ def complete_stop(id):
         try:
             amount = Decimal(amount_str)
             if amount > 0:
-                customer = stop.customer
+                # Lock the customer row for safe balance update
+                customer = db.session.query(Customer).filter_by(id=stop.customer_id).with_for_update().one()
                 previous_balance = customer.balance
                 receipt_number = generate_receipt_number()
 
@@ -157,9 +167,11 @@ def complete_stop(id):
     except Exception:
         db.session.rollback()
         # Retry without payment — at least complete the stop
-        stop.completed = True
-        stop.completed_at = datetime.now(timezone.utc)
-        db.session.commit()
+        stop = RouteStop.query.get(id)
+        if stop:
+            stop.completed = True
+            stop.completed_at = datetime.now(timezone.utc)
+            db.session.commit()
         receipt_number = None
 
     # For HTMX, return the updated stop card

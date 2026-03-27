@@ -75,11 +75,16 @@ def init_database():
         db.session.commit()
 
         if generated:
-            print(f"\n{'='*50}")
-            print(f"  Default admin user created")
-            print(f"  Username: admin")
-            print(f"  Password: {admin_password}")
-            print(f"{'='*50}\n")
+            import logging
+            logging.getLogger(__name__).warning(
+                "Default admin user created with auto-generated password. "
+                "Set ADMIN_PASSWORD env var and restart, or change via /change-password. "
+                "Auto-generated password written to: instance/admin_password.txt"
+            )
+            pw_file = Path(__file__).parent.parent / "instance" / "admin_password.txt"
+            pw_file.parent.mkdir(exist_ok=True)
+            pw_file.write_text(admin_password)
+            pw_file.chmod(0o600)
         else:
             print("  Default admin user created with ADMIN_PASSWORD from environment.")
 

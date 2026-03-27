@@ -6,7 +6,7 @@ from decimal import Decimal, InvalidOperation
 from flask import Blueprint, jsonify, request
 from flask_login import login_required, current_user
 
-from app import db, csrf
+from app import db
 from app.helpers import generate_receipt_number
 from app.models import Customer, Payment, RouteStop, ActivityLog
 
@@ -86,7 +86,6 @@ def route_today():
     })
 
 
-@csrf.exempt
 @bp.route("/sync", methods=["POST"])
 def sync():
     """Process offline payment queue.
@@ -139,7 +138,7 @@ def sync():
             continue
 
         try:
-            customer = db.session.get(Customer, customer_id)
+            customer = db.session.query(Customer).filter_by(id=customer_id).with_for_update().first()
             if customer is None:
                 result["status"] = "error"
                 result["message"] = "Customer not found."
@@ -176,10 +175,10 @@ def sync():
             result["previous_balance"] = float(previous_balance)
             result["new_balance"] = float(customer.balance)
 
-        except Exception as exc:
+        except Exception:
             db.session.rollback()
             result["status"] = "error"
-            result["message"] = str(exc)
+            result["message"] = "An internal error occurred while processing this payment."
 
         results.append(result)
 
