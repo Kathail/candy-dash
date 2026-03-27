@@ -62,6 +62,31 @@ def logout():
     return redirect(url_for("auth.login"))
 
 
+@bp.route("/profile")
+@login_required
+def profile():
+    """User's own profile page."""
+    from app.models import Payment, RouteStop, ActivityLog
+    from sqlalchemy import func
+    from datetime import datetime, timezone
+
+    # Stats for this user
+    payments_recorded = Payment.query.filter_by(recorded_by=current_user.id).count()
+    stops_completed = RouteStop.query.filter_by(created_by=current_user.id, completed=True).count()
+    total_collected = (
+        db.session.query(func.coalesce(func.sum(Payment.amount), 0))
+        .filter(Payment.recorded_by == current_user.id)
+        .scalar()
+    )
+
+    return render_template(
+        "auth/profile.html",
+        payments_recorded=payments_recorded,
+        stops_completed=stops_completed,
+        total_collected=total_collected,
+    )
+
+
 @bp.route("/change-password", methods=["GET", "POST"])
 @login_required
 def change_password():
@@ -86,6 +111,6 @@ def change_password():
         current_user.set_password(new_password)
         db.session.commit()
         flash("Your password has been updated.", "success")
-        return redirect(url_for("dashboard.index"))
+        return redirect(url_for("auth.profile"))
 
     return render_template("auth/change_password.html")

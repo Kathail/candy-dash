@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile - Candy Dash{% endblock %}
+{% block page_title %}Profile{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+
+  {# ── Header ── #}
+  <div class="animate-fade-in-up">
+    <h1 class="text-2xl font-bold text-gray-100">My Profile</h1>
+    <p class="text-xs text-gray-500 mt-0.5">Account details and stats</p>
+  </div>
+
+  {# ── Account Info ── #}
+  <div class="bg-gray-800 rounded-xl border border-gray-700 p-5 animate-fade-in-up stagger-1">
+    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Account</h2>
+    <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+      <div>
+        <dt class="text-xs font-medium text-gray-500">Username</dt>
+        <dd class="mt-1 text-sm font-semibold text-gray-100">{{ current_user.username }}</dd>
+      </div>
+      <div>
+        <dt class="text-xs font-medium text-gray-500">Email</dt>
+        <dd class="mt-1 text-sm text-gray-100">{{ current_user.email or 'Not set' }}</dd>
+      </div>
+      <div>
+        <dt class="text-xs font-medium text-gray-500">Role</dt>
+        <dd class="mt-1">
+          {% if current_user.role == 'admin' %}
+          <span class="inline-flex px-2 py-0.5 text-xs font-semibold rounded-full bg-red-500/20 text-red-400">Admin</span>
+          {% elif current_user.role == 'demo' %}
+          <span class="inline-flex px-2 py-0.5 text-xs font-semibold rounded-full bg-purple-500/20 text-purple-400">Demo</span>
+          {% else %}
+          <span class="inline-flex px-2 py-0.5 text-xs font-semibold rounded-full bg-indigo-500/20 text-indigo-400">Owner</span>
+          {% endif %}
+        </dd>
+      </div>
+      <div>
+        <dt class="text-xs font-medium text-gray-500">Status</dt>
+        <dd class="mt-1">
+          <span class="inline-flex px-2 py-0.5 text-xs font-semibold rounded-full bg-green-500/20 text-green-400">Active</span>
+        </dd>
+      </div>
+    </dl>
+  </div>
+
+  {# ── Stats ── #}
+  <div class="grid grid-cols-3 gap-3 animate-fade-in-up stagger-2">
+    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 text-center">
+      <p class="text-2xs font-semibold text-gray-500 uppercase tracking-wider">Payments</p>
+      <p class="text-xl font-bold text-gray-100 mt-1">{{ payments_recorded }}</p>
+      <p class="text-2xs text-gray-500">recorded</p>
+    </div>
+    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 text-center">
+      <p class="text-2xs font-semibold text-gray-500 uppercase tracking-wider">Stops</p>
+      <p class="text-xl font-bold text-gray-100 mt-1">{{ stops_completed }}</p>
+      <p class="text-2xs text-gray-500">completed</p>
+    </div>
+    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 text-center">
+      <p class="text-2xs font-semibold text-gray-500 uppercase tracking-wider">Collected</p>
+      <p class="text-xl font-bold text-green-400 mt-1">{{ total_collected|currency }}</p>
+      <p class="text-2xs text-gray-500">total</p>
+    </div>
+  </div>
+
+  {# ── Actions ── #}
+  <div class="space-y-3 animate-fade-in-up stagger-3">
+    <a href="{{ url_for('auth.change_password') }}"
+       class="flex items-center justify-between bg-gray-800 rounded-xl border border-gray-700 px-5 py-4 hover:bg-gray-700/50 transition">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-indigo-500/15 flex items-center justify-center">
+          <svg aria-hidden="true" class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+          </svg>
+        </div>
+        <div>
+          <p class="text-sm font-semibold text-gray-100">Change Password</p>
+          <p class="text-2xs text-gray-500">Update your login credentials</p>
+        </div>
+      </div>
+      <svg aria-hidden="true" class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+      </svg>
+    </a>
+
+    {% if current_user.is_admin %}
+    <a href="{{ url_for('admin.index') }}"
+       class="flex items-center justify-between bg-gray-800 rounded-xl border border-gray-700 px-5 py-4 hover:bg-gray-700/50 transition">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-red-500/15 flex items-center justify-center">
+          <svg aria-hidden="true" class="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+        </div>
+        <div>
+          <p class="text-sm font-semibold text-gray-100">Admin Panel</p>
+          <p class="text-2xs text-gray-500">User management and audit log</p>
+        </div>
+      </div>
+      <svg aria-hidden="true" class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+      </svg>
+    </a>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}
