@@ -22,11 +22,34 @@ def before_request():
 
 @bp.route("/customers/search")
 def customer_search():
-    """Search customers by name, returning JSON results."""
+    """Search customers by name and payments by receipt number."""
     q = request.args.get("q", "").strip()
     if not q:
         return jsonify([])
 
+    results = []
+
+    # Search receipts if query looks like a receipt number
+    if q.upper().startswith("RCP") or q.isdigit():
+        payments = (
+            Payment.query
+            .filter(Payment.receipt_number.ilike(f"%{q}%"))
+            .order_by(Payment.payment_date.desc())
+            .limit(10)
+            .all()
+        )
+        for p in payments:
+            customer = Customer.query.get(p.customer_id)
+            results.append({
+                "type": "receipt",
+                "id": p.customer_id,
+                "receipt_number": p.receipt_number,
+                "amount": float(p.amount),
+                "name": customer.name if customer else "Unknown",
+                "date": p.payment_date.strftime("%b %d, %Y") if p.payment_date else "",
+            })
+
+    # Always search customers by name
     customers = (
         Customer.query
         .filter(Customer.name.ilike(f"%{q}%"))
@@ -34,17 +57,16 @@ def customer_search():
         .limit(20)
         .all()
     )
-
-    results = [
-        {
+    for c in customers:
+        results.append({
+            "type": "customer",
             "id": c.id,
             "name": c.name,
             "city": c.city,
             "balance": float(c.balance) if c.balance else 0.0,
             "phone": c.phone,
-        }
-        for c in customers
-    ]
+        })
+
     return jsonify(results)
 
 

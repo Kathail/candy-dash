@@ -3,9 +3,10 @@
 import io
 from decimal import Decimal
 from datetime import datetime, timezone, timedelta, date
+from zoneinfo import ZoneInfo
 
-# GMT-5 (Central Daylight / Eastern Standard)
-TZ_DISPLAY = timezone(timedelta(hours=-5))
+# Toronto timezone (handles EST/EDT automatically)
+TZ_DISPLAY = ZoneInfo("America/Toronto")
 from functools import wraps
 from urllib.parse import urlparse, urljoin
 
