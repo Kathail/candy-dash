@@ -46,6 +46,11 @@ def create_app():
     app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    # Recycle stale Postgres connections before the server drops them
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+        "pool_pre_ping": True,
+        "pool_recycle": 300,
+    }
     app.config["PERMANENT_SESSION_LIFETIME"] = 60 * 60 * 24 * 7  # 7 days
 
     # Secure cookie settings
