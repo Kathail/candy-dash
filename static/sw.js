@@ -2,7 +2,7 @@
    Candy Route Planner - Service Worker
    ============================================ */
 
-var CACHE_NAME = "candy-route-v6";
+var CACHE_NAME = "candy-route-v7";
 
 var PRECACHE_URLS = [
   "/static/css/tailwind.css",
