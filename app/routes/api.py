@@ -31,22 +31,24 @@ def customer_search():
 
     # Search receipts if query looks like a receipt number
     if q.upper().startswith("RCP") or q.isdigit():
+        from sqlalchemy.orm import joinedload
+        from app.helpers import format_date
         payments = (
             Payment.query
+            .options(joinedload(Payment.customer))
             .filter(Payment.receipt_number.ilike(f"%{q}%"))
             .order_by(Payment.payment_date.desc())
             .limit(10)
             .all()
         )
         for p in payments:
-            customer = Customer.query.get(p.customer_id)
             results.append({
                 "type": "receipt",
                 "id": p.customer_id,
                 "receipt_number": p.receipt_number,
                 "amount": float(p.amount),
-                "name": customer.name if customer else "Unknown",
-                "date": p.payment_date.strftime("%b %d, %Y") if p.payment_date else "",
+                "name": p.customer.name if p.customer else "Unknown",
+                "date": format_date(p.payment_date),
             })
 
     # Always search customers by name
@@ -184,7 +186,7 @@ def sync():
             log = ActivityLog(
                 customer_id=customer.id,
                 user_id=current_user.id,
-                action="payment",
+                action="payment_recorded",
                 description=f"Synced offline payment of ${amount:,.2f}. Receipt: {receipt_number}",
             )
 

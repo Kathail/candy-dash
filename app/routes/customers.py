@@ -4,12 +4,12 @@ from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation
 
 from flask import (
-    Blueprint, render_template, request, redirect, url_for, flash, abort,
+    Blueprint, render_template, request, redirect, url_for, flash, abort, jsonify,
 )
 from flask_login import login_required, current_user
 
 from app import db
-from app.models import Customer, Payment, ActivityLog, RouteStop, AdminAuditLog, VALID_CUSTOMER_STATUSES
+from app.models import Customer, Payment, ActivityLog, RouteStop, VALID_CUSTOMER_STATUSES
 from app.helpers import admin_required, generate_receipt_number, audit
 
 bp = Blueprint("customers", __name__, url_prefix="/customers")
@@ -261,12 +261,8 @@ def record_payment(id):
     Accepts amount_sold (increases balance) and amount_paid (decreases balance).
     Falls back to legacy 'amount' field as amount_paid for backwards compat.
     """
-    from flask import jsonify
-
-    customer = Customer.query.get_or_404(id)
     is_fetch = request.headers.get("X-Requested-With") == "fetch"
-
-    redirect_to = request.form.get("next") or url_for("customers.profile", id=customer.id)
+    redirect_to = request.form.get("next") or url_for("customers.profile", id=id)
 
     def _error(msg):
         if is_fetch:

@@ -3,13 +3,11 @@
 <head>
     <meta charset="utf-8" />
     <script>
-    // Force clear old service worker caches and re-register
-    if ('serviceWorker' in navigator) {
+    // One-time purge of old service worker caches
+    if ('serviceWorker' in navigator && !sessionStorage.getItem('sw-purged-v8')) {
+      sessionStorage.setItem('sw-purged-v8', '1');
       caches.keys().then(function(names) {
         names.forEach(function(name) { if (name !== 'candy-route-v8') caches.delete(name); });
-      });
-      navigator.serviceWorker.getRegistrations().then(function(regs) {
-        regs.forEach(function(r) { r.update(); });
       });
     }
     </script>

@@ -26,10 +26,8 @@ def index():
     """List all users and recent audit log."""
     users = User.query.order_by(User.username).all()
 
-    # Audit log with optional filtering
     filter_action = request.args.get("action", "").strip()
     filter_user = request.args.get("user", "").strip()
-    page = request.args.get("page", 1, type=int)
 
     audit_query = AdminAuditLog.query
 

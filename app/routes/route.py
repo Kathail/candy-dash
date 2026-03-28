@@ -169,11 +169,11 @@ def complete_stop(id):
         db.session.commit()
     except Exception:
         db.session.rollback()
-        # Retry without payment — at least complete the stop
         stop = RouteStop.query.get(id)
         if stop:
             stop.completed = True
             stop.completed_at = datetime.now(timezone.utc)
+            audit("stop_completed", f"Completed route stop (retry, no payment) for customer #{stop.customer_id} on {stop.route_date}")
             db.session.commit()
         receipt_number = None
 

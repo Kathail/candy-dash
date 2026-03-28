@@ -2,7 +2,7 @@
 
 import io
 from decimal import Decimal
-from datetime import datetime, timezone, timedelta, date
+from datetime import datetime, timezone, date
 from zoneinfo import ZoneInfo
 
 # Toronto timezone (handles EST/EDT automatically)
@@ -64,7 +64,7 @@ def format_currency(value):
 
 
 def format_date(value, fmt="%b %d, %Y"):
-    """Template filter: format a datetime or date object in GMT-5."""
+    """Template filter: format a datetime or date in America/Toronto timezone."""
     if value is None:
         return ""
     if isinstance(value, str):
@@ -74,7 +74,6 @@ def format_date(value, fmt="%b %d, %Y"):
             return value
     if isinstance(value, date) and not isinstance(value, datetime):
         return value.strftime(fmt)
-    # Convert UTC datetimes to GMT-5 for display
     if value.tzinfo is None:
         value = value.replace(tzinfo=timezone.utc)
     value = value.astimezone(TZ_DISPLAY)
