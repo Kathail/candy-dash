@@ -3,10 +3,13 @@
 <head>
     <meta charset="utf-8" />
     <script>
-    // Force clear old service worker caches
+    // Force clear old service worker caches and re-register
     if ('serviceWorker' in navigator) {
       caches.keys().then(function(names) {
-        names.forEach(function(name) { if (name !== 'candy-route-v7') caches.delete(name); });
+        names.forEach(function(name) { if (name !== 'candy-route-v8') caches.delete(name); });
+      });
+      navigator.serviceWorker.getRegistrations().then(function(regs) {
+        regs.forEach(function(r) { r.update(); });
       });
     }
     </script>
@@ -21,19 +24,19 @@
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='icons/favicon.svg') }}" />
 
     <!-- Tailwind CSS (built) + App theme -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}?v=7" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}?v=8" />
 
     <!-- Prevent Alpine FOUC -->
     <style>[x-cloak] { display: none !important; }</style>
+
+    <!-- App JS must load before Alpine so alpine:init listener is registered first -->
+    <script defer src="{{ url_for('static', filename='js/app.js') }}?v=8"></script>
+    <script defer src="{{ url_for('static', filename='js/offline.js') }}?v=8"></script>
 
     <!-- Vendor JS -->
     <script defer src="{{ url_for('static', filename='vendor/alpine.min.js') }}"></script>
     <script defer src="{{ url_for('static', filename='vendor/htmx.min.js') }}"></script>
     {% block vendor_js %}{% endblock %}
-
-    <!-- App JS -->
-    <script defer src="{{ url_for('static', filename='js/app.js') }}?v=7"></script>
-    <script defer src="{{ url_for('static', filename='js/offline.js') }}?v=7"></script>
 
     {% block head %}{% endblock %}
 </head>
