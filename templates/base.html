@@ -2,6 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="utf-8" />
+    <script>
+    // Force clear old service worker caches
+    if ('serviceWorker' in navigator) {
+      caches.keys().then(function(names) {
+        names.forEach(function(name) { if (name !== 'candy-route-v7') caches.delete(name); });
+      });
+    }
+    </script>
     <title>{% block title %}Candy Dash{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#0b1220" />
@@ -13,7 +21,7 @@
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='icons/favicon.svg') }}" />
 
     <!-- Tailwind CSS (built) + App theme -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}?v=7" />
 
     <!-- Prevent Alpine FOUC -->
     <style>[x-cloak] { display: none !important; }</style>
@@ -24,8 +32,8 @@
     {% block vendor_js %}{% endblock %}
 
     <!-- App JS -->
-    <script defer src="{{ url_for('static', filename='js/app.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/offline.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/app.js') }}?v=7"></script>
+    <script defer src="{{ url_for('static', filename='js/offline.js') }}?v=7"></script>
 
     {% block head %}{% endblock %}
 </head>
