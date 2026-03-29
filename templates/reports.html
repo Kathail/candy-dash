@@ -4,39 +4,28 @@
 {% block page_title %}Reports{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto space-y-6" x-data="reportsApp()">
+<div class="max-w-2xl mx-auto space-y-3" x-data="reportsApp()">
 
-  {# ── Breadcrumb + Header ── #}
+  {# -- Header -- #}
   <div class="animate-fade-in-up">
-    <nav aria-label="Breadcrumb" class="text-sm mb-2">
-      <ol class="flex items-center gap-1.5">
-        <li><a href="{{ url_for('dashboard.index') }}" class="text-indigo-400 hover:text-indigo-300">Dashboard</a></li>
-        <li aria-hidden="true">
-          <svg class="w-3.5 h-3.5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-          </svg>
-        </li>
-        <li aria-current="page" class="text-gray-400">Reports</li>
-      </ol>
-    </nav>
-    <h1 class="text-2xl font-bold text-gray-100">Reports</h1>
+    <h1 class="text-xl font-bold text-gray-100">Reports</h1>
     <p class="text-xs text-gray-500 mt-0.5">Export and review your data</p>
   </div>
 
-  {# ── Date Range ── #}
-  <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 animate-fade-in-up stagger-1">
-    {# Quick presets #}
-    <div class="flex flex-wrap gap-1.5 mb-3" role="group" aria-label="Date range presets">
-      {% set presets = [('today', 'Today'), ('week', 'This Week'), ('month', 'This Month'), ('lastMonth', 'Last Month'), ('quarter', 'Quarter')] %}
-      {% for key, label in presets %}
-      <button type="button" @click="setPreset('{{ key }}')"
-              :class="activePreset === '{{ key }}' ? 'bg-indigo-600 text-white' : 'bg-gray-700 text-gray-400 hover:bg-gray-600'"
-              class="px-3 py-2 text-xs font-semibold rounded-lg transition btn-press min-h-[44px]">
-        {{ label }}
-      </button>
-      {% endfor %}
-    </div>
-    {# Custom range #}
+  {# -- Date Range Presets -- #}
+  <div class="flex flex-wrap gap-1.5 animate-fade-in-up stagger-1" role="group" aria-label="Date range presets">
+    {% set presets = [('today', 'Today'), ('week', 'This Week'), ('month', 'This Month'), ('lastMonth', 'Last Month'), ('quarter', 'Quarter')] %}
+    {% for key, label in presets %}
+    <button type="button" @click="setPreset('{{ key }}')"
+            :class="activePreset === '{{ key }}' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-gray-800 text-gray-400 border-gray-700 hover:bg-gray-700'"
+            class="px-3 py-2 text-xs font-semibold rounded-lg border transition-colors btn-press min-h-[44px]">
+      {{ label }}
+    </button>
+    {% endfor %}
+  </div>
+
+  {# -- Custom Date Range -- #}
+  <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 animate-fade-in-up stagger-2">
     <div class="flex gap-3">
       <div class="flex-1">
         <label for="report-start-date" class="block text-2xs font-semibold text-gray-500 uppercase tracking-wider mb-1">From</label>
@@ -51,145 +40,108 @@
                class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 text-sm min-h-[44px] focus:border-indigo-500 focus:ring-indigo-500">
       </div>
     </div>
-    {# Date summary #}
-    <div aria-live="polite" aria-atomic="true" class="mt-2">
-      <p class="text-2xs text-gray-500" x-text="dateSummary()"></p>
-    </div>
+    <p class="text-2xs text-gray-500 mt-2" x-text="dateSummary()"></p>
   </div>
 
-  {# ── Report Cards ──
-       Static classes so Tailwind JIT can detect them.
-       Each card is explicit instead of a dynamic loop.
-  #}
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
+  {# -- Report Cards -- #}
+  <div class="flex items-center gap-2 pt-1 animate-fade-in-up">
+    <div class="w-5 h-5 rounded-md bg-indigo-500/15 flex items-center justify-center">
+      <svg aria-hidden="true" class="w-3 h-3 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+      </svg>
+    </div>
+    <h2 class="text-xs font-bold text-indigo-400 uppercase tracking-wider">Reports</h2>
+    <div class="flex-1 h-px bg-gray-700"></div>
+  </div>
 
+  <div class="space-y-2">
     {# Financial #}
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 animate-fade-in-up stagger-2">
-      <div class="flex flex-col gap-3">
-        <div class="flex items-center gap-3">
-          <div class="w-11 h-11 rounded-xl bg-indigo-500/15 flex items-center justify-center shrink-0">
-            <svg class="w-5 h-5 text-indigo-400" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-          </div>
-          <div class="flex-1 min-w-0">
-            <p class="text-sm font-semibold text-gray-100">Financial</p>
-            <p class="text-xs text-gray-500">Payment summary by customer and city.</p>
-          </div>
+    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 animate-fade-in-up stagger-3">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-10 h-10 rounded-lg bg-indigo-500/15 flex items-center justify-center flex-shrink-0">
+          <span aria-hidden="true" class="text-base font-black text-indigo-400">$</span>
         </div>
-        <div class="flex items-center gap-1.5 flex-wrap">
-          <a :href="'{{ url_for('reports.financial') }}?start_date=' + startDate + '&end_date=' + endDate"
-             class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-500 transition btn-press min-h-[44px] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-white focus-visible:ring-offset-indigo-600">
-            <svg class="w-3.5 h-3.5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a9 9 0 11-18 0 9 9 0 0118 0z M10 8l6 4-6 4V8z"/>
-            </svg>
-            View
-          </a>
-          <a :href="'{{ url_for('reports.financial') }}?start_date=' + startDate + '&end_date=' + endDate + '&format=csv'+ '&format=csv')"
-             class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-300 bg-gray-700 border border-gray-600 rounded-lg hover:bg-gray-600 transition btn-press min-h-[44px]"
-             aria-label="Download Financial report as CSV">
-            <svg class="w-3.5 h-3.5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-            </svg>
-            CSV
-          </a>
-          <a :href="'{{ url_for('reports.financial') }}?start_date=' + startDate + '&end_date=' + endDate + '&format=xlsx'+ '&format=xlsx')"
-             class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-300 bg-gray-700 border border-gray-600 rounded-lg hover:bg-gray-600 transition btn-press min-h-[44px]"
-             aria-label="Download Financial report as Excel">
-            <svg class="w-3.5 h-3.5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-            </svg>
-            Excel
-          </a>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-semibold text-gray-100">Financial Report</p>
+          <p class="text-2xs text-gray-500">Payment summary by customer and city</p>
         </div>
+      </div>
+      <div class="flex gap-2">
+        <a :href="'{{ url_for('reports.financial') }}?start_date=' + startDate + '&end_date=' + endDate"
+           class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-500 transition-colors min-h-[44px] btn-press">
+          View
+        </a>
+        <a :href="'{{ url_for('reports.financial') }}?start_date=' + startDate + '&end_date=' + endDate + '&format=csv'"
+           class="inline-flex items-center justify-center px-3 py-2.5 bg-gray-700 border border-gray-600 text-gray-300 text-sm rounded-xl hover:bg-gray-600 transition-colors min-h-[44px] btn-press">
+          CSV
+        </a>
+        <a :href="'{{ url_for('reports.financial') }}?start_date=' + startDate + '&end_date=' + endDate + '&format=xlsx'"
+           class="inline-flex items-center justify-center px-3 py-2.5 bg-gray-700 border border-gray-600 text-gray-300 text-sm rounded-xl hover:bg-gray-600 transition-colors min-h-[44px] btn-press">
+          Excel
+        </a>
       </div>
     </div>
 
     {# Tax #}
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 animate-fade-in-up stagger-3">
-      <div class="flex flex-col gap-3">
-        <div class="flex items-center gap-3">
-          <div class="w-11 h-11 rounded-xl bg-blue-500/15 flex items-center justify-center shrink-0">
-            <svg class="w-5 h-5 text-blue-400" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/>
-            </svg>
-          </div>
-          <div class="flex-1 min-w-0">
-            <p class="text-sm font-semibold text-gray-100">Tax</p>
-            <p class="text-xs text-gray-500">Taxable vs. exempt breakdown.</p>
-          </div>
+    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 animate-fade-in-up stagger-4">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-10 h-10 rounded-lg bg-blue-500/15 flex items-center justify-center flex-shrink-0">
+          <svg aria-hidden="true" class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/>
+          </svg>
         </div>
-        <div class="flex items-center gap-1.5 flex-wrap">
-          <a :href="'{{ url_for('reports.tax') }}?start_date=' + startDate + '&end_date=' + endDate"
-             class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-500 transition btn-press min-h-[44px] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-white focus-visible:ring-offset-blue-600">
-            <svg class="w-3.5 h-3.5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a9 9 0 11-18 0 9 9 0 0118 0z M10 8l6 4-6 4V8z"/>
-            </svg>
-            View
-          </a>
-          <a :href="'{{ url_for('reports.tax') }}?start_date=' + startDate + '&end_date=' + endDate + '&format=csv'+ '&format=csv')"
-             class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-300 bg-gray-700 border border-gray-600 rounded-lg hover:bg-gray-600 transition btn-press min-h-[44px]"
-             aria-label="Download Tax report as CSV">
-            <svg class="w-3.5 h-3.5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-            </svg>
-            CSV
-          </a>
-          <a :href="'{{ url_for('reports.tax') }}?start_date=' + startDate + '&end_date=' + endDate + '&format=xlsx'+ '&format=xlsx')"
-             class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-300 bg-gray-700 border border-gray-600 rounded-lg hover:bg-gray-600 transition btn-press min-h-[44px]"
-             aria-label="Download Tax report as Excel">
-            <svg class="w-3.5 h-3.5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-            </svg>
-            Excel
-          </a>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-semibold text-gray-100">Tax Report</p>
+          <p class="text-2xs text-gray-500">Taxable vs exempt breakdown</p>
         </div>
+      </div>
+      <div class="flex gap-2">
+        <a :href="'{{ url_for('reports.tax') }}?start_date=' + startDate + '&end_date=' + endDate"
+           class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-500 transition-colors min-h-[44px] btn-press">
+          View
+        </a>
+        <a :href="'{{ url_for('reports.tax') }}?start_date=' + startDate + '&end_date=' + endDate + '&format=csv'"
+           class="inline-flex items-center justify-center px-3 py-2.5 bg-gray-700 border border-gray-600 text-gray-300 text-sm rounded-xl hover:bg-gray-600 transition-colors min-h-[44px] btn-press">
+          CSV
+        </a>
+        <a :href="'{{ url_for('reports.tax') }}?start_date=' + startDate + '&end_date=' + endDate + '&format=xlsx'"
+           class="inline-flex items-center justify-center px-3 py-2.5 bg-gray-700 border border-gray-600 text-gray-300 text-sm rounded-xl hover:bg-gray-600 transition-colors min-h-[44px] btn-press">
+          Excel
+        </a>
       </div>
     </div>
 
     {# Collections #}
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 animate-fade-in-up stagger-4">
-      <div class="flex flex-col gap-3">
-        <div class="flex items-center gap-3">
-          <div class="w-11 h-11 rounded-xl bg-emerald-500/15 flex items-center justify-center shrink-0">
-            <svg class="w-5 h-5 text-emerald-400" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
-            </svg>
-          </div>
-          <div class="flex-1 min-w-0">
-            <p class="text-sm font-semibold text-gray-100">Collections</p>
-            <p class="text-xs text-gray-500">By sales rep for the period.</p>
-          </div>
+    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 animate-fade-in-up stagger-5">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-10 h-10 rounded-lg bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
+          <svg aria-hidden="true" class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+          </svg>
         </div>
-        <div class="flex items-center gap-1.5 flex-wrap">
-          <a :href="'{{ url_for('reports.collections') }}?start_date=' + startDate + '&end_date=' + endDate"
-             class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 text-white text-xs font-semibold rounded-lg hover:bg-emerald-500 transition btn-press min-h-[44px] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-white focus-visible:ring-offset-emerald-600">
-            <svg class="w-3.5 h-3.5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a9 9 0 11-18 0 9 9 0 0118 0z M10 8l6 4-6 4V8z"/>
-            </svg>
-            View
-          </a>
-          <a :href="'{{ url_for('reports.collections') }}?start_date=' + startDate + '&end_date=' + endDate + '&format=csv'+ '&format=csv')"
-             class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-300 bg-gray-700 border border-gray-600 rounded-lg hover:bg-gray-600 transition btn-press min-h-[44px]"
-             aria-label="Download Collections report as CSV">
-            <svg class="w-3.5 h-3.5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-            </svg>
-            CSV
-          </a>
-          <a :href="'{{ url_for('reports.collections') }}?start_date=' + startDate + '&end_date=' + endDate + '&format=xlsx'+ '&format=xlsx')"
-             class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-300 bg-gray-700 border border-gray-600 rounded-lg hover:bg-gray-600 transition btn-press min-h-[44px]"
-             aria-label="Download Collections report as Excel">
-            <svg class="w-3.5 h-3.5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-            </svg>
-            Excel
-          </a>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-semibold text-gray-100">Collections Report</p>
+          <p class="text-2xs text-gray-500">By sales rep for the period</p>
         </div>
       </div>
+      <div class="flex gap-2">
+        <a :href="'{{ url_for('reports.collections') }}?start_date=' + startDate + '&end_date=' + endDate"
+           class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 text-white text-sm font-semibold rounded-xl hover:bg-emerald-500 transition-colors min-h-[44px] btn-press">
+          View
+        </a>
+        <a :href="'{{ url_for('reports.collections') }}?start_date=' + startDate + '&end_date=' + endDate + '&format=csv'"
+           class="inline-flex items-center justify-center px-3 py-2.5 bg-gray-700 border border-gray-600 text-gray-300 text-sm rounded-xl hover:bg-gray-600 transition-colors min-h-[44px] btn-press">
+          CSV
+        </a>
+        <a :href="'{{ url_for('reports.collections') }}?start_date=' + startDate + '&end_date=' + endDate + '&format=xlsx'"
+           class="inline-flex items-center justify-center px-3 py-2.5 bg-gray-700 border border-gray-600 text-gray-300 text-sm rounded-xl hover:bg-gray-600 transition-colors min-h-[44px] btn-press">
+          Excel
+        </a>
+      </div>
     </div>
-
   </div>
+
+  <div class="h-4"></div>
 
 </div>
 {% endblock %}
@@ -205,44 +157,23 @@ function reportsApp() {
     endDate: todayStr,
     todayStr: todayStr,
     activePreset: 'month',
-
     dateSummary() {
       if (!this.startDate || !this.endDate) return '';
       const s = new Date(this.startDate + 'T00:00:00');
       const e = new Date(this.endDate + 'T00:00:00');
-      if (e < s) return 'Invalid range \u2014 start date is after end date.';
+      if (e < s) return 'Invalid range';
       const days = Math.round((e - s) / 86400000) + 1;
-      if (days > 366) return days + ' days selected (max 366 \u2014 range will be capped)';
       return days + ' day' + (days !== 1 ? 's' : '') + ' selected';
     },
-
     setPreset(name) {
       this.activePreset = name;
       const t = new Date();
       switch (name) {
-        case 'today':
-          this.startDate = this.endDate = fmt(t);
-          break;
-        case 'week': {
-          const day = t.getDay();
-          const mon = new Date(t); mon.setDate(t.getDate() - (day === 0 ? 6 : day - 1));
-          this.startDate = fmt(mon); this.endDate = fmt(t);
-          break;
-        }
-        case 'month':
-          this.startDate = fmt(new Date(t.getFullYear(), t.getMonth(), 1)); this.endDate = fmt(t);
-          break;
-        case 'lastMonth': {
-          const s = new Date(t.getFullYear(), t.getMonth() - 1, 1);
-          const e = new Date(t.getFullYear(), t.getMonth(), 0);
-          this.startDate = fmt(s); this.endDate = fmt(e);
-          break;
-        }
-        case 'quarter': {
-          const qm = Math.floor(t.getMonth() / 3) * 3;
-          this.startDate = fmt(new Date(t.getFullYear(), qm, 1)); this.endDate = fmt(t);
-          break;
-        }
+        case 'today': this.startDate = this.endDate = fmt(t); break;
+        case 'week': { const d = t.getDay(); const m = new Date(t); m.setDate(t.getDate() - (d === 0 ? 6 : d - 1)); this.startDate = fmt(m); this.endDate = fmt(t); break; }
+        case 'month': this.startDate = fmt(new Date(t.getFullYear(), t.getMonth(), 1)); this.endDate = fmt(t); break;
+        case 'lastMonth': { const s = new Date(t.getFullYear(), t.getMonth() - 1, 1); const e = new Date(t.getFullYear(), t.getMonth(), 0); this.startDate = fmt(s); this.endDate = fmt(e); break; }
+        case 'quarter': { const qm = Math.floor(t.getMonth() / 3) * 3; this.startDate = fmt(new Date(t.getFullYear(), qm, 1)); this.endDate = fmt(t); break; }
       }
     },
   };

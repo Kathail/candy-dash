@@ -34,22 +34,33 @@
                      {{ 'bg-green-500/20 text-green-400' if customer.status == 'active' else 'bg-blue-500/20 text-blue-400' if customer.status == 'lead' else 'bg-gray-700 text-gray-500' }}">
           {{ customer.status|capitalize }}
         </span>
-        {% if customer.tax_exempt %}
-        <span class="inline-flex px-2.5 py-0.5 text-xs font-semibold rounded-full bg-blue-500/20 text-blue-400">
-          Tax Exempt
-        </span>
-        {% endif %}
       </div>
     </div>
-    <form method="POST" action="{{ url_for('customers.toggle_status', id=customer.id) }}"
-          x-data @submit.prevent="if (confirm({{ (('Deactivate ' ~ customer.name ~ '?') if customer.status == 'active' else ('Activate ' ~ customer.name ~ '?'))|tojson }})) $el.submit()">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <button type="submit"
-              class="btn-press inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg border transition-colors
-                     {{ 'text-red-400 border-red-500/30 bg-red-500/10 hover:bg-red-500/20' if customer.status == 'active' else 'text-green-400 border-green-500/30 bg-green-500/10 hover:bg-green-500/20' }}">
-        {{ 'Deactivate' if customer.status == 'active' else 'Activate' }}
-      </button>
-    </form>
+    <div class="flex items-center gap-2 flex-wrap">
+      {# Tax exempt toggle #}
+      <form method="POST" action="{{ url_for('customers.toggle_tax_exempt', id=customer.id) }}"
+            class="inline-flex items-center gap-2">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <span class="text-sm {{ 'text-cyan-400' if customer.tax_exempt else 'text-gray-500' }}">Tax Exempt</span>
+        <button type="submit" role="switch" aria-checked="{{ 'true' if customer.tax_exempt else 'false' }}" aria-label="Toggle tax exempt"
+                class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors btn-press
+                       {{ 'bg-cyan-500' if customer.tax_exempt else 'bg-gray-600' }}">
+          <span class="inline-block h-4 w-4 rounded-full bg-white shadow transition-transform
+                       {{ 'translate-x-6' if customer.tax_exempt else 'translate-x-1' }}"></span>
+        </button>
+      </form>
+
+      {# Status toggle #}
+      <form method="POST" action="{{ url_for('customers.toggle_status', id=customer.id) }}"
+            x-data @submit.prevent="if (confirm({{ (('Deactivate ' ~ customer.name ~ '?') if customer.status == 'active' else ('Activate ' ~ customer.name ~ '?'))|tojson }})) $el.submit()">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit"
+                class="btn-press inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg border transition-colors
+                       {{ 'text-red-400 border-red-500/30 bg-red-500/10 hover:bg-red-500/20' if customer.status == 'active' else 'text-green-400 border-green-500/30 bg-green-500/10 hover:bg-green-500/20' }}">
+          {{ 'Deactivate' if customer.status == 'active' else 'Activate' }}
+        </button>
+      </form>
+    </div>
   </div>
 
   <!-- Info + Balance Cards -->
@@ -107,9 +118,7 @@
       <div class="mt-auto space-y-2">
         <button type="button" @click="showPayment = !showPayment"
                 class="btn-press w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-500 transition-colors">
-          <svg class="w-4 h-4" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V7m0 10v1"/>
-          </svg>
+          <span aria-hidden="true" class="text-sm font-black ">$</span>
           Record Payment
         </button>
       </div>
@@ -260,9 +269,7 @@
             <div class="flex-shrink-0 mt-0.5">
               {% if entry.action == 'payment_recorded' %}
               <div class="w-7 h-7 rounded-full bg-green-500/20 flex items-center justify-center">
-                <svg class="w-3.5 h-3.5 text-green-400" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V7m0 10v1"/>
-                </svg>
+                <span aria-hidden="true" class="text-xs font-black text-green-400">$</span>
               </div>
               {% elif entry.action == 'payment_deleted' %}
               <div class="w-7 h-7 rounded-full bg-red-500/20 flex items-center justify-center">

@@ -87,7 +87,7 @@
                                @input.debounce.300ms="search()" @focus="open = query.length > 0"
                                @keydown.escape="open = false"
                                x-ref="searchInput"
-                               class="theme-input pl-10 pr-4 py-2 text-sm rounded-lg" />
+                               class="theme-input text-sm rounded-lg" style="padding-left: 2.5rem;" />
                     </div>
                     <div x-show="open && results.length > 0" @click.outside="open = false" x-transition x-cloak
                          class="absolute top-full mt-1 w-full theme-card max-h-72 overflow-y-auto z-50 shadow-lg">
@@ -126,7 +126,7 @@
                            @input.debounce.300ms="search()" @focus="open = query.length > 0"
                            @keydown.escape="open = false"
                            x-ref="searchInput"
-                           class="theme-input pl-10 pr-4 py-2.5 text-sm rounded-lg min-h-[44px]" />
+                           class="theme-input text-sm rounded-lg min-h-[44px]" style="padding-left: 2.5rem;" />
                 </div>
                 <div x-show="open && results.length > 0" @click.outside="open = false" x-transition x-cloak
                      class="absolute left-4 right-4 mt-1 theme-card max-h-72 overflow-y-auto z-50 shadow-lg">

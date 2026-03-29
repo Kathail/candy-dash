@@ -3,9 +3,9 @@
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 
-from flask import Blueprint, render_template, jsonify, request
+from flask import Blueprint, render_template
 from flask_login import login_required, current_user
-from sqlalchemy import func, case
+from sqlalchemy import func
 
 from app import db
 from app.models import Customer, RouteStop, Payment
@@ -40,6 +40,16 @@ def index():
     payment_count = payment_stats[0]
     payment_sum = payment_stats[1] or Decimal("0")
 
+    # Today's highest single payment
+    highest_today = db.session.query(
+        func.max(Payment.amount),
+    ).filter(
+        Payment.payment_date >= day_start, Payment.payment_date <= day_end
+    ).scalar() or Decimal("0")
+
+    # Today's avg order value
+    avg_order_today = round(float(payment_sum) / payment_count, 2) if payment_count else 0
+
     # Yesterday's payments for comparison
     yest_payment = db.session.query(
         func.coalesce(func.sum(Payment.amount), Decimal("0")),
@@ -56,14 +66,13 @@ def index():
     active_customers = Customer.query.filter(Customer.status == "active").count()
     lead_count = Customer.query.filter(Customer.status == "lead").count()
 
-    # Overdue customers (balance > 0, no payment in 30+ days)
-    thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
+    # Overdue customers (balance > 0)
     overdue_count = db.session.query(func.count(Customer.id)).filter(
         Customer.status == "active",
         Customer.balance > 0,
     ).scalar() or 0
 
-    # Today's route stops with customer info (for the quick route preview)
+    # Today's route stops with customer info
     todays_stops = (
         RouteStop.query
         .join(Customer)
@@ -78,16 +87,89 @@ def index():
         RouteStop.route_date == today + timedelta(days=1)
     ).count()
 
-    # Recent payments (last 5) for the feed
-    recent_payments = (
-        Payment.query
-        .join(Customer)
-        .order_by(Payment.payment_date.desc())
+    # This week's schedule (remaining days)
+    week_end = today + timedelta(days=(6 - today.weekday()))  # through Sunday
+    week_schedule = (
+        db.session.query(
+            RouteStop.route_date,
+            func.count(RouteStop.id).label("total"),
+            func.sum(
+                db.case((RouteStop.completed.is_(True), 1), else_=0)
+            ).label("completed"),
+        )
+        .filter(
+            RouteStop.route_date >= today,
+            RouteStop.route_date <= week_end,
+        )
+        .group_by(RouteStop.route_date)
+        .order_by(RouteStop.route_date)
+        .all()
+    )
+    week_schedule_data = [
+        {
+            "date": row.route_date,
+            "day": row.route_date.strftime("%a"),
+            "total": row.total,
+            "completed": int(row.completed),
+            "is_today": row.route_date == today,
+        }
+        for row in week_schedule
+    ]
+
+    # Needs attention: active customers not visited in 30+ days (top 5)
+    subq = (
+        db.session.query(
+            RouteStop.customer_id,
+            func.max(RouteStop.route_date).label("last_visit"),
+        )
+        .filter(RouteStop.completed.is_(True))
+        .group_by(RouteStop.customer_id)
+        .subquery()
+    )
+
+    needs_attention = (
+        db.session.query(
+            Customer.id,
+            Customer.name,
+            Customer.city,
+            Customer.balance,
+            subq.c.last_visit,
+        )
+        .outerjoin(subq, Customer.id == subq.c.customer_id)
+        .filter(Customer.status == "active")
+        .filter(
+            db.or_(
+                subq.c.last_visit.is_(None),
+                subq.c.last_visit < today - timedelta(days=30),
+            )
+        )
+        .order_by(subq.c.last_visit.asc().nullsfirst())
         .limit(5)
         .all()
     )
 
-    # Weekly collection trend (last 7 days) — single query
+    attention_list = [
+        {
+            "id": r.id,
+            "name": r.name,
+            "city": r.city or "—",
+            "balance": float(r.balance or 0),
+            "last_visit": r.last_visit,
+            "days_since": (today - r.last_visit).days if r.last_visit else None,
+        }
+        for r in needs_attention
+    ]
+
+    # Top balances (top 5 customers with highest balance)
+    top_balances = (
+        Customer.query
+        .filter(Customer.status == "active", Customer.balance > 0)
+        .order_by(Customer.balance.desc())
+        .limit(5)
+        .all()
+    )
+
+    # Weekly collection trend (last 7 days)
     week_start = today - timedelta(days=6)
     week_start_dt = datetime(week_start.year, week_start.month, week_start.day, tzinfo=timezone.utc)
 
@@ -128,6 +210,8 @@ def index():
         completed_stops=completed_stops,
         payment_count=payment_count,
         payment_sum=payment_sum,
+        highest_today=highest_today,
+        avg_order_today=avg_order_today,
         yest_payment=yest_payment,
         total_outstanding=total_outstanding,
         active_customers=active_customers,
@@ -135,6 +219,8 @@ def index():
         overdue_count=overdue_count,
         todays_stops=todays_stops,
         tomorrow_stops=tomorrow_stops,
-        recent_payments=recent_payments,
+        week_schedule=week_schedule_data,
+        attention_list=attention_list,
+        top_balances=top_balances,
         week_data=week_data,
     )

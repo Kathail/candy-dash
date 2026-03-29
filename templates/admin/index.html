@@ -174,7 +174,7 @@
           </div>
           {% elif entry.action in ('payment_recorded', 'offline_sync') %}
           <div class="w-7 h-7 rounded-full bg-emerald-500/20 flex items-center justify-center">
-            <svg aria-hidden="true" class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V7m0 10v1"/></svg>
+            <span aria-hidden="true" class="text-xs font-black text-emerald-400">$</span>
           </div>
           {% elif entry.action == 'payment_deleted' %}
           <div class="w-7 h-7 rounded-full bg-red-500/20 flex items-center justify-center">

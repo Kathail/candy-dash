@@ -5,97 +5,250 @@
 {% block vendor_js %}<script defer src="{{ url_for('static', filename='vendor/chart.min.js') }}"></script>{% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto space-y-6">
+{% set has_revenue = total_revenue > 0 %}
+{% set has_payments = total_payments > 0 %}
+<div class="max-w-2xl lg:max-w-6xl mx-auto space-y-4 sm:space-y-6">
 
-  {# ── Header + Range Selector ── #}
-  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between" x-data="analyticsRange()">
-    <div>
-      <h1 class="text-2xl font-bold text-gray-100">Analytics</h1>
-      <p class="text-xs text-gray-500 mt-0.5">Performance overview</p>
-    </div>
-    <div class="flex items-center gap-2 mt-3 sm:mt-0">
+  {# -- Header + Range -- #}
+  <div class="flex items-center justify-between">
+    <h1 class="text-xl font-bold text-gray-100">Analytics</h1>
+    <div class="flex items-center gap-1 bg-gray-800 rounded-lg border border-gray-700 p-1" x-data="analyticsRange()">
       {% for val, label in [('3', '3M'), ('6', '6M'), ('12', '1Y')] %}
       <button type="button" @click="range = '{{ val }}'; navigate()"
-              class="px-3 py-1.5 text-xs font-semibold rounded-lg transition btn-press
-                     {{ 'bg-indigo-600 text-white' if months == val|int else 'bg-gray-700 text-gray-400 hover:bg-gray-600' }}">
+              class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors btn-press
+                     {{ 'bg-indigo-600 text-white' if months == val|int else 'text-gray-400 hover:text-gray-200' }}">
         {{ label }}
       </button>
       {% endfor %}
     </div>
   </div>
 
-  {# ── KPI Summary Cards ── #}
-  <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 animate-fade-in-up stagger-1">
-      <p class="text-2xs font-semibold text-gray-500 uppercase tracking-wider">Revenue</p>
-      <p class="text-xl font-bold text-gray-100 mt-1">{{ total_revenue|currency }}</p>
-      <p class="text-2xs text-gray-500 mt-0.5">last {{ months }} months</p>
+  {# -- KPI Scoreboard -- #}
+  <div class="grid grid-cols-2 gap-3 animate-fade-in-up stagger-1">
+    {# Revenue #}
+    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-lg bg-green-500/15 flex items-center justify-center flex-shrink-0">
+          <span aria-hidden="true" class="text-sm font-black text-green-400">$</span>
+        </div>
+        <div>
+          <p class="text-lg font-bold {{ 'text-green-400' if has_revenue else 'text-gray-100' }}">${{ '{:,.0f}'.format(total_revenue) }}</p>
+          <p class="text-2xs text-gray-500">revenue</p>
+        </div>
+      </div>
+      {% if revenue_delta is not none %}
+      <div class="mt-2 flex items-center gap-1">
+        <svg aria-hidden="true" class="w-3 h-3 {{ 'text-green-400' if revenue_delta >= 0 else 'text-red-400' }}" fill="currentColor" viewBox="0 0 20 20">
+          {% if revenue_delta >= 0 %}
+          <path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+          {% else %}
+          <path fill-rule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+          {% endif %}
+        </svg>
+        <span class="text-2xs font-semibold {{ 'text-green-400' if revenue_delta >= 0 else 'text-red-400' }}">{{ revenue_delta }}%</span>
+      </div>
+      {% endif %}
     </div>
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 animate-fade-in-up stagger-2">
-      <p class="text-2xs font-semibold text-gray-500 uppercase tracking-wider">Payments</p>
-      <p class="text-xl font-bold text-gray-100 mt-1">{{ total_payments }}</p>
-      <p class="text-2xs text-gray-500 mt-0.5">transactions</p>
+
+    {# Outstanding #}
+    <a href="{{ url_for('balances.index') }}" class="bg-gray-800 rounded-xl border border-gray-700 p-4 hover:border-orange-500/40 transition-all btn-press">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-lg bg-orange-500/15 flex items-center justify-center flex-shrink-0">
+          <svg aria-hidden="true" class="w-4.5 h-4.5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+        </div>
+        <div>
+          <p class="text-lg font-bold text-gray-100">${{ '{:,.0f}'.format(total_outstanding) }}</p>
+          <p class="text-2xs text-gray-500">owed by {{ balance_stats.count }}</p>
+        </div>
+      </div>
+    </a>
+
+    {# Payments + Avg Order (compact) #}
+    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-lg bg-blue-500/15 flex items-center justify-center flex-shrink-0">
+          <svg aria-hidden="true" class="w-4.5 h-4.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+          </svg>
+        </div>
+        <div>
+          <p class="text-lg font-bold text-gray-100">{{ total_payments }}</p>
+          <p class="text-2xs text-gray-500">payments</p>
+        </div>
+      </div>
     </div>
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 animate-fade-in-up stagger-3">
-      <p class="text-2xs font-semibold text-gray-500 uppercase tracking-wider">Customers</p>
-      <p class="text-xl font-bold text-gray-100 mt-1">{{ active_customers }}</p>
-      <p class="text-2xs text-gray-500 mt-0.5">active</p>
-    </div>
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 animate-fade-in-up stagger-4">
-      <p class="text-2xs font-semibold text-gray-500 uppercase tracking-wider">Completion</p>
-      <p class="text-xl font-bold {{ 'text-green-400' if completion_rate >= 80 else 'text-amber-400' if completion_rate >= 50 else 'text-red-400' }} mt-1">{{ completion_rate }}%</p>
-      <p class="text-2xs text-gray-500 mt-0.5">route stops</p>
+
+    {# Completion rate #}
+    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-lg bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
+          <svg aria-hidden="true" class="w-4.5 h-4.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </div>
+        <div>
+          <p class="text-lg font-bold {{ 'text-green-400' if completion_rate >= 80 else 'text-amber-400' if completion_rate >= 50 else 'text-gray-100' }}">{{ completion_rate }}%</p>
+          <p class="text-2xs text-gray-500">route completion</p>
+        </div>
+      </div>
     </div>
   </div>
 
-  {# ── Charts Grid ── #}
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-    {# Revenue Over Time #}
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 sm:p-6 animate-fade-in-up stagger-5">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-sm font-semibold text-gray-100">Revenue Over Time</h2>
-        <span class="text-2xs text-gray-600">monthly</span>
-      </div>
-      <div class="relative" style="height: 280px;">
-        <canvas id="revenueChart"></canvas>
-      </div>
+  {# -- Revenue Chart (only if there's data) -- #}
+  {% if has_revenue %}
+  <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 animate-fade-in-up stagger-2">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-sm font-semibold text-gray-100">Revenue</h2>
+      <span class="text-2xs text-gray-600">vs previous</span>
     </div>
+    <div class="relative" style="height: 220px;">
+      <canvas id="revenueChart"></canvas>
+    </div>
+  </div>
+  {% endif %}
 
+  {# -- Needs Attention (promote this — it's always useful) -- #}
+  {% if attention_list %}
+  <div class="animate-fade-in-up stagger-3">
+    <div class="flex items-center justify-between px-1 mb-2">
+      <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider">Needs a Visit</h2>
+      <span class="text-2xs text-gray-600">30+ days</span>
+    </div>
+    <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden divide-y divide-gray-700/60">
+      {% for store in attention_list %}
+      <a href="{{ url_for('customers.profile', id=store.id) }}"
+         class="flex items-center gap-3 px-4 py-3 hover:bg-gray-700/50 transition-colors btn-press">
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-medium text-gray-200 truncate">{{ store.name }}</p>
+          <p class="text-2xs text-gray-500">{{ store.city }}</p>
+        </div>
+        {% if store.days_since is not none %}
+        <span class="px-2 py-0.5 text-2xs font-semibold rounded-full
+                     {{ 'bg-yellow-500/20 text-yellow-400' if store.days_since <= 45
+                        else 'bg-orange-500/20 text-orange-400' if store.days_since <= 60
+                        else 'bg-red-500/20 text-red-400' }}">{{ store.days_since }}d</span>
+        {% else %}
+        <span class="px-2 py-0.5 text-2xs font-semibold rounded-full bg-red-500/20 text-red-400">never</span>
+        {% endif %}
+        {% if store.balance > 0 %}
+        <span class="text-2xs font-semibold text-amber-400">${{ '{:,.0f}'.format(store.balance) }}</span>
+        {% endif %}
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {# -- Top Stores (only if revenue exists) -- #}
+  {% if top_stores and has_revenue %}
+  <div class="animate-fade-in-up stagger-4">
+    <div class="flex items-center justify-between px-1 mb-2">
+      <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider">Top Stores</h2>
+      <span class="text-2xs text-gray-600">by revenue</span>
+    </div>
+    <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden divide-y divide-gray-700/60">
+      {% for store in top_stores[:5] %}
+      <a href="{{ url_for('customers.profile', id=store.id) }}"
+         class="flex items-center gap-3 px-4 py-3 hover:bg-gray-700/50 transition-colors btn-press">
+        <span class="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-2xs font-bold flex-shrink-0">
+          {{ loop.index }}
+        </span>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-medium text-gray-200 truncate">{{ store.name }}</p>
+          <p class="text-2xs text-gray-500">{{ store.city }} · {{ store.payment_count }} payment{{ 's' if store.payment_count != 1 else '' }}</p>
+        </div>
+        <span class="text-sm font-bold text-green-400">${{ '{:,.0f}'.format(store.revenue) }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {# -- Balance Overview (compact horizontal) -- #}
+  {% if balance_stats.count > 0 %}
+  <div class="animate-fade-in-up stagger-5">
+    <div class="flex items-center justify-between px-1 mb-2">
+      <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider">Balances</h2>
+      <a href="{{ url_for('balances.index') }}" class="text-xs text-indigo-400 hover:text-indigo-300 font-medium btn-press">View all</a>
+    </div>
+    <div class="grid grid-cols-2 gap-3">
+      <div class="bg-gray-800 rounded-xl border border-gray-700 p-4">
+        <p class="text-2xs text-gray-500">Total Owed</p>
+        <p class="text-lg font-bold text-gray-100 mt-0.5">${{ '{:,.2f}'.format(balance_stats.total) }}</p>
+      </div>
+      <div class="bg-gray-800 rounded-xl border border-gray-700 p-4">
+        <p class="text-2xs text-gray-500">Average</p>
+        <p class="text-lg font-bold text-gray-100 mt-0.5">${{ '{:,.2f}'.format(balance_stats.average) }}</p>
+      </div>
+      {% if balance_stats.highest_id %}
+      <a href="{{ url_for('customers.profile', id=balance_stats.highest_id) }}" class="col-span-2 bg-gray-800 rounded-xl border border-gray-700 p-4 hover:border-amber-500/40 transition-all btn-press">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-2xs text-gray-500">Highest Balance</p>
+            <p class="text-sm font-medium text-gray-200 mt-0.5">{{ balance_stats.highest_name }}</p>
+          </div>
+          <span class="text-lg font-bold text-amber-400">${{ '{:,.2f}'.format(balance_stats.highest_amount) }}</span>
+        </div>
+      </a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  {# -- Desktop: More Charts -- #}
+  {% if has_revenue %}
+  <div class="hidden lg:grid grid-cols-2 gap-6 animate-fade-in-up">
     {# Collections by City #}
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 sm:p-6 animate-fade-in-up stagger-6">
+    <div class="bg-gray-800 rounded-xl border border-gray-700 p-5">
       <div class="flex items-center justify-between mb-4">
-        <h2 class="text-sm font-semibold text-gray-100">Collections by City</h2>
-        <span class="text-2xs text-gray-600">total</span>
+        <h2 class="text-sm font-semibold text-gray-100">By City</h2>
       </div>
       <div class="relative" style="height: 280px;">
         <canvas id="cityChart"></canvas>
       </div>
     </div>
 
-    {# Customer Status #}
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 sm:p-6 animate-fade-in-up stagger-7">
+    {# Best Days #}
+    <div class="bg-gray-800 rounded-xl border border-gray-700 p-5">
       <div class="flex items-center justify-between mb-4">
-        <h2 class="text-sm font-semibold text-gray-100">Customer Status</h2>
-        <span class="text-2xs text-gray-600">current</span>
+        <h2 class="text-sm font-semibold text-gray-100">Best Days</h2>
+        <span class="text-2xs text-gray-600">avg per transaction</span>
       </div>
       <div class="relative" style="height: 280px;">
-        <canvas id="statusChart"></canvas>
+        <canvas id="dowChart"></canvas>
       </div>
     </div>
 
     {# Route Efficiency #}
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 sm:p-6 animate-fade-in-up stagger-8">
+    <div class="bg-gray-800 rounded-xl border border-gray-700 p-5">
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-sm font-semibold text-gray-100">Route Efficiency</h2>
-        <span class="text-2xs text-gray-600">weekly</span>
       </div>
       <div class="relative" style="height: 280px;">
         <canvas id="efficiencyChart"></canvas>
       </div>
     </div>
 
+    {# Customer Breakdown #}
+    <div class="bg-gray-800 rounded-xl border border-gray-700 p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-sm font-semibold text-gray-100">Customers</h2>
+      </div>
+      <div class="relative mx-auto" style="height: 280px; max-width: 320px;">
+        <canvas id="statusChart"></canvas>
+        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div class="text-center">
+            <p class="text-2xl font-bold text-gray-100">{{ charts.status_distribution.total }}</p>
+            <p class="text-2xs text-gray-500">total</p>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
+  {% endif %}
+
 </div>
 {% endblock %}
 
@@ -104,172 +257,80 @@
 function analyticsRange() {
   return {
     range: '{{ months }}',
-    navigate() {
-      window.location.href = '{{ url_for("analytics.index") }}?months=' + this.range;
-    }
+    navigate() { window.location.href = '{{ url_for("analytics.index") }}?months=' + this.range; }
   };
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-  const charts = {{ charts|tojson }};
+  var charts = {{ charts|tojson }};
   if (typeof Chart === 'undefined') return;
 
-  // Shared dark theme for all charts
-  const gridColor = '#1f2937';
-  const tickColor = '#6b7280';
-  const tooltipStyle = {
-    backgroundColor: '#1f2937',
-    titleColor: '#e5e7eb',
-    bodyColor: '#e5e7eb',
-    borderColor: '#374151',
-    borderWidth: 1,
-    padding: 10,
-    cornerRadius: 8,
-    displayColors: true,
-  };
+  var gridColor = '#1f2937', tickColor = '#6b7280';
+  var tt = { backgroundColor: '#1f2937', titleColor: '#e5e7eb', bodyColor: '#e5e7eb', borderColor: '#374151', borderWidth: 1, padding: 10, cornerRadius: 8, displayColors: true };
+  var $label = function(ctx) { return '$' + ctx.parsed.y.toLocaleString(undefined, {minimumFractionDigits: 0}); };
+  var $tick = function(v) { return '$' + v.toLocaleString(); };
+  var xAx = { grid: { display: false }, ticks: { color: tickColor, font: { size: 11 } }, border: { display: false } };
+  var yAx = { grid: { color: gridColor }, ticks: { color: tickColor, font: { size: 11 }, callback: $tick }, border: { display: false } };
+  var leg = { position: 'bottom', labels: { padding: 12, usePointStyle: true, pointStyleWidth: 10, color: tickColor, font: { size: 11 } } };
 
-  // Color palette
-  const indigo = '#818cf8';
-  const purple = '#a78bfa';
-  const blue = '#60a5fa';
-  const cyan = '#22d3ee';
-  const emerald = '#34d399';
-  const amber = '#fbbf24';
-  const rose = '#fb7185';
+  var indigo = '#818cf8', blue = '#60a5fa', purple = '#a78bfa', cyan = '#22d3ee', emerald = '#34d399', amber = '#fbbf24', rose = '#fb7185';
+  var pal = [indigo, blue, purple, cyan, emerald, amber, rose];
 
-  // Revenue Over Time
-  new Chart(document.getElementById('revenueChart'), {
-    type: 'line',
-    data: {
-      labels: charts.revenue.labels,
-      datasets: [{
-        label: 'Revenue',
-        data: charts.revenue.data,
-        borderColor: indigo,
-        backgroundColor: 'rgba(129, 140, 248, 0.08)',
-        fill: true,
-        tension: 0.4,
-        pointBackgroundColor: indigo,
-        pointBorderColor: '#1f2937',
-        pointBorderWidth: 2,
-        pointRadius: 4,
-        pointHoverRadius: 6,
-      }],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: { intersect: false, mode: 'index' },
-      plugins: {
-        legend: { display: false },
-        tooltip: { ...tooltipStyle, callbacks: { label: (ctx) => '$' + ctx.parsed.y.toLocaleString(undefined, { minimumFractionDigits: 2 }) } },
+  // Revenue
+  var revEl = document.getElementById('revenueChart');
+  if (revEl && charts.revenue.data.length > 0) {
+    new Chart(revEl, {
+      type: 'line',
+      data: {
+        labels: charts.revenue.labels,
+        datasets: [
+          { label: 'Current', data: charts.revenue.data, borderColor: indigo, backgroundColor: 'rgba(129,140,248,0.08)', fill: true, tension: 0.4, pointRadius: 3, pointHoverRadius: 5, pointBackgroundColor: indigo, pointBorderColor: '#1f2937', pointBorderWidth: 2 },
+          { label: 'Previous', data: charts.revenue.prev_data, borderColor: '#4b5563', borderDash: [4,4], backgroundColor: 'transparent', tension: 0.4, pointRadius: 0, borderWidth: 1.5 },
+        ],
       },
-      scales: {
-        x: { grid: { display: false }, ticks: { color: tickColor, font: { size: 11 } }, border: { display: false } },
-        y: { grid: { color: gridColor }, ticks: { color: tickColor, font: { size: 11 }, callback: (v) => '$' + v.toLocaleString() }, border: { display: false } },
-      },
-    },
-  });
+      options: { responsive: true, maintainAspectRatio: false, interaction: { intersect: false, mode: 'index' }, plugins: { legend: leg, tooltip: { ...tt, callbacks: { label: $label } } }, scales: { x: xAx, y: yAx } },
+    });
+  }
 
-  // Collections by City
-  const cityPalette = [indigo, blue, purple, cyan, emerald, amber, rose];
-  new Chart(document.getElementById('cityChart'), {
-    type: 'bar',
-    data: {
-      labels: charts.collections_by_city.labels,
-      datasets: [{
-        label: 'Collections',
-        data: charts.collections_by_city.data,
-        backgroundColor: charts.collections_by_city.labels.map((_, i) => cityPalette[i % cityPalette.length]),
-        borderRadius: 6,
-        borderSkipped: false,
-        barPercentage: 0.7,
-      }],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: { intersect: false },
-      plugins: {
-        legend: { display: false },
-        tooltip: { ...tooltipStyle, callbacks: { label: (ctx) => '$' + ctx.parsed.y.toLocaleString(undefined, { minimumFractionDigits: 2 }) } },
-      },
-      scales: {
-        x: { grid: { display: false }, ticks: { color: tickColor, font: { size: 11 } }, border: { display: false } },
-        y: { grid: { color: gridColor }, ticks: { color: tickColor, font: { size: 11 }, callback: (v) => '$' + v.toLocaleString() }, border: { display: false } },
-      },
-    },
-  });
+  // Desktop charts
+  var cityEl = document.getElementById('cityChart');
+  if (cityEl) {
+    new Chart(cityEl, {
+      type: 'bar',
+      data: { labels: charts.collections_by_city.labels, datasets: [{ data: charts.collections_by_city.data, backgroundColor: charts.collections_by_city.labels.map(function(_,i) { return pal[i%pal.length]; }), borderRadius: 6, borderSkipped: false, barPercentage: 0.7 }] },
+      options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false }, tooltip: { ...tt, callbacks: { label: function(ctx) { return '$' + ctx.parsed.x.toLocaleString(); } } } }, scales: { y: { grid: { display: false }, ticks: { color: tickColor, font: { size: 11 } }, border: { display: false } }, x: { grid: { color: gridColor }, ticks: { color: tickColor, font: { size: 11 }, callback: $tick }, border: { display: false } } } },
+    });
+  }
 
-  // Customer Status Distribution
-  new Chart(document.getElementById('statusChart'), {
-    type: 'doughnut',
-    data: {
-      labels: charts.status_distribution.labels,
-      datasets: [{
-        data: charts.status_distribution.data,
-        backgroundColor: [indigo, blue, amber, rose, emerald, purple],
-        borderWidth: 3,
-        borderColor: '#1f2937',
-        hoverBorderColor: '#374151',
-        hoverOffset: 6,
-      }],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      cutout: '65%',
-      plugins: {
-        legend: { position: 'bottom', labels: { padding: 16, usePointStyle: true, pointStyleWidth: 10, color: tickColor, font: { size: 12 } } },
-        tooltip: tooltipStyle,
-      },
-    },
-  });
+  var dowEl = document.getElementById('dowChart');
+  if (dowEl) {
+    new Chart(dowEl, {
+      type: 'bar',
+      data: { labels: charts.day_of_week.labels, datasets: [{ data: charts.day_of_week.data, backgroundColor: charts.day_of_week.data.map(function(v,i,a) { return v === Math.max.apply(null, a) ? emerald : indigo; }), borderRadius: 6, borderSkipped: false, barPercentage: 0.6 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { ...tt, callbacks: { label: $label } } }, scales: { x: xAx, y: yAx } },
+    });
+  }
 
-  // Route Efficiency
-  new Chart(document.getElementById('efficiencyChart'), {
-    type: 'line',
-    data: {
-      labels: charts.route_efficiency.labels,
-      datasets: [
-        {
-          label: 'Total Stops',
-          data: charts.route_efficiency.total,
-          borderColor: blue,
-          backgroundColor: 'rgba(96, 165, 250, 0.05)',
-          fill: true,
-          tension: 0.4,
-          pointRadius: 3,
-          pointHoverRadius: 5,
-          borderWidth: 2,
-        },
-        {
-          label: 'Completed',
-          data: charts.route_efficiency.completed,
-          borderColor: emerald,
-          backgroundColor: 'rgba(52, 211, 153, 0.08)',
-          fill: true,
-          tension: 0.4,
-          pointRadius: 3,
-          pointHoverRadius: 5,
-          borderWidth: 2,
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: { intersect: false, mode: 'index' },
-      plugins: {
-        legend: { position: 'bottom', labels: { padding: 16, usePointStyle: true, pointStyleWidth: 10, color: tickColor, font: { size: 12 } } },
-        tooltip: tooltipStyle,
-      },
-      scales: {
-        x: { grid: { display: false }, ticks: { color: tickColor, font: { size: 11 } }, border: { display: false } },
-        y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: tickColor, font: { size: 11 } }, border: { display: false } },
-      },
-    },
-  });
+  var effEl = document.getElementById('efficiencyChart');
+  if (effEl) {
+    new Chart(effEl, {
+      type: 'line',
+      data: { labels: charts.route_efficiency.labels, datasets: [
+        { label: 'Total', data: charts.route_efficiency.total, borderColor: blue, backgroundColor: 'rgba(96,165,250,0.05)', fill: true, tension: 0.4, pointRadius: 3, borderWidth: 2 },
+        { label: 'Completed', data: charts.route_efficiency.completed, borderColor: emerald, backgroundColor: 'rgba(52,211,153,0.08)', fill: true, tension: 0.4, pointRadius: 3, borderWidth: 2 },
+      ] },
+      options: { responsive: true, maintainAspectRatio: false, interaction: { intersect: false, mode: 'index' }, plugins: { legend: leg, tooltip: tt }, scales: { x: xAx, y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: tickColor, font: { size: 11 } }, border: { display: false } } } },
+    });
+  }
+
+  var statusEl = document.getElementById('statusChart');
+  if (statusEl) {
+    new Chart(statusEl, {
+      type: 'doughnut',
+      data: { labels: charts.status_distribution.labels, datasets: [{ data: charts.status_distribution.data, backgroundColor: [indigo, blue, amber, rose, emerald, purple], borderWidth: 3, borderColor: '#1f2937', hoverOffset: 6 }] },
+      options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: leg, tooltip: tt } },
+    });
+  }
 });
 </script>
 {% endblock %}

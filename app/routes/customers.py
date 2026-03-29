@@ -483,3 +483,30 @@ def toggle_status(id):
 
     flash(f"Customer status changed to {customer.status}.", "success")
     return redirect(url_for("customers.profile", id=customer.id))
+
+
+# ---------------------------------------------------------------------------
+# Toggle tax exempt
+# ---------------------------------------------------------------------------
+
+@bp.route("/<int:id>/toggle-tax-exempt", methods=["POST"])
+@login_required
+def toggle_tax_exempt(id):
+    """Toggle customer tax exempt status."""
+    customer = Customer.query.get_or_404(id)
+    customer.tax_exempt = not customer.tax_exempt
+
+    db.session.add(ActivityLog(
+        customer_id=customer.id,
+        user_id=current_user.id,
+        action="tax_exempt_changed",
+        description=f"Tax exempt {'enabled' if customer.tax_exempt else 'disabled'}.",
+    ))
+    audit("tax_exempt_changed", f"'{customer.name}' tax exempt: {customer.tax_exempt}")
+    db.session.commit()
+
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return jsonify({"ok": True, "tax_exempt": customer.tax_exempt})
+
+    flash(f"Tax exempt {'enabled' if customer.tax_exempt else 'disabled'} for {customer.name}.", "success")
+    return redirect(url_for("customers.profile", id=customer.id))

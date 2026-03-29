@@ -9,6 +9,8 @@
 <div class="max-w-2xl mx-auto space-y-6">
 
   {# ── Celebration / Header ── #}
+  <img src="{{ url_for('static', filename='img/logo.png') }}" alt="" class="w-10 h-10 mx-auto mb-2 rounded-lg object-contain">
+
   {% if completed_stops == total_stops and total_stops > 0 %}
   <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-green-600 to-emerald-700 p-6 text-white text-center animate-pop-in">
     <div class="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4"></div>

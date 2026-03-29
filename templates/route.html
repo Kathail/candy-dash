@@ -190,9 +190,7 @@
             <button @click="showPay = !showPay"
                     :class="showPay ? 'bg-green-700 ring-2 ring-green-500/50' : 'bg-green-600 hover:bg-green-500'"
                     class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 text-white text-sm font-semibold rounded-xl transition-colors min-h-[44px] btn-press">
-              <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
-              </svg>
+              <span aria-hidden="true" class="text-sm font-black ">$</span>
               Pay {{ stop.customer.balance|currency }}
             </button>
             {% endif %}

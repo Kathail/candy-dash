@@ -1,7 +1,10 @@
 {# ── Mobile top bar ── #}
 <header class="lg:hidden fixed top-0 inset-x-0 z-40 bg-panel border-b border-app shadow-md">
     <div class="flex items-center justify-between h-14 px-4">
-        <a href="{{ url_for('dashboard.index') }}" class="text-lg font-bold tracking-tight text-accent">Candy Dash</a>
+        <a href="{{ url_for('dashboard.index') }}" class="flex items-center gap-2">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="" class="w-7 h-7 rounded object-contain">
+            <span class="text-lg font-bold tracking-tight text-accent">Candy Dash</span>
+        </a>
         <span class="text-sm text-muted">{{ current_user.username }}</span>
     </div>
 </header>
@@ -11,7 +14,10 @@
 
     {# Brand #}
     <div class="flex items-center h-14 px-4 shrink-0 border-b border-app">
-        <a href="{{ url_for('dashboard.index') }}" class="nav-title text-accent">Candy Dash</a>
+        <a href="{{ url_for('dashboard.index') }}" class="flex items-center gap-2.5">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="" class="w-9 h-9 rounded object-contain">
+            <span class="nav-title text-accent">Candy Dash</span>
+        </a>
     </div>
 
     {# Navigation links #}
