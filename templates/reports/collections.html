@@ -23,13 +23,13 @@
       <div class="flex gap-1.5">
         <a href="{{ url_for('reports.collections', start_date=start.strftime('%Y-%m-%d'), end_date=end.strftime('%Y-%m-%d'), format='csv') }}"
            aria-label="Download collections report as CSV"
-           class="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-700 border border-gray-600 text-xs font-medium rounded-lg text-gray-300 hover:bg-gray-600 transition btn-press min-h-[40px]">
+           class="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-700 border border-gray-600 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-600 transition-colors btn-press min-h-[44px]">
           <svg class="w-3.5 h-3.5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
           CSV
         </a>
         <a href="{{ url_for('reports.collections', start_date=start.strftime('%Y-%m-%d'), end_date=end.strftime('%Y-%m-%d'), format='xlsx') }}"
            aria-label="Download collections report as Excel"
-           class="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-700 border border-gray-600 text-xs font-medium rounded-lg text-gray-300 hover:bg-gray-600 transition btn-press min-h-[40px]">
+           class="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-700 border border-gray-600 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-600 transition-colors btn-press min-h-[44px]">
           <svg class="w-3.5 h-3.5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
           Excel
         </a>

@@ -145,7 +145,7 @@
                 x-data @submit.prevent="if (confirm({{ ('Convert ' ~ lead.name ~ ' to an active customer?')|tojson }})) $el.submit()">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit"
-                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-xs font-semibold rounded-lg hover:bg-green-500 transition btn-press min-h-[44px]">
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-500 transition-colors btn-press min-h-[44px]">
               <svg aria-hidden="true" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>

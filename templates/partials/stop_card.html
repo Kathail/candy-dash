@@ -76,7 +76,7 @@
       <button hx-post="{{ url_for('route.complete_stop', id=stop.id) }}"
               hx-target="#stop-{{ stop.id }}" hx-swap="outerHTML"
               hx-disabled-elt="this"
-              class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-500 transition min-h-[44px] disabled:opacity-50 btn-press">
+              class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-500 transition-colors min-h-[44px] disabled:opacity-50 btn-press">
         <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
         </svg>
@@ -85,7 +85,7 @@
       {% if stop.customer.balance and stop.customer.balance > 0 %}
       <button @click="showPay = !showPay"
               :class="showPay ? 'bg-green-700 ring-2 ring-green-500/50' : 'bg-green-600 hover:bg-green-500'"
-              class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 text-white text-sm font-semibold rounded-xl transition min-h-[44px] btn-press">
+              class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 text-white text-sm font-semibold rounded-xl transition-colors min-h-[44px] btn-press">
         Pay {{ stop.customer.balance|currency }}
       </button>
       {% endif %}
@@ -94,7 +94,7 @@
               hx-target="#stop-{{ stop.id }}" hx-swap="outerHTML"
               hx-disabled-elt="this"
               hx-confirm="Undo this stop completion?"
-              class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 bg-gray-700 text-gray-400 text-xs font-medium rounded-xl hover:bg-gray-600 transition min-h-[44px] disabled:opacity-50 btn-press">
+              class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 bg-gray-700 text-gray-400 text-sm font-medium rounded-xl hover:bg-gray-600 transition-colors min-h-[44px] disabled:opacity-50 btn-press">
         Undo
       </button>
       {% endif %}
@@ -114,7 +114,7 @@
                  class="flex-1 theme-input rounded-xl text-sm min-h-[44px]">
         </div>
         <button type="submit"
-                class="w-full inline-flex items-center justify-center gap-2 px-3 py-2.5 bg-green-600 text-white text-sm font-semibold rounded-xl hover:bg-green-500 transition min-h-[44px] btn-press">
+                class="w-full inline-flex items-center justify-center gap-2 px-3 py-2.5 bg-green-600 text-white text-sm font-semibold rounded-xl hover:bg-green-500 transition-colors min-h-[44px] btn-press">
           Complete &amp; Pay
         </button>
       </form>

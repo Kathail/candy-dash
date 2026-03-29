@@ -23,8 +23,6 @@ bp = Blueprint("customers", __name__, url_prefix="/customers")
 @login_required
 def index():
     """Paginated, searchable, filterable customer list."""
-    page = request.args.get("page", 1, type=int)
-    per_page = min(request.args.get("per_page", 25, type=int), 100)
     q = request.args.get("q", "").strip()
     status_filter = request.args.get("status", "").strip()
     city_filter = request.args.get("city", "").strip()
@@ -71,8 +69,6 @@ def index():
 
     query = query.order_by(sort_col)
 
-    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
-
     # Distinct cities for filter dropdown
     cities = (
         db.session.query(Customer.city)
@@ -83,19 +79,19 @@ def index():
     )
     cities = [c[0] for c in cities]
 
+    customers = query.all()
+
+    from datetime import date
     tpl_ctx = dict(
-        pagination=pagination,
+        customers=customers,
         q=q,
         status_filter=status_filter,
         city_filter=city_filter,
         sort=sort,
         direction=direction,
         cities=cities,
+        today=date.today(),
     )
-
-    # HTMX partial response
-    if request.headers.get("HX-Request"):
-        return render_template("partials/customer_rows.html", **tpl_ctx)
 
     return render_template("customers.html", **tpl_ctx)
 

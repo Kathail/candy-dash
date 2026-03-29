@@ -42,7 +42,7 @@
         {% if customer.balance and customer.balance > 0 %}
         <button type="button"
                 @click.stop="$dispatch('open-payment-modal', { customerId: {{ customer.id }}, customerName: {{ customer.name|tojson }}, customerBalance: {{ customer.balance or 0 }} })"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-500 transition btn-press min-h-[44px]">
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-500 transition-colors btn-press min-h-[44px]">
           <svg aria-hidden="true" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V7m0 10v1"/>
           </svg>

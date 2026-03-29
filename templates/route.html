@@ -22,7 +22,7 @@
       <span class="text-sm font-bold text-gray-100">{{ route_date|dateformat('%A, %b %d') }}</span>
       {% if not is_today %}
       <div class="mt-0.5">
-        <a href="{{ url_for('route.index') }}" class="text-2xs text-indigo-400 hover:text-indigo-300 font-medium">Go to Today</a>
+        <a href="{{ url_for('route.index') }}" class="text-2xs text-indigo-400 hover:text-indigo-300 font-medium btn-press transition-colors inline-flex items-center min-h-[44px]">Go to Today</a>
       </div>
       {% endif %}
     </div>
@@ -180,7 +180,7 @@
             <button hx-post="{{ url_for('route.complete_stop', id=stop.id) }}"
                     hx-target="#stop-{{ stop.id }}" hx-swap="outerHTML"
                     hx-disabled-elt="this"
-                    class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-500 transition min-h-[44px] disabled:opacity-50 btn-press">
+                    class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-500 transition-colors min-h-[44px] disabled:opacity-50 btn-press">
               <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
@@ -189,7 +189,7 @@
             {% if stop.customer.balance and stop.customer.balance > 0 %}
             <button @click="showPay = !showPay"
                     :class="showPay ? 'bg-green-700 ring-2 ring-green-500/50' : 'bg-green-600 hover:bg-green-500'"
-                    class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 text-white text-sm font-semibold rounded-xl transition min-h-[44px] btn-press">
+                    class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 text-white text-sm font-semibold rounded-xl transition-colors min-h-[44px] btn-press">
               <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
               </svg>
@@ -201,7 +201,7 @@
                     hx-target="#stop-{{ stop.id }}" hx-swap="outerHTML"
                     hx-disabled-elt="this"
                     hx-confirm="Undo this stop completion?"
-                    class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 bg-gray-700 text-gray-400 text-xs font-medium rounded-xl hover:bg-gray-600 transition min-h-[44px] disabled:opacity-50 btn-press">
+                    class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 bg-gray-700 text-gray-400 text-sm font-medium rounded-xl hover:bg-gray-600 transition-colors min-h-[44px] disabled:opacity-50 btn-press">
               Undo
             </button>
             {% endif %}
@@ -221,7 +221,7 @@
                        class="flex-1 theme-input rounded-xl text-sm min-h-[44px]">
               </div>
               <button type="submit"
-                      class="w-full inline-flex items-center justify-center gap-2 px-3 py-2.5 bg-green-600 text-white text-sm font-semibold rounded-xl hover:bg-green-500 transition min-h-[44px] btn-press">
+                      class="w-full inline-flex items-center justify-center gap-2 px-3 py-2.5 bg-green-600 text-white text-sm font-semibold rounded-xl hover:bg-green-500 transition-colors min-h-[44px] btn-press">
                 <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                 </svg>
@@ -268,7 +268,7 @@
       <p class="text-2xs text-gray-500 mt-0.5">{{ collected_today|currency }} collected</p>
     </div>
     <a href="{{ url_for('route.summary', date=route_date.isoformat()) }}"
-       class="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-500 transition min-h-[44px] btn-press">
+       class="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-500 transition-colors min-h-[44px] btn-press">
       Summary
       <svg aria-hidden="true" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
