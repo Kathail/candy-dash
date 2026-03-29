@@ -139,6 +139,13 @@
             </span>
             {% endif %}
 
+            {# Tax exempt pill #}
+            {% if customer.tax_exempt %}
+            <span class="flex-shrink-0 px-2 py-0.5 text-2xs font-semibold rounded-full bg-cyan-500/20 text-cyan-400">
+              tax exempt
+            </span>
+            {% endif %}
+
             {# Balance badge #}
             {% if customer.balance and customer.balance > 0 %}
             <span class="flex-shrink-0 px-2 py-0.5 text-2xs font-semibold rounded-full bg-amber-500/20 text-amber-400">
