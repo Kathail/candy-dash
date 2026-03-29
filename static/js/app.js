@@ -55,13 +55,12 @@
 
     // Toast manager
     Alpine.data("toastManager", () => {
-      let _bound = false;
       return {
         toasts: [],
         nextId: 0,
 
         init() {
-          // Read flash messages injected by Jinja
+          // Read flash messages injected by Jinja (consume once)
           const el = document.getElementById("flash-messages");
           if (el) {
             try {
@@ -70,10 +69,11 @@
                 this.add(msg, cat);
               }
             } catch (_) { /* ignore parse errors */ }
+            el.remove();
           }
-          // Listen for dynamic toasts (guard against duplicate listeners)
-          if (!_bound) {
-            _bound = true;
+          // Listen for dynamic toasts (single global listener via window flag)
+          if (!window.__toastBound) {
+            window.__toastBound = true;
             document.addEventListener("show-toast", (e) => {
               this.add(e.detail.message, e.detail.category || "info");
             });
