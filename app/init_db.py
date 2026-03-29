@@ -56,6 +56,15 @@ def init_database():
 
     db.create_all()
 
+    # Add amount_sold column to payments if missing
+    try:
+        db.session.execute(db.text(
+            "ALTER TABLE payments ADD COLUMN amount_sold NUMERIC(10,2) DEFAULT 0"
+        ))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
     # Migrate old roles (sales, manager) to owner
     try:
         db.session.execute(db.text(

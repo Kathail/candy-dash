@@ -122,7 +122,7 @@
           </svg>
         </a>
         <form method="post" action="{{ url_for('leads.convert', id=lead.id) }}"
-              x-data @submit.prevent="if (confirm({{ ('Convert ' ~ lead.name ~ '?')|tojson }})) $el.submit()">
+              onsubmit="{{ 'return confirm(' ~ ('Convert ' ~ lead.name ~ '?')|tojson ~ ')' }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button type="submit"
                   class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-green-600 text-white text-xs font-semibold rounded-lg hover:bg-green-500 transition-colors btn-press min-h-[36px]">

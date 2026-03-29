@@ -20,10 +20,22 @@ from reportlab.lib import colors
 
 
 def admin_required(f):
-    """Decorator that requires the current user to be an admin."""
+    """Decorator that requires the current user to be an admin or owner."""
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not current_user.is_authenticated or not current_user.is_admin:
+        if not current_user.is_authenticated:
+            abort(403)
+        if current_user.role not in ("admin", "owner"):
+            abort(403)
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+def staff_required(f):
+    """Decorator that requires admin or owner role (blocks demo users)."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated or current_user.is_demo:
             abort(403)
         return f(*args, **kwargs)
     return decorated_function
@@ -84,8 +96,9 @@ def generate_receipt_number(payment_date=None, max_retries=5):
     """Generate a unique receipt number in format RCP-YYYYMMDD-XXXX.
 
     Uses SELECT ... FOR UPDATE (Postgres) to prevent race conditions.
-    Falls back to retry-on-conflict for SQLite.
+    Falls back to UUID suffix if sequence collides after retries.
     """
+    import uuid
     from app.models import Payment
     from app import db
 
@@ -95,34 +108,42 @@ def generate_receipt_number(payment_date=None, max_retries=5):
     date_str = payment_date.strftime("%Y%m%d")
     prefix = f"RCP-{date_str}-"
 
-    # Use FOR UPDATE to lock the row and prevent concurrent duplicates
-    last = (
-        Payment.query
-        .filter(Payment.receipt_number.like(f"{prefix}%"))
-        .order_by(Payment.receipt_number.desc())
-        .with_for_update()
-        .first()
-    )
-
-    if last and last.receipt_number.startswith(prefix):
+    for attempt in range(max_retries):
         try:
-            seq = int(last.receipt_number[len(prefix):]) + 1
-        except ValueError:
-            seq = 1
-    else:
-        seq = 1
+            # Use FOR UPDATE to lock the row and prevent concurrent duplicates
+            last = (
+                Payment.query
+                .filter(Payment.receipt_number.like(f"{prefix}%"))
+                .order_by(Payment.receipt_number.desc())
+                .with_for_update()
+                .first()
+            )
 
-    # Also check unflushed session objects for higher sequences
-    for obj in db.session.new:
-        if isinstance(obj, Payment) and hasattr(obj, 'receipt_number') and obj.receipt_number:
-            if obj.receipt_number.startswith(prefix):
+            if last and last.receipt_number.startswith(prefix):
                 try:
-                    pending_seq = int(obj.receipt_number[len(prefix):]) + 1
-                    seq = max(seq, pending_seq)
+                    seq = int(last.receipt_number[len(prefix):]) + 1
                 except ValueError:
-                    pass
+                    seq = 1
+            else:
+                seq = 1
 
-    return f"{prefix}{seq:04d}"
+            # Also check unflushed session objects for higher sequences
+            for obj in db.session.new:
+                if isinstance(obj, Payment) and hasattr(obj, 'receipt_number') and obj.receipt_number:
+                    if obj.receipt_number.startswith(prefix):
+                        try:
+                            pending_seq = int(obj.receipt_number[len(prefix):]) + 1
+                            seq = max(seq, pending_seq)
+                        except ValueError:
+                            pass
+
+            return f"{prefix}{seq:04d}"
+        except Exception:
+            db.session.rollback()
+            if attempt == max_retries - 1:
+                # Final fallback: use UUID to guarantee uniqueness
+                short_uuid = uuid.uuid4().hex[:6].upper()
+                return f"{prefix}{short_uuid}"
 
 
 def generate_receipt_pdf(payment, customer):

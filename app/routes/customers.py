@@ -11,6 +11,7 @@ from flask_login import login_required, current_user
 from app import db
 from app.models import Customer, Payment, ActivityLog, RouteStop, VALID_CUSTOMER_STATUSES
 from app.helpers import admin_required, generate_receipt_number, audit
+import logging
 
 bp = Blueprint("customers", __name__, url_prefix="/customers")
 
@@ -344,14 +345,17 @@ def record_payment(id):
 
         # Apply sale (increases balance) then payment (decreases balance)
         new_balance = previous_balance + amount_sold - amount_paid
+        if new_balance < 0:
+            new_balance = Decimal("0")
         customer.balance = new_balance
 
         receipt_number = generate_receipt_number()
 
-        # Record the payment entry (amount = net paid)
+        # Record the payment entry
         payment = Payment(
             customer_id=customer.id,
             amount=amount_paid,
+            amount_sold=amount_sold,
             receipt_number=receipt_number,
             previous_balance=previous_balance,
             notes=notes,
@@ -377,6 +381,7 @@ def record_payment(id):
 
         db.session.commit()
     except Exception:
+        logging.exception("Transaction failed")
         db.session.rollback()
         return _error("An error occurred while recording the transaction.")
 
@@ -420,6 +425,7 @@ def delete_payment(id, payment_id):
         audit("payment_deleted", f"Deleted payment #{payment.receipt_number} (${payment.amount:,.2f}) for '{customer.name}'. Balance restored to ${customer.balance:,.2f}.")
         db.session.commit()
     except Exception:
+        logging.exception("Operation failed")
         db.session.rollback()
         flash("An error occurred while deleting the payment.", "error")
         return redirect(url_for("customers.profile", id=id))

@@ -10,6 +10,7 @@ from sqlalchemy import func
 from app import db
 from app.helpers import generate_receipt_number
 from app.models import Customer, Payment, ActivityLog
+import logging
 
 bp = Blueprint("balances", __name__, url_prefix="/balances")
 
@@ -192,6 +193,7 @@ def quick_payment(id):
             "success",
         )
     except Exception:
+        logging.exception("Operation failed")
         db.session.rollback()
         flash("An error occurred while processing the payment.", "error")
 

@@ -9,6 +9,7 @@ from flask_login import login_required, current_user
 from app import db
 from app.helpers import admin_required, audit
 from app.models import User, AdminAuditLog, VALID_ROLES
+import logging
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -325,6 +326,7 @@ def import_csv():
         flash(f"CSV import complete: {', '.join(parts)}.", "success" if imported or updated else "warning")
 
     except Exception:
+        logging.exception("Operation failed")
         db.session.rollback()
         flash("Import failed. Please check the CSV format and try again.", "error")
 

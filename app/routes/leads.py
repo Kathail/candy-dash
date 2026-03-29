@@ -8,6 +8,7 @@ from flask_login import login_required, current_user
 
 from app import db
 from app.models import Customer, ActivityLog
+import logging
 
 bp = Blueprint("leads", __name__, url_prefix="/leads")
 
@@ -187,7 +188,7 @@ def convert(id):
         return redirect(url_for("leads.index"))
 
     lead.status = "active"
-    lead.lead_source = None
+    # Preserve lead_source for historical tracking
 
     log = ActivityLog(
         customer_id=lead.id,
@@ -259,6 +260,7 @@ def import_csv():
         flash(f"Successfully imported {imported} leads.", "success")
 
     except Exception:
+        logging.exception("Operation failed")
         db.session.rollback()
         flash("Import failed. Please check the CSV format and try again.", "error")
 

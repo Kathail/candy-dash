@@ -10,7 +10,7 @@ from flask_login import login_required
 from sqlalchemy import func
 
 from app import db
-from app.helpers import format_currency, format_date
+from app.helpers import format_currency, format_date, staff_required
 from app.models import Customer, Payment, User
 
 bp = Blueprint("reports", __name__, url_prefix="/reports")
@@ -21,8 +21,9 @@ MAX_REPORT_DAYS = 366
 
 @bp.before_request
 @login_required
+@staff_required
 def before_request():
-    """Require login for all report routes."""
+    """Require login and non-demo role for all report routes."""
     pass
 
 

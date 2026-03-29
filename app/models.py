@@ -45,13 +45,13 @@ class Customer(db.Model):
     __tablename__ = "customers"
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(200), nullable=False)
+    name = db.Column(db.String(200), nullable=False, index=True)
     address = db.Column(db.String(300), nullable=True)
-    city = db.Column(db.String(100), nullable=True)
+    city = db.Column(db.String(100), nullable=True, index=True)
     phone = db.Column(db.String(30), nullable=True)
     notes = db.Column(db.Text, nullable=True)
     balance = db.Column(db.Numeric(10, 2), nullable=False, default=0)
-    status = db.Column(db.String(20), nullable=False, default="active")
+    status = db.Column(db.String(20), nullable=False, default="active", index=True)
     tax_exempt = db.Column(db.Boolean, default=False)
     lead_source = db.Column(db.String(50), nullable=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
@@ -67,10 +67,14 @@ class Customer(db.Model):
 
 class RouteStop(db.Model):
     __tablename__ = "route_stops"
+    __table_args__ = (
+        db.Index("ix_route_stops_date_customer", "route_date", "customer_id"),
+        db.Index("ix_route_stops_date_completed", "route_date", "completed"),
+    )
 
     id = db.Column(db.Integer, primary_key=True)
-    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=False)
-    route_date = db.Column(db.Date, nullable=False)
+    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=False, index=True)
+    route_date = db.Column(db.Date, nullable=False, index=True)
     sequence = db.Column(db.Integer, nullable=False, default=0)
     completed = db.Column(db.Boolean, default=False)
     completed_at = db.Column(db.DateTime, nullable=True)
@@ -85,9 +89,10 @@ class Payment(db.Model):
     __tablename__ = "payments"
 
     id = db.Column(db.Integer, primary_key=True)
-    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=False)
+    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=False, index=True)
     amount = db.Column(db.Numeric(10, 2), nullable=False)
-    payment_date = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    amount_sold = db.Column(db.Numeric(10, 2), nullable=True, default=0)
+    payment_date = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
     receipt_number = db.Column(db.String(20), unique=True, nullable=False)
     previous_balance = db.Column(db.Numeric(10, 2), nullable=False)
     notes = db.Column(db.Text, nullable=True)
@@ -102,7 +107,7 @@ class RecurringStop(db.Model):
     __tablename__ = "recurring_stops"
 
     id = db.Column(db.Integer, primary_key=True)
-    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=False)
+    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=False, index=True)
     interval_days = db.Column(db.Integer, nullable=False)
     start_date = db.Column(db.Date, nullable=False)
     end_date = db.Column(db.Date, nullable=True)
@@ -145,7 +150,7 @@ class RecurringSkip(db.Model):
     __tablename__ = "recurring_skips"
 
     id = db.Column(db.Integer, primary_key=True)
-    recurring_stop_id = db.Column(db.Integer, db.ForeignKey("recurring_stops.id"), nullable=False)
+    recurring_stop_id = db.Column(db.Integer, db.ForeignKey("recurring_stops.id"), nullable=False, index=True)
     skip_date = db.Column(db.Date, nullable=False)
 
     recurring_stop = db.relationship("RecurringStop", backref=db.backref("skips", lazy="dynamic"))
@@ -158,11 +163,11 @@ class ActivityLog(db.Model):
     __tablename__ = "activity_logs"
 
     id = db.Column(db.Integer, primary_key=True)
-    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=False)
+    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=False, index=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
-    action = db.Column(db.String(50), nullable=False)
+    action = db.Column(db.String(50), nullable=False, index=True)
     description = db.Column(db.Text, nullable=True)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
 
     def __repr__(self):
         return f"<ActivityLog {self.action} for customer {self.customer_id}>"

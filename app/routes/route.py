@@ -14,6 +14,7 @@ from sqlalchemy import func
 from app import db
 from app.models import Customer, RouteStop, Payment, ActivityLog
 from app.helpers import generate_receipt_pdf, generate_receipt_number, audit
+import logging
 
 bp = Blueprint("route", __name__, url_prefix="/route")
 

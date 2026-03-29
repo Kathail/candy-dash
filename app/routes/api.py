@@ -7,16 +7,18 @@ from flask import Blueprint, jsonify, request
 from flask_login import login_required, current_user
 
 from app import db
-from app.helpers import generate_receipt_number, audit
+from app.helpers import generate_receipt_number, audit, staff_required
 from app.models import Customer, Payment, RouteStop, ActivityLog
+import logging
 
 bp = Blueprint("api", __name__, url_prefix="/api")
 
 
 @bp.before_request
 @login_required
+@staff_required
 def before_request():
-    """Require login for all API routes."""
+    """Require login and non-demo role for all API routes."""
     pass
 
 
@@ -162,6 +164,21 @@ def sync():
             continue
 
         try:
+            # Idempotency: skip if this offline_id was already processed
+            if offline_id:
+                existing = Payment.query.filter(
+                    Payment.notes.contains(f"[offline:{offline_id}]")
+                ).first()
+                if existing:
+                    result["status"] = "ok"
+                    result["receipt_number"] = existing.receipt_number
+                    result["message"] = "Already processed."
+                    result["new_balance"] = float(
+                        Customer.query.get(customer_id).balance if Customer.query.get(customer_id) else 0
+                    )
+                    results.append(result)
+                    continue
+
             customer = db.session.query(Customer).filter_by(id=customer_id).with_for_update().first()
             if customer is None:
                 result["status"] = "error"
@@ -172,6 +189,8 @@ def sync():
             previous_balance = customer.balance
             receipt_number = generate_receipt_number()
             notes = entry.get("notes", "")
+            if offline_id:
+                notes = f"{notes} [offline:{offline_id}]".strip()
 
             payment = Payment(
                 customer_id=customer.id,
@@ -201,6 +220,7 @@ def sync():
             result["new_balance"] = float(customer.balance)
 
         except Exception:
+            logging.exception("Operation failed")
             db.session.rollback()
             result["status"] = "error"
             result["message"] = "An internal error occurred while processing this payment."

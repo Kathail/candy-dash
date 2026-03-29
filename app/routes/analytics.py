@@ -9,6 +9,7 @@ from sqlalchemy import func, extract, case
 
 from app import db
 from app.models import Customer, Payment, RouteStop, ActivityLog
+import logging
 
 bp = Blueprint("analytics", __name__, url_prefix="/analytics")
 

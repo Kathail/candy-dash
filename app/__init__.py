@@ -80,18 +80,27 @@ def create_app():
     from app.routes import register_blueprints
     register_blueprints(app)
 
-    # Demo mode: block all writes for demo users
+    # Demo mode: block writes and sensitive data exports
     @app.before_request
     def demo_guard():
         from flask_login import current_user as cu
         from flask import request as req, flash, redirect, jsonify, url_for as _url_for
-        if (cu.is_authenticated and cu.is_demo
-                and req.method in ("POST", "PUT", "DELETE")
-                and req.endpoint != "auth.logout"):
+        if not (cu.is_authenticated and cu.is_demo):
+            return
+        # Block all writes except logout
+        if req.method in ("POST", "PUT", "DELETE") and req.endpoint != "auth.logout":
             if req.headers.get("X-Requested-With") == "XMLHttpRequest":
                 return jsonify({"error": "Demo mode — this action is disabled."}), 403
             flash("Demo mode — this action is disabled.", "warning")
             return redirect(req.referrer or _url_for("dashboard.index"))
+        # Block report exports and API access
+        blocked_prefixes = ("reports.", "api.")
+        if req.endpoint and any(req.endpoint.startswith(p) for p in blocked_prefixes):
+            if req.args.get("format") in ("csv", "xlsx"):
+                flash("Demo mode — exports are disabled.", "warning")
+                return redirect(req.referrer or _url_for("dashboard.index"))
+            if req.endpoint.startswith("api."):
+                return jsonify({"error": "Demo mode — API disabled."}), 403
 
     # Template filters
     from app.helpers import format_currency, format_date
