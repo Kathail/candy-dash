@@ -122,6 +122,23 @@
               <p class="text-sm font-medium text-gray-200 truncate group-hover:text-white transition-colors">{{ customer.name }}</p>
             </div>
 
+            {# Last visit pill #}
+            {% if last_visit %}
+            {% set days_ago = (today - last_visit).days %}
+            <span class="hidden sm:inline-flex flex-shrink-0 px-2 py-0.5 text-2xs font-semibold rounded-full
+                         {{ 'bg-green-500/20 text-green-400' if days_ago <= 7
+                            else 'bg-emerald-500/20 text-emerald-400' if days_ago <= 14
+                            else 'bg-yellow-500/20 text-yellow-400' if days_ago <= 30
+                            else 'bg-orange-500/20 text-orange-400' if days_ago <= 60
+                            else 'bg-red-500/20 text-red-400' }}">
+              {% if days_ago == 0 %}today{% elif days_ago == 1 %}1d ago{% else %}{{ days_ago }}d ago{% endif %}
+            </span>
+            {% else %}
+            <span class="hidden sm:inline-flex flex-shrink-0 px-2 py-0.5 text-2xs font-semibold rounded-full bg-gray-700/50 text-gray-500">
+              no visits
+            </span>
+            {% endif %}
+
             {# Balance badge #}
             {% if customer.balance and customer.balance > 0 %}
             <span class="flex-shrink-0 px-2 py-0.5 text-2xs font-semibold rounded-full bg-amber-500/20 text-amber-400">
@@ -146,16 +163,18 @@
           <div class="flex items-center gap-3 px-4 pb-3 pt-1 ml-12">
             {# Meta info #}
             <div class="flex-1 min-w-0 flex flex-wrap items-center gap-x-3 gap-y-0.5">
-              {# Last visit #}
-              {% if last_visit %}
-              {% set days_ago = (today - last_visit).days %}
-              <span class="text-2xs text-gray-500">
-                <span class="text-gray-600">Visited</span>
-                {% if days_ago == 0 %}today{% elif days_ago == 1 %}yesterday{% else %}{{ days_ago }}d ago{% endif %}
+              {# Last visit (mobile only — pill shows on desktop) #}
+              <span class="sm:hidden text-2xs {{ 'text-green-400' if last_visit and (today - last_visit).days <= 7
+                            else 'text-emerald-400' if last_visit and (today - last_visit).days <= 14
+                            else 'text-yellow-400' if last_visit and (today - last_visit).days <= 30
+                            else 'text-orange-400' if last_visit and (today - last_visit).days <= 60
+                            else 'text-red-400' if last_visit
+                            else 'text-gray-600' }}">
+                {% if last_visit %}
+                  {% set days_ago = (today - last_visit).days %}
+                  {% if days_ago == 0 %}Visited today{% elif days_ago == 1 %}1d ago{% else %}{{ days_ago }}d ago{% endif %}
+                {% else %}No visits{% endif %}
               </span>
-              {% else %}
-              <span class="text-2xs text-gray-600">No visits</span>
-              {% endif %}
 
               {# Last note #}
               {% if last_note %}
