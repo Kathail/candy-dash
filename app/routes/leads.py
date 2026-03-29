@@ -42,7 +42,35 @@ def index():
             )
         )
 
-    leads = query.order_by(Customer.created_at.desc()).all()
+    leads = query.order_by(Customer.name).all()
+    lead_ids = [l.id for l in leads]
+
+    # Last note per lead
+    last_notes = {}
+    if lead_ids:
+        rows = (
+            db.session.query(
+                ActivityLog.customer_id,
+                ActivityLog.description,
+                ActivityLog.created_at,
+            )
+            .filter(
+                ActivityLog.customer_id.in_(lead_ids),
+                ActivityLog.action == "note_added",
+            )
+            .order_by(ActivityLog.customer_id, ActivityLog.created_at.desc())
+            .all()
+        )
+        for r in rows:
+            if r.customer_id not in last_notes:
+                last_notes[r.customer_id] = r.description
+
+    # Group by city
+    from collections import OrderedDict
+    grouped = OrderedDict()
+    for lead in leads:
+        city = lead.city or "No City"
+        grouped.setdefault(city, []).append(lead)
 
     # Available filter options
     lead_sources = (
@@ -75,6 +103,8 @@ def index():
     return render_template(
         "leads.html",
         leads=leads,
+        grouped=grouped,
+        last_notes=last_notes,
         lead_sources=lead_sources,
         cities=cities,
         lead_source_filter=lead_source_filter,

@@ -80,17 +80,67 @@ def index():
     cities = [c[0] for c in cities]
 
     customers = query.all()
+    customer_ids = [c.id for c in customers]
 
+    # Last completed visit per customer
+    from sqlalchemy import func
     from datetime import date
+    last_visits = {}
+    if customer_ids:
+        rows = (
+            db.session.query(
+                RouteStop.customer_id,
+                func.max(RouteStop.route_date).label("last_date"),
+            )
+            .filter(
+                RouteStop.customer_id.in_(customer_ids),
+                RouteStop.completed.is_(True),
+            )
+            .group_by(RouteStop.customer_id)
+            .all()
+        )
+        last_visits = {r.customer_id: r.last_date for r in rows}
+
+    # Last note per customer
+    last_notes = {}
+    if customer_ids:
+        rows = (
+            db.session.query(
+                ActivityLog.customer_id,
+                ActivityLog.description,
+                ActivityLog.created_at,
+            )
+            .filter(
+                ActivityLog.customer_id.in_(customer_ids),
+                ActivityLog.action == "note_added",
+            )
+            .order_by(ActivityLog.customer_id, ActivityLog.created_at.desc())
+            .all()
+        )
+        for r in rows:
+            if r.customer_id not in last_notes:
+                last_notes[r.customer_id] = r.description
+
+    # Group by city for the default view
+    from collections import OrderedDict
+    grouped = OrderedDict()
+    for c in customers:
+        city = c.city or "No City"
+        grouped.setdefault(city, []).append(c)
+
+    today = date.today()
     tpl_ctx = dict(
         customers=customers,
+        grouped=grouped,
+        last_visits=last_visits,
+        last_notes=last_notes,
         q=q,
         status_filter=status_filter,
         city_filter=city_filter,
         sort=sort,
         direction=direction,
         cities=cities,
-        today=date.today(),
+        today=today,
     )
 
     return render_template("customers.html", **tpl_ctx)
