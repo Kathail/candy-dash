@@ -11,7 +11,5 @@ services:
         generateValue: true
       - key: ADMIN_PASSWORD
         generateValue: true
-      - key: BOOKKEEPER_PASSWORD
-        generateValue: true
       - key: FLASK_ENV
         value: "production"

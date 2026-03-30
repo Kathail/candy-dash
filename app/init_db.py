@@ -142,31 +142,6 @@ def init_database():
         db.session.commit()
         print("  Demo user created (username: demo, password: demo)")
 
-    # Create bookkeeper user if it doesn't exist
-    if not User.query.filter_by(username="miranda").first():
-        bk = User(
-            username="miranda",
-            email="miranda@candyroute.local",
-            role="bookkeeper",
-            is_active=True,
-        )
-        bk_password = os.environ.get("BOOKKEEPER_PASSWORD")
-        generated_bk = False
-        if not bk_password:
-            bk_password = secrets.token_urlsafe(12)
-            generated_bk = True
-        bk.set_password(bk_password)
-        db.session.add(bk)
-        db.session.commit()
-        if generated_bk:
-            creds_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".bookkeeper_password")
-            with open(creds_file, "w") as f:
-                f.write(f"username: miranda\npassword: {bk_password}\n")
-            os.chmod(creds_file, 0o600)
-            print(f"  Bookkeeper user created (username: miranda). Password saved to .bookkeeper_password")
-        else:
-            print("  Bookkeeper user created (username: miranda) with BOOKKEEPER_PASSWORD from environment.")
-
     # Add unique index on invoice_number (partial: non-NULL only)
     try:
         with db.engine.connect() as conn:
