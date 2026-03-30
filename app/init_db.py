@@ -86,7 +86,7 @@ def init_database():
     except Exception:
         db.session.rollback()
 
-    # Create invoices and notes tables if missing
+    # Create invoices, invoice_items, and notes tables if missing
     db.create_all()
 
     # Migrate old roles (sales, manager) to owner

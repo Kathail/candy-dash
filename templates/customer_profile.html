@@ -233,13 +233,22 @@
       </button>
       {% endif %}
     </div>
-    <div x-show="showInvoiceForm" x-transition x-cloak class="mb-2">
+    <div x-show="showInvoiceForm" x-transition x-cloak class="mb-2"
+         x-data="{
+           invPt: 'cash',
+           items: [{ item_number: '', description: '', quantity: '1', weight: '', unit_price: '' }],
+           addItem() { this.items.push({ item_number: '', description: '', quantity: '1', weight: '', unit_price: '' }) },
+           removeItem(i) { if (this.items.length > 1) this.items.splice(i, 1) },
+           get subtotal() { return this.items.reduce((s, it) => s + (parseFloat(it.quantity || 0) * parseFloat(it.unit_price || 0)), 0) },
+           get hst() { return this.subtotal * 0.13 },
+           get total() { return this.subtotal + this.hst }
+         }">
       <form method="POST" action="{{ url_for('customers.add_invoice', id=customer.id) }}" class="bg-panel rounded-xl border border-app p-4 space-y-3">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label for="invoice-amount" class="block text-2xs font-semibold text-gray-500 uppercase mb-1">Amount ($)</label>
-            <input type="number" name="amount" id="invoice-amount" step="0.01" min="0.01" required placeholder="0.00"
+            <label for="invoice-number" class="block text-2xs font-semibold text-gray-500 uppercase mb-1">Invoice # (optional)</label>
+            <input type="text" name="invoice_number" id="invoice-number" placeholder="INV-001"
                    class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 text-sm min-h-[44px]">
           </div>
           <div>
@@ -248,16 +257,75 @@
                    class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 text-sm min-h-[44px]">
           </div>
         </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label for="invoice-number" class="block text-2xs font-semibold text-gray-500 uppercase mb-1">Invoice # (optional)</label>
-            <input type="text" name="invoice_number" id="invoice-number" placeholder="INV-001"
-                   class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 text-sm min-h-[44px]">
+        <div>
+          <label for="invoice-description" class="block text-2xs font-semibold text-gray-500 uppercase mb-1">Description (optional)</label>
+          <input type="text" name="description" id="invoice-description" placeholder="Optional"
+                 class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 text-sm min-h-[44px]">
+        </div>
+
+        {# Line items #}
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <label class="block text-2xs font-semibold text-gray-500 uppercase">Line Items</label>
+            <button type="button" @click="addItem()" class="text-2xs text-indigo-400 hover:text-indigo-300 font-medium btn-press">+ Add Item</button>
           </div>
-          <div>
-            <label for="invoice-description" class="block text-2xs font-semibold text-gray-500 uppercase mb-1">Description</label>
-            <input type="text" name="description" id="invoice-description" placeholder="Optional"
-                   class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 text-sm min-h-[44px]">
+          <template x-for="(item, idx) in items" :key="idx">
+            <div class="grid grid-cols-12 gap-2 mb-2 items-end">
+              <div class="col-span-2">
+                <label x-show="idx === 0" class="block text-2xs text-gray-600 mb-0.5">Item #</label>
+                <input type="text" :name="'item_number_' + idx" x-model="item.item_number" placeholder="#"
+                       class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 text-xs min-h-[40px] px-2">
+              </div>
+              <div class="col-span-3">
+                <label x-show="idx === 0" class="block text-2xs text-gray-600 mb-0.5">Desc</label>
+                <input type="text" :name="'item_desc_' + idx" x-model="item.description" placeholder="Item"
+                       class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 text-xs min-h-[40px] px-2">
+              </div>
+              <div class="col-span-1">
+                <label x-show="idx === 0" class="block text-2xs text-gray-600 mb-0.5">Qty</label>
+                <input type="number" :name="'item_qty_' + idx" x-model="item.quantity" step="0.01" min="0" placeholder="1"
+                       class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 text-xs min-h-[40px] px-2">
+              </div>
+              <div class="col-span-2">
+                <label x-show="idx === 0" class="block text-2xs text-gray-600 mb-0.5">Weight</label>
+                <input type="text" :name="'item_weight_' + idx" x-model="item.weight" placeholder="e.g. 5kg"
+                       class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 text-xs min-h-[40px] px-2">
+              </div>
+              <div class="col-span-2">
+                <label x-show="idx === 0" class="block text-2xs text-gray-600 mb-0.5">Price</label>
+                <input type="number" :name="'item_price_' + idx" x-model="item.unit_price" step="0.01" min="0" placeholder="$0.00"
+                       class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 text-xs min-h-[40px] px-2">
+              </div>
+              <div class="col-span-2 flex items-center gap-1">
+                <span class="text-xs text-gray-400" x-text="'$' + (parseFloat(item.quantity || 0) * parseFloat(item.unit_price || 0)).toFixed(2)"></span>
+                <button type="button" x-show="items.length > 1" @click="removeItem(idx)" class="text-red-400 hover:text-red-300 p-1">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+              </div>
+            </div>
+          </template>
+          <input type="hidden" name="item_count" :value="items.length">
+        </div>
+
+        {# Totals #}
+        <div class="text-right text-sm space-y-1 border-t border-gray-700 pt-2">
+          <p class="text-gray-400">Subtotal: <span class="text-gray-200 font-medium" x-text="'$' + subtotal.toFixed(2)"></span></p>
+          <p class="text-gray-400">HST (13%): <span class="text-gray-200 font-medium" x-text="'$' + hst.toFixed(2)"></span></p>
+          <p class="text-gray-200 font-bold">Total: <span x-text="'$' + total.toFixed(2)"></span></p>
+        </div>
+        <input type="hidden" name="amount" :value="total.toFixed(2)">
+
+        <div>
+          <label class="block text-2xs font-semibold text-gray-500 uppercase mb-1">Payment Type</label>
+          <div class="flex flex-wrap gap-1.5">
+            <input type="hidden" name="payment_type" :value="invPt">
+            {% for val, label in [('cash', 'Cash'), ('cheque', 'Cheque'), ('credit', 'Credit'), ('debit', 'Debit'), ('etransfer', 'E-Transfer'), ('other', 'Other')] %}
+            <button type="button" @click="invPt = '{{ val }}'"
+                    :class="invPt === '{{ val }}' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-gray-700 text-gray-400 border-gray-600 hover:bg-gray-600'"
+                    class="px-2.5 py-1 text-2xs font-semibold rounded-lg border transition-colors btn-press">
+              {{ label }}
+            </button>
+            {% endfor %}
           </div>
         </div>
         <button type="submit" class="w-full px-4 py-2.5 bg-amber-600 text-white text-sm font-semibold rounded-xl hover:bg-amber-500 transition-colors btn-press min-h-[44px]">
@@ -285,7 +353,7 @@
                          {{ 'bg-green-500/20 text-green-400' if inv.status == 'paid' else 'bg-amber-500/20 text-amber-400' }}">
               {{ inv.status }}
             </span>
-            {% if inv.status == 'paid' and inv.payment_type %}
+            {% if inv.payment_type %}
             <span class="px-1.5 py-0.5 text-2xs font-semibold rounded-full bg-gray-700 text-muted">{{ inv.payment_type }}</span>
             {% endif %}
           </div>
@@ -384,7 +452,7 @@
                 <th class="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Date</th>
                 <th class="text-right px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Amount</th>
                 <th class="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Invoice #</th>
-                <th class="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider hidden sm:table-cell">Type</th>
+                <th class="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Type</th>
                 <th class="text-right px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider hidden sm:table-cell">Previous Bal.</th>
                 <th class="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider hidden md:table-cell">Recorded By</th>
                 <th class="text-right px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Actions</th>
@@ -400,7 +468,7 @@
                      target="_blank"
                      class="text-indigo-400 hover:text-indigo-300 hover:underline transition-colors">{{ payment.receipt_number }}</a>
                 </td>
-                <td class="px-4 py-3 hidden sm:table-cell">
+                <td class="px-4 py-3">
                   {% if payment.payment_type %}
                   <span class="px-1.5 py-0.5 text-2xs font-semibold rounded-full bg-gray-700 text-muted">{{ payment.payment_type }}</span>
                   {% endif %}

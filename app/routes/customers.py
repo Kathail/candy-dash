@@ -10,7 +10,7 @@ from flask import (
 from flask_login import login_required, current_user
 
 from app import db, limiter
-from app.models import Customer, Payment, Invoice, Note, ActivityLog, RouteStop, VALID_CUSTOMER_STATUSES
+from app.models import Customer, Payment, Invoice, InvoiceItem, Note, ActivityLog, RouteStop, VALID_CUSTOMER_STATUSES
 from app.helpers import admin_required, staff_required, generate_receipt_number, generate_receipt_pdf, audit, safe_redirect
 import logging
 
@@ -363,8 +363,10 @@ def record_payment(id):
         customer = db.session.query(Customer).filter_by(id=id).with_for_update().one()
         previous_balance = customer.balance
 
-        # Apply sale (increases balance) then payment (decreases balance)
-        new_balance = previous_balance + amount_sold - amount_paid
+        # Apply sale (increases balance with HST) then payment (decreases balance)
+        hst_on_sale = (amount_sold * Decimal("0.13")).quantize(Decimal("0.01")) if amount_sold > 0 else Decimal("0")
+        sale_with_tax = amount_sold + hst_on_sale
+        new_balance = previous_balance + sale_with_tax - amount_paid
         if new_balance < 0:
             new_balance = Decimal("0")
         customer.balance = new_balance
@@ -384,10 +386,25 @@ def record_payment(id):
         )
         db.session.add(payment)
 
+        # Auto-create invoice when a sale is recorded
+        if amount_sold > 0:
+            from datetime import date as date_type
+            invoice = Invoice(
+                customer_id=customer.id,
+                invoice_number=receipt_number,
+                amount=amount_sold,
+                invoice_date=date_type.today(),
+                description=notes,
+                payment_type=payment_type,
+                status="paid" if amount_paid >= sale_with_tax else "unpaid",
+                created_by=current_user.id,
+            )
+            db.session.add(invoice)
+
         # Build description
         parts = []
         if amount_sold > 0:
-            parts.append(f"Sold ${amount_sold:,.2f}")
+            parts.append(f"Sold ${amount_sold:,.2f} + ${hst_on_sale:,.2f} HST = ${sale_with_tax:,.2f}")
         if amount_paid > 0:
             parts.append(f"Paid ${amount_paid:,.2f}")
         desc = ". ".join(parts) + f". Invoice #{receipt_number}. Balance: ${previous_balance:,.2f} → ${new_balance:,.2f}."
@@ -409,7 +426,10 @@ def record_payment(id):
     if is_fetch:
         return jsonify({"ok": True, "receipt_number": receipt_number, "new_balance": float(new_balance)})
 
-    flash(f"Transaction recorded. Invoice #{receipt_number}.", "success")
+    if amount_sold > 0:
+        flash(f"Transaction recorded. Invoice #{receipt_number}. Sale ${amount_sold:,.2f} + ${hst_on_sale:,.2f} HST = ${sale_with_tax:,.2f}.", "success")
+    else:
+        flash(f"Transaction recorded. Invoice #{receipt_number}.", "success")
     return redirect(redirect_to)
 
 
@@ -574,9 +594,26 @@ def add_invoice(id):
         amount=amount,
         invoice_date=invoice_date,
         description=request.form.get("description", "").strip() or None,
+        payment_type=request.form.get("payment_type", "").strip() or None,
         status="unpaid",
         created_by=current_user.id,
     )
+
+    # Parse line items
+    item_count = int(request.form.get("item_count", 0) or 0)
+    for i in range(item_count):
+        item_qty = Decimal(request.form.get(f"item_qty_{i}", "0") or "0")
+        item_price = Decimal(request.form.get(f"item_price_{i}", "0") or "0")
+        item_amount = item_qty * item_price
+        if item_amount > 0:
+            invoice.items.append(InvoiceItem(
+                item_number=request.form.get(f"item_number_{i}", "").strip() or None,
+                description=request.form.get(f"item_desc_{i}", "").strip() or None,
+                quantity=item_qty,
+                weight=request.form.get(f"item_weight_{i}", "").strip() or None,
+                unit_price=item_price,
+                amount=item_amount,
+            ))
 
     try:
         db.session.add(invoice)
@@ -584,16 +621,18 @@ def add_invoice(id):
         # Lock the customer row for safe balance update
         customer = db.session.query(Customer).filter_by(id=id).with_for_update().one()
 
-        # Add the invoice amount to customer balance
-        customer.balance += amount
+        # Add the invoice amount + HST to customer balance
+        hst = (amount * Decimal("0.13")).quantize(Decimal("0.01"))
+        amount_with_tax = amount + hst
+        customer.balance += amount_with_tax
 
         db.session.add(ActivityLog(
             customer_id=customer.id,
             user_id=current_user.id,
             action="invoice_added",
-            description=f"Invoice ${amount:,.2f} added. Balance: ${customer.balance:,.2f}.",
+            description=f"Invoice ${amount:,.2f} + ${hst:,.2f} HST = ${amount_with_tax:,.2f}. Balance: ${customer.balance:,.2f}.",
         ))
-        audit("invoice_added", f"Invoice ${amount:,.2f} for '{customer.name}'")
+        audit("invoice_added", f"Invoice ${amount_with_tax:,.2f} for '{customer.name}'")
         db.session.commit()
     except Exception:
         logging.exception("Invoice creation failed")
@@ -601,7 +640,7 @@ def add_invoice(id):
         flash("An error occurred while adding the invoice.", "error")
         return redirect(url_for("customers.profile", id=id))
 
-    flash(f"Invoice for ${amount:,.2f} added.", "success")
+    flash(f"Invoice for ${amount_with_tax:,.2f} (incl. HST) added.", "success")
     return redirect(url_for("customers.profile", id=id))
 
 
@@ -616,17 +655,19 @@ def delete_invoice(id, invoice_id):
 
     try:
         customer = db.session.query(Customer).filter_by(id=id).with_for_update().one()
-        customer.balance = max(customer.balance - invoice.amount, Decimal("0"))
+        hst = (invoice.amount * Decimal("0.13")).quantize(Decimal("0.01"))
+        amount_with_tax = invoice.amount + hst
+        customer.balance = max(customer.balance - amount_with_tax, Decimal("0"))
 
         db.session.add(ActivityLog(
             customer_id=customer.id,
             user_id=current_user.id,
             action="invoice_deleted",
-            description=f"Invoice #{invoice.invoice_number or invoice.id} (${invoice.amount:,.2f}) deleted. Balance: ${customer.balance:,.2f}.",
+            description=f"Invoice #{invoice.invoice_number or invoice.id} (${amount_with_tax:,.2f} incl. HST) deleted. Balance: ${customer.balance:,.2f}.",
         ))
 
         db.session.delete(invoice)
-        audit("invoice_deleted", f"Deleted invoice ${invoice.amount:,.2f} for '{customer.name}'")
+        audit("invoice_deleted", f"Deleted invoice ${amount_with_tax:,.2f} for '{customer.name}'")
         db.session.commit()
     except Exception:
         logging.exception("Invoice deletion failed")
@@ -779,10 +820,13 @@ def invoice_pdf(id, invoice_id):
 
     # Invoice details
     detail_style = ParagraphStyle("Detail", parent=styles["Normal"], fontSize=11, spaceAfter=4)
+    normal_center = ParagraphStyle("NormalCenter", parent=styles["Normal"], alignment=1)
     if invoice.invoice_number:
         elements.append(Paragraph(f"<b>Invoice #:</b> {invoice.invoice_number}", detail_style))
     elements.append(Paragraph(f"<b>Date:</b> {invoice.invoice_date}", detail_style))
     elements.append(Paragraph(f"<b>Status:</b> {invoice.status.upper()}", detail_style))
+    if invoice.payment_type:
+        elements.append(Paragraph(f"<b>Payment Type:</b> {invoice.payment_type.capitalize()}", detail_style))
     elements.append(Spacer(1, 16))
 
     # Customer info
@@ -796,27 +840,83 @@ def invoice_pdf(id, invoice_id):
         elements.append(Paragraph(customer.phone, detail_style))
     elements.append(Spacer(1, 20))
 
-    # Amount table
-    data = [
-        ["Description", "Amount"],
-        [invoice.description or "Goods/Services", f"${invoice.amount:,.2f}"],
-        ["", ""],
-        ["Total", f"${invoice.amount:,.2f}"],
-    ]
-    t = Table(data, colWidths=[4 * inch, 2 * inch])
-    t.setStyle(TableStyle([
-        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-        ("FONTSIZE", (0, 0), (-1, -1), 11),
-        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#374151")),
-        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-        ("ALIGN", (1, 0), (1, -1), "RIGHT"),
-        ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
-        ("LINEBELOW", (0, 0), (-1, 0), 1, colors.HexColor("#4b5563")),
-        ("LINEABOVE", (0, -1), (-1, -1), 1, colors.HexColor("#4b5563")),
-        ("TOPPADDING", (0, 0), (-1, -1), 8),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
-    ]))
+    # Line items table
+    from decimal import Decimal as Dec
+    line_items = invoice.items or []
+
+    if line_items:
+        data = [["Item #", "Description", "Qty", "Weight", "Unit Price", "Amount"]]
+        subtotal = Dec("0")
+        for item in line_items:
+            data.append([
+                item.item_number or "",
+                item.description or "",
+                f"{item.quantity:g}" if item.quantity else "",
+                item.weight or "",
+                f"${item.unit_price:,.2f}" if item.unit_price else "",
+                f"${item.amount:,.2f}",
+            ])
+            subtotal += item.amount or Dec("0")
+
+        hst = (subtotal * Dec("0.13")).quantize(Dec("0.01"))
+        total = subtotal + hst
+
+        data.append(["", "", "", "", "Subtotal:", f"${subtotal:,.2f}"])
+        data.append(["", "", "", "", "HST (13%):", f"${hst:,.2f}"])
+        data.append(["", "", "", "", "Total:", f"${total:,.2f}"])
+
+        t = Table(data, colWidths=[0.8 * inch, 1.8 * inch, 0.6 * inch, 0.8 * inch, 1 * inch, 1 * inch])
+        t.setStyle(TableStyle([
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, -1), 10),
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#374151")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("ALIGN", (-2, 0), (-1, -1), "RIGHT"),
+            ("ALIGN", (2, 0), (2, -1), "CENTER"),
+            ("LINEBELOW", (0, 0), (-1, 0), 1, colors.HexColor("#4b5563")),
+            ("LINEABOVE", (0, -3), (-1, -3), 1, colors.HexColor("#4b5563")),
+            ("FONTNAME", (-2, -1), (-1, -1), "Helvetica-Bold"),
+            ("TOPPADDING", (0, 0), (-1, -1), 6),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+        ]))
+    else:
+        # Fallback: single-line invoice (e.g. from quick sale)
+        subtotal = invoice.amount
+        hst = (subtotal * Dec("0.13")).quantize(Dec("0.01"))
+        total = subtotal + hst
+
+        data = [
+            ["Description", "Amount"],
+            [invoice.description or "Goods/Services", f"${subtotal:,.2f}"],
+            ["", ""],
+            ["Subtotal", f"${subtotal:,.2f}"],
+            ["HST (13%)", f"${hst:,.2f}"],
+            ["Total", f"${total:,.2f}"],
+        ]
+        t = Table(data, colWidths=[4 * inch, 2 * inch])
+        t.setStyle(TableStyle([
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, -1), 11),
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#374151")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("ALIGN", (1, 0), (1, -1), "RIGHT"),
+            ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
+            ("LINEBELOW", (0, 0), (-1, 0), 1, colors.HexColor("#4b5563")),
+            ("LINEABOVE", (0, -3), (-1, -3), 1, colors.HexColor("#4b5563")),
+            ("TOPPADDING", (0, 0), (-1, -1), 8),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+        ]))
+
     elements.append(t)
+    elements.append(Spacer(1, 0.5 * inch))
+
+    if invoice.status == "unpaid":
+        elements.append(Paragraph(
+            f"Balance owing: ${total:,.2f}. Please remit payment at your earliest convenience.",
+            normal_center,
+        ))
+    else:
+        elements.append(Paragraph("Thank you for your payment!", normal_center))
 
     doc.build(elements)
     buf.seek(0)

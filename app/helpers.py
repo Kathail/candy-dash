@@ -207,19 +207,27 @@ def generate_receipt_pdf(payment, customer):
     elements.append(Paragraph("Payment Receipt", normal_center))
     elements.append(Spacer(1, 0.3 * inch))
 
+    amount_sold = getattr(payment, "amount_sold", None) or Decimal("0")
+    new_balance = payment.previous_balance + amount_sold - payment.amount
+
     data = [
         ["Invoice #:", payment.receipt_number],
         ["Date:", format_date(payment.payment_date, "%B %d, %Y")],
         ["Customer:", customer.name],
+        ["Payment Type:", (payment.payment_type or "cash").capitalize()],
         ["", ""],
         ["Previous Balance:", format_currency(payment.previous_balance)],
-        ["Payment Amount:", format_currency(payment.amount)],
-        ["New Balance:", format_currency(payment.previous_balance - payment.amount)],
     ]
+    if amount_sold > 0:
+        data.append(["Sale Amount:", format_currency(amount_sold)])
+    if payment.amount > 0:
+        data.append(["Payment Amount:", format_currency(payment.amount)])
+    data.append(["New Balance:", format_currency(new_balance)])
 
     if payment.notes:
         data.append(["Notes:", payment.notes])
 
+    separator_row = 4  # the empty row
     table = Table(data, colWidths=[2.5 * inch, 4 * inch])
     table.setStyle(TableStyle([
         ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
@@ -227,14 +235,18 @@ def generate_receipt_pdf(payment, customer):
         ("FONTSIZE", (0, 0), (-1, -1), 11),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
         ("TOPPADDING", (0, 0), (-1, -1), 4),
-        ("LINEBELOW", (0, 3), (-1, 3), 1, colors.grey),
+        ("LINEBELOW", (0, separator_row), (-1, separator_row), 1, colors.grey),
         ("LINEBELOW", (0, -1), (-1, -1), 1, colors.grey),
         ("LINEABOVE", (0, 0), (-1, 0), 1, colors.grey),
     ]))
 
     elements.append(table)
     elements.append(Spacer(1, 0.5 * inch))
-    elements.append(Paragraph("Thank you for your payment!", normal_center))
+
+    if new_balance > 0:
+        elements.append(Paragraph(f"Balance owing: {format_currency(new_balance)}. Please remit payment at your earliest convenience.", normal_center))
+    else:
+        elements.append(Paragraph("Thank you for your payment!", normal_center))
 
     doc.build(elements)
     buffer.seek(0)

@@ -17,17 +17,20 @@
     <div class="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4"></div>
 
     <div class="relative z-10">
-      <div class="flex items-baseline justify-between">
+      <div class="text-center">
+        <p class="text-indigo-200 text-2xs font-semibold uppercase tracking-wider">{{ today.strftime('%A') }} · Total Sales</p>
+        <p class="text-3xl font-bold mt-0.5">{{ (payment_sum + total_outstanding)|currency }}</p>
+      </div>
+
+      <div class="flex items-center justify-between mt-3">
         <div>
-          <p class="text-indigo-200 text-2xs font-semibold uppercase tracking-wider">{{ today.strftime('%A') }}</p>
-          <p class="text-2xl font-bold mt-0.5">{{ completed_stops }}/{{ total_stops }} stops</p>
-        </div>
-        {% if payment_count > 0 %}
-        <div class="text-right">
           <p class="text-indigo-200 text-2xs font-semibold uppercase tracking-wider">Collected</p>
-          <p class="text-2xl font-bold mt-0.5">{{ payment_sum|currency }}</p>
+          <p class="text-lg font-bold">{{ payment_sum|currency }}</p>
         </div>
-        {% endif %}
+        <div class="text-right">
+          <p class="text-indigo-200 text-2xs font-semibold uppercase tracking-wider">Owing</p>
+          <p class="text-lg font-bold">{{ total_outstanding|currency }}</p>
+        </div>
       </div>
 
       <div class="mt-3 bg-white/20 rounded-full h-2.5 overflow-hidden">
@@ -35,7 +38,7 @@
       </div>
 
       <div class="flex items-center justify-between mt-2">
-        <span class="text-indigo-200 text-xs font-medium">{{ pct }}%</span>
+        <span class="text-indigo-200 text-xs font-medium">{{ completed_stops }}/{{ total_stops }} stops · {{ pct }}%</span>
         <span class="text-indigo-200 text-xs">
           {% if completed_stops == total_stops %}
           All done!
@@ -45,6 +48,32 @@
           {{ total_stops - completed_stops }} remaining
           {% endif %}
         </span>
+      </div>
+    </div>
+  </div>
+
+  {# Collected vs Owing breakdown #}
+  <div class="grid grid-cols-2 gap-3 animate-fade-in-up stagger-1">
+    <div class="bg-panel rounded-xl border border-app p-4">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-lg bg-green-500/15 flex items-center justify-center flex-shrink-0">
+          <span class="text-sm font-black text-green-400">$</span>
+        </div>
+        <div>
+          <p class="text-lg font-bold text-green-400">{{ payment_sum|currency }}</p>
+          <p class="text-2xs text-faint">collected · {{ payment_count }} payments</p>
+        </div>
+      </div>
+    </div>
+    <div class="bg-panel rounded-xl border border-app p-4">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-lg bg-orange-500/15 flex items-center justify-center flex-shrink-0">
+          <span class="text-sm font-black text-orange-400">$</span>
+        </div>
+        <div>
+          <p class="text-lg font-bold text-orange-400">{{ total_outstanding|currency }}</p>
+          <p class="text-2xs text-faint">owing · {{ overdue_count }} accounts</p>
+        </div>
       </div>
     </div>
   </div>

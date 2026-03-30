@@ -115,6 +115,24 @@ class Invoice(db.Model):
         return f"<Invoice {self.invoice_number or self.id} ${self.amount}>"
 
 
+class InvoiceItem(db.Model):
+    __tablename__ = "invoice_items"
+
+    id = db.Column(db.Integer, primary_key=True)
+    invoice_id = db.Column(db.Integer, db.ForeignKey("invoices.id", ondelete="CASCADE"), nullable=False, index=True)
+    item_number = db.Column(db.String(50), nullable=True)
+    description = db.Column(db.String(200), nullable=True)
+    quantity = db.Column(db.Numeric(10, 2), nullable=True)
+    weight = db.Column(db.String(50), nullable=True)
+    unit_price = db.Column(db.Numeric(10, 2), nullable=False, default=0)
+    amount = db.Column(db.Numeric(10, 2), nullable=False, default=0)
+
+    invoice = db.relationship("Invoice", backref=db.backref("items", lazy="select", cascade="all, delete-orphan", order_by="InvoiceItem.id"))
+
+    def __repr__(self):
+        return f"<InvoiceItem {self.item_number} ${self.amount}>"
+
+
 class Note(db.Model):
     __tablename__ = "notes"
 
