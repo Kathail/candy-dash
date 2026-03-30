@@ -5,7 +5,7 @@
 {% block vendor_js %}<script defer src="{{ url_for('static', filename='vendor/chart.min.js') }}"></script>{% endblock %}
 
 {% block content %}
-{% set pct = (completed_stops / total_stops * 100)|int if total_stops else 0 %}
+{% set pct = [(completed_stops / total_stops * 100)|int if total_stops else 0, 100]|min %}
 <div class="max-w-2xl mx-auto space-y-3">
 
   {# ═══════════════════════════════════════════════════

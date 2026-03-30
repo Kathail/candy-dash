@@ -55,6 +55,35 @@
   </div>
 
   <div class="space-y-2">
+    {# Daily Sales #}
+    <div class="bg-panel rounded-xl border border-app p-4 animate-fade-in-up stagger-3">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-10 h-10 rounded-lg bg-green-500/15 flex items-center justify-center flex-shrink-0">
+          <svg aria-hidden="true" class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+          </svg>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-semibold text-gray-100">Daily Sales</p>
+          <p class="text-2xs text-gray-500">Day-by-day sales breakdown</p>
+        </div>
+      </div>
+      <div class="flex gap-2">
+        <a :href="'{{ url_for('reports.daily_sales') }}?start_date=' + startDate + '&end_date=' + endDate"
+           class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 text-white text-sm font-semibold rounded-xl hover:bg-green-500 transition-colors min-h-[44px] btn-press">
+          View
+        </a>
+        <a :href="'{{ url_for('reports.daily_sales') }}?start_date=' + startDate + '&end_date=' + endDate + '&format=csv'"
+           class="inline-flex items-center justify-center px-3 py-2.5 bg-gray-700 border border-gray-600 text-gray-300 text-sm rounded-xl hover:bg-gray-600 transition-colors min-h-[44px] btn-press">
+          CSV
+        </a>
+        <a :href="'{{ url_for('reports.daily_sales') }}?start_date=' + startDate + '&end_date=' + endDate + '&format=xlsx'"
+           class="inline-flex items-center justify-center px-3 py-2.5 bg-gray-700 border border-gray-600 text-gray-300 text-sm rounded-xl hover:bg-gray-600 transition-colors min-h-[44px] btn-press">
+          Excel
+        </a>
+      </div>
+    </div>
+
     {# Financial #}
     <div class="bg-panel rounded-xl border border-app p-4 animate-fade-in-up stagger-3">
       <div class="flex items-center gap-3 mb-3">

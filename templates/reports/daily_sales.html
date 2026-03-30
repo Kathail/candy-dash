@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Daily Sales - Candy Dash{% endblock %}
+{% block page_title %}Daily Sales{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+
+  {# ── Header ── #}
+  <div class="animate-fade-in-up">
+    <nav class="flex items-center gap-1.5 text-sm mb-2" aria-label="Breadcrumb">
+      <a href="{{ url_for('reports.index') }}" class="text-indigo-400 hover:text-indigo-300">Reports</a>
+      <svg class="w-3.5 h-3.5 text-gray-600" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+      </svg>
+      <span class="text-muted">Daily Sales</span>
+    </nav>
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-100">Daily Sales</h1>
+        <p class="text-xs text-gray-500 mt-0.5">{{ start|dateformat }} &ndash; {{ end|dateformat }}</p>
+      </div>
+      <div class="flex gap-1.5">
+        <a href="{{ url_for('reports.daily_sales', start_date=start.strftime('%Y-%m-%d'), end_date=end.strftime('%Y-%m-%d'), format='csv') }}"
+           class="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-700 border border-gray-600 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-600 transition-colors btn-press min-h-[44px]">
+          <svg class="w-3.5 h-3.5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          CSV
+        </a>
+        <a href="{{ url_for('reports.daily_sales', start_date=start.strftime('%Y-%m-%d'), end_date=end.strftime('%Y-%m-%d'), format='xlsx') }}"
+           class="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-700 border border-gray-600 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-600 transition-colors btn-press min-h-[44px]">
+          <svg class="w-3.5 h-3.5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          Excel
+        </a>
+      </div>
+    </div>
+  </div>
+
+  {# ── KPI Cards ── #}
+  <div class="grid grid-cols-2 gap-3">
+    <div class="bg-panel rounded-xl border border-app p-4 animate-fade-in-up stagger-1">
+      <p class="text-2xs font-semibold text-gray-500 uppercase tracking-wider">Total Sales</p>
+      <p class="text-xl font-bold text-green-400 mt-1">{{ grand_total|currency }}</p>
+    </div>
+    <div class="bg-panel rounded-xl border border-app p-4 animate-fade-in-up stagger-2">
+      <p class="text-2xs font-semibold text-gray-500 uppercase tracking-wider">Invoices</p>
+      <p class="text-xl font-bold text-gray-100 mt-1">{{ grand_count }}</p>
+    </div>
+  </div>
+
+  {# ── Daily Breakdown ── #}
+  {% if rows %}
+  <div class="bg-panel rounded-xl border border-app overflow-hidden animate-fade-in-up stagger-3">
+    <div class="px-5 py-4 border-b border-app">
+      <h2 class="text-sm font-semibold text-gray-100">Day by Day</h2>
+    </div>
+    <div class="divide-y divide-gray-700">
+      {% for row in rows %}
+      <div class="flex items-center justify-between px-5 py-3 hover:bg-gray-700/50 transition">
+        <div class="flex items-center gap-3">
+          <div class="w-10 text-center flex-shrink-0">
+            <p class="text-xs font-bold text-gray-300">{{ row.invoice_date.strftime('%a') }}</p>
+            <p class="text-2xs text-gray-500">{{ row.invoice_date.strftime('%b %d') }}</p>
+          </div>
+          <div>
+            <p class="text-sm font-medium text-gray-100">{{ row.count }} sale{{ 's' if row.count != 1 else '' }}</p>
+            {% if grand_total %}
+            <div class="w-24 h-1.5 bg-gray-700 rounded-full overflow-hidden mt-1">
+              <div class="h-full rounded-full bg-green-500" style="width: {{ (row.total / grand_total * 100)|int }}%"></div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        <span class="text-sm font-bold text-green-400">{{ row.total|currency }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% else %}
+  <div class="bg-panel rounded-xl border border-app p-10 text-center animate-fade-in-up">
+    <p class="text-sm text-muted">No sales for this period.</p>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

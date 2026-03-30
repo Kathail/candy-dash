@@ -97,6 +97,48 @@ def index():
     return render_template("reports.html")
 
 
+@bp.route("/daily-sales")
+def daily_sales():
+    """Daily sales breakdown for the selected period."""
+    start, end = _parse_date_range()
+    fmt = request.args.get("format", "").lower()
+
+    start_date = start.date() if hasattr(start, 'date') else start
+    end_date = end.date() if hasattr(end, 'date') else end
+
+    rows = (
+        db.session.query(
+            Invoice.invoice_date,
+            func.count(Invoice.id).label("count"),
+            func.coalesce(func.sum(Invoice.amount), Decimal("0")).label("total"),
+        )
+        .filter(Invoice.invoice_date >= start_date, Invoice.invoice_date <= end_date)
+        .group_by(Invoice.invoice_date)
+        .order_by(Invoice.invoice_date.desc())
+        .all()
+    )
+
+    grand_total = sum(r.total for r in rows)
+    grand_count = sum(r.count for r in rows)
+
+    if fmt in ("csv", "xlsx"):
+        headers = ["Date", "Sales Count", "Total"]
+        export_rows = [(str(r.invoice_date), r.count, str(r.total)) for r in rows]
+        filename = f"daily_sales_{start.strftime('%Y%m%d')}_{end.strftime('%Y%m%d')}"
+        if fmt == "csv":
+            return csv_response(export_rows, headers, f"{filename}.csv")
+        return _xlsx_response(export_rows, headers, f"{filename}.xlsx")
+
+    return render_template(
+        "reports/daily_sales.html",
+        rows=rows,
+        grand_total=grand_total,
+        grand_count=grand_count,
+        start=start,
+        end=end,
+    )
+
+
 @bp.route("/financial")
 def financial():
     """Sales report: total sales by city and customer for date range."""

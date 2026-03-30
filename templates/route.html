@@ -6,7 +6,7 @@
 {% block content %}
 {% set completed_count = stops|selectattr('completed')|list|length %}
 {% set total_count = stops|length %}
-{% set pct = ((collected_today / collection_target * 100)|int) if collection_target > 0 else 0 %}
+{% set pct = [((collected_today / collection_target * 100)|int) if collection_target > 0 else 0, 100]|min %}
 
 <div class="max-w-2xl mx-auto space-y-3">
 
@@ -162,7 +162,13 @@
           {% if lv or lp %}
           <div class="ml-9 mt-1 flex flex-wrap gap-x-3 text-2xs text-gray-500">
             {% if lv %}<span>Visited {{ lv|dateformat('%b %d') }}</span>{% endif %}
-            {% if lp %}<span>Paid {{ lp.amount|currency }} on {{ lp.payment_date|dateformat('%b %d') }}</span>{% endif %}
+            {% if lp %}
+            <span>
+              {% if lp.amount_sold and lp.amount_sold > 0 %}Sold {{ lp.amount_sold|currency }}{% endif %}
+              {% if lp.amount > 0 %}{% if lp.amount_sold and lp.amount_sold > 0 %} · {% endif %}Paid {{ lp.amount|currency }}{% endif %}
+              on {{ lp.payment_date|dateformat('%b %d') }}
+            </span>
+            {% endif %}
           </div>
           {% endif %}
           {% endif %}
