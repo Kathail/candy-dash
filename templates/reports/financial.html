@@ -13,7 +13,7 @@
       <svg class="w-3.5 h-3.5 text-gray-600" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
       </svg>
-      <span class="text-gray-400">Financial</span>
+      <span class="text-muted">Financial</span>
     </nav>
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
       <div>
@@ -43,19 +43,19 @@
 
   {# ── KPI Cards ── #}
   <div class="grid grid-cols-2 gap-3">
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 animate-fade-in-up stagger-1">
+    <div class="bg-panel rounded-xl border border-app p-4 animate-fade-in-up stagger-1">
       <p class="text-2xs font-semibold text-gray-500 uppercase tracking-wider">Total Collected</p>
       <p class="text-xl font-bold text-green-400 mt-1">{{ summary.total|currency }}</p>
     </div>
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 animate-fade-in-up stagger-2">
+    <div class="bg-panel rounded-xl border border-app p-4 animate-fade-in-up stagger-2">
       <p class="text-2xs font-semibold text-gray-500 uppercase tracking-wider">Payments</p>
       <p class="text-xl font-bold text-gray-100 mt-1">{{ summary.count }}</p>
     </div>
   </div>
 
   {# ── By City ── #}
-  <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden animate-fade-in-up stagger-3">
-    <div class="px-5 py-4 border-b border-gray-700">
+  <div class="bg-panel rounded-xl border border-app overflow-hidden animate-fade-in-up stagger-3">
+    <div class="px-5 py-4 border-b border-app">
       <h2 class="text-sm font-semibold text-gray-100">By City</h2>
     </div>
     {% if by_city %}
@@ -80,8 +80,8 @@
   </div>
 
   {# ── By Customer ── #}
-  <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden animate-fade-in-up stagger-4">
-    <div class="px-5 py-4 border-b border-gray-700">
+  <div class="bg-panel rounded-xl border border-app overflow-hidden animate-fade-in-up stagger-4">
+    <div class="px-5 py-4 border-b border-app">
       <h2 class="text-sm font-semibold text-gray-100">By Customer</h2>
     </div>
     {% if by_customer %}

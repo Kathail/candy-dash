@@ -99,7 +99,7 @@ class Invoice(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=False, index=True)
-    invoice_number = db.Column(db.String(50), nullable=True)
+    invoice_number = db.Column(db.String(50), nullable=True, unique=True)
     amount = db.Column(db.Numeric(10, 2), nullable=False)
     invoice_date = db.Column(db.Date, nullable=False)
     description = db.Column(db.Text, nullable=True)
@@ -167,6 +167,8 @@ class RecurringStop(db.Model):
 
     def matches(self, target_date):
         """Return True if this schedule falls on target_date."""
+        if self.interval_days < 1:
+            return False
         if not self.is_active:
             return False
         delta = (target_date - self.start_date).days

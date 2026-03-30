@@ -1,6 +1,6 @@
 """Planner blueprint – calendar-based route planning."""
 
-from datetime import date
+from datetime import date, timedelta
 
 from flask import (
     Blueprint, render_template, request, redirect, url_for, flash, jsonify,
@@ -9,6 +9,7 @@ from flask_login import login_required, current_user
 from sqlalchemy import func
 
 from app import db
+from app.helpers import staff_required
 from app.models import Customer, RouteStop, RecurringStop, RecurringSkip
 
 bp = Blueprint("planner", __name__, url_prefix="/planner")
@@ -339,6 +340,7 @@ def remove_stop(id):
 
 @bp.route("/reorder", methods=["POST"])
 @login_required
+@staff_required
 def reorder():
     """Receive JSON array of stop IDs in new order and update sequences."""
     data = request.get_json(silent=True)
@@ -460,9 +462,11 @@ def recurring_delete(id):
 @login_required
 def all_stops():
     """Return JSON of all stops, grouped by date, for calendar rendering."""
+    cutoff = date.today() - timedelta(days=90)
     stops = (
         RouteStop.query
         .join(Customer)
+        .filter(RouteStop.route_date >= cutoff)
         .order_by(RouteStop.route_date, RouteStop.sequence)
         .all()
     )

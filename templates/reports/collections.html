@@ -13,7 +13,7 @@
       <svg class="w-3.5 h-3.5 text-gray-600" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
       </svg>
-      <span class="text-gray-400">Collections</span>
+      <span class="text-muted">Collections</span>
     </nav>
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
       <div>
@@ -44,19 +44,19 @@
 
   {# KPI #}
   <div class="grid grid-cols-2 gap-3">
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 animate-fade-in-up stagger-1">
+    <div class="bg-panel rounded-xl border border-app p-4 animate-fade-in-up stagger-1">
       <p class="text-2xs font-semibold text-gray-500 uppercase tracking-wider">Total Collected</p>
       <p class="text-xl font-bold text-green-400 mt-1">{{ grand_total|currency }}</p>
     </div>
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 animate-fade-in-up stagger-2">
+    <div class="bg-panel rounded-xl border border-app p-4 animate-fade-in-up stagger-2">
       <p class="text-2xs font-semibold text-gray-500 uppercase tracking-wider">Payments</p>
       <p class="text-xl font-bold text-gray-100 mt-1">{{ grand_count }}</p>
     </div>
   </div>
 
   {# Leaderboard #}
-  <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden animate-fade-in-up stagger-3">
-    <div class="px-5 py-4 border-b border-gray-700">
+  <div class="bg-panel rounded-xl border border-app overflow-hidden animate-fade-in-up stagger-3">
+    <div class="px-5 py-4 border-b border-app">
       <h2 class="text-sm font-semibold text-gray-100">By Sales Rep</h2>
     </div>
     <div class="divide-y divide-gray-700">
@@ -64,7 +64,7 @@
       <div class="flex items-center gap-4 px-5 py-4 hover:bg-gray-700/50 transition">
         {# Rank #}
         <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0
-                    {{ 'bg-amber-500/20 text-amber-400' if loop.index == 1 else 'bg-gray-700 text-gray-400' }}"
+                    {{ 'bg-amber-500/20 text-amber-400' if loop.index == 1 else 'bg-gray-700 text-muted' }}"
              aria-label="Rank {{ loop.index }}">
           {% if loop.index == 1 %}<span aria-hidden="true">&#127942;</span>{% else %}{{ loop.index }}{% endif %}
         </div>
@@ -96,9 +96,9 @@
   </div>
 
   {% else %}
-  <div class="bg-gray-800 rounded-xl border border-gray-700 p-10 text-center animate-fade-in-up">
+  <div class="bg-panel rounded-xl border border-app p-10 text-center animate-fade-in-up">
     <div class="text-4xl mb-3" aria-hidden="true">&#128202;</div>
-    <p class="text-sm text-gray-400">No collections for this period.</p>
+    <p class="text-sm text-muted">No collections for this period.</p>
   </div>
   {% endif %}
 

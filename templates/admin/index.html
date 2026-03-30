@@ -28,20 +28,20 @@
   </div>
 
   <!-- Users Table -->
-  <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden animate-fade-in-up">
+  <div class="bg-panel rounded-xl border border-app overflow-hidden animate-fade-in-up">
     <!-- Desktop Table -->
     <div class="hidden sm:block overflow-x-auto">
       <table class="min-w-full divide-y divide-gray-700">
-        <thead class="bg-gray-900">
+        <thead class="bg-app">
           <tr>
-            <th scope="col" class="px-5 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Username</th>
-            <th scope="col" class="px-5 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Email</th>
-            <th scope="col" class="px-5 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Role</th>
-            <th scope="col" class="px-5 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
-            <th scope="col" class="px-5 py-3 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">Actions</th>
+            <th scope="col" class="px-5 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Username</th>
+            <th scope="col" class="px-5 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Email</th>
+            <th scope="col" class="px-5 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Role</th>
+            <th scope="col" class="px-5 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Status</th>
+            <th scope="col" class="px-5 py-3 text-right text-xs font-semibold text-muted uppercase tracking-wider">Actions</th>
           </tr>
         </thead>
-        <tbody class="bg-gray-800 divide-y divide-gray-700">
+        <tbody class="bg-panel divide-y divide-gray-700">
           {% for user in users %}
           <tr class="hover:bg-gray-700">
             <td class="px-5 py-3 whitespace-nowrap">
@@ -72,7 +72,7 @@
             </td>
           </tr>
           <!-- Inline Reset Password Form -->
-          <tr id="reset-pw-{{ user.id }}" class="hidden bg-gray-900">
+          <tr id="reset-pw-{{ user.id }}" class="hidden bg-app">
             <td colspan="5" class="px-6 py-3">
               <form method="post" action="{{ url_for('admin.reset_password', id=user.id) }}"
                     class="flex flex-col sm:flex-row gap-2 items-end max-w-lg">
@@ -108,17 +108,35 @@
             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-500/20 text-indigo-400">Owner</span>
             {% endif %}
             {% if user.is_active %}
-            <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+            <span class="inline-flex items-center gap-1"><span class="w-2 h-2 bg-green-500 rounded-full"></span><span class="text-xs text-green-400">Active</span></span>
             {% else %}
-            <span class="w-2 h-2 bg-red-500 rounded-full"></span>
+            <span class="inline-flex items-center gap-1"><span class="w-2 h-2 bg-red-500 rounded-full"></span><span class="text-xs text-red-400">Inactive</span></span>
             {% endif %}
           </div>
         </div>
         <p class="text-sm text-gray-500 mb-2">{{ user.email or 'No email' }}</p>
-        <div class="flex gap-2">
+        <div class="flex gap-2" x-data="{ showReset: false }">
           <a href="{{ url_for('admin.edit_user', id=user.id) }}"
              class="text-sm text-indigo-400 hover:text-indigo-300 font-medium btn-press transition-colors">Edit</a>
+          <button @click="showReset = !showReset"
+                  class="text-sm text-gray-500 hover:text-gray-300 font-medium btn-press transition-colors">Reset Password</button>
         </div>
+        <template x-if="showReset">
+          <form method="post" action="{{ url_for('admin.reset_password', id=user.id) }}"
+                class="mt-2 flex gap-2 items-end">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="flex-1">
+              <label class="block text-xs font-medium text-gray-500 mb-1">New password for {{ user.username }}</label>
+              <input type="password" name="new_password" required minlength="12"
+                     placeholder="Min 12 characters"
+                     class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm min-h-[44px]">
+            </div>
+            <button type="submit"
+                    class="btn-press px-4 py-2 min-h-[44px] bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-500 transition-colors">
+              Reset
+            </button>
+          </form>
+        </template>
       </div>
       {% endfor %}
     </div>
@@ -129,8 +147,8 @@
   </div>
 
   {# ── Audit Log ── #}
-  <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden animate-fade-in-up mt-6">
-    <div class="px-5 py-4 border-b border-gray-700">
+  <div class="bg-panel rounded-xl border border-app overflow-hidden animate-fade-in-up mt-6">
+    <div class="px-5 py-4 border-b border-app">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <h2 class="text-base font-semibold text-gray-100">Audit Log</h2>
         <!-- Filters -->
@@ -222,7 +240,7 @@
                          {% elif entry.action in ('customer_created', 'customer_edited', 'csv_import') %}bg-blue-500/20 text-blue-400
                          {% elif entry.action == 'stop_completed' %}bg-teal-500/20 text-teal-400
                          {% elif entry.action in ('password_reset', 'password_changed') %}bg-orange-500/20 text-orange-400
-                         {% else %}bg-gray-700 text-gray-400{% endif %}">
+                         {% else %}bg-gray-700 text-muted{% endif %}">
               {{ entry.action|replace('_', ' ')|title }}
             </span>
             {% if entry.user %}

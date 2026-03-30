@@ -3,7 +3,7 @@
 import csv
 import io
 
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timezone
 from decimal import Decimal
 
 from flask import Blueprint, flash, redirect, render_template, request, url_for, Response
@@ -131,6 +131,15 @@ def edit_user(id):
         if role not in VALID_ROLES:
             flash("Invalid role selected.", "error")
             return render_template("admin/user_form.html", user=user, editing=True), 400
+
+        # Prevent admins from locking themselves out
+        if user.id == current_user.id:
+            if not is_active:
+                flash("You cannot deactivate your own account.", "error")
+                return redirect(url_for("admin.edit_user", id=user.id))
+            if role not in ("admin", "owner"):
+                flash("You cannot remove your own admin privileges.", "error")
+                return redirect(url_for("admin.edit_user", id=user.id))
 
         existing = User.query.filter_by(username=username).first()
         if existing and existing.id != user.id:
@@ -298,7 +307,7 @@ def import_csv():
                     if phone: c.phone = phone
                     if notes: c.notes = notes
                     if lead_source: c.lead_source = lead_source
-                    if balance: c.balance = balance
+                    if balance is not None: c.balance = balance
                     updated += 1
                 else:
                     skipped += 1
@@ -379,7 +388,7 @@ def backup_customers():
     customers = Customer.query.order_by(Customer.name).all()
     rows = [
         [c.id, c.name, c.address or "", c.city or "", c.phone or "",
-         float(c.balance), c.status, c.tax_exempt, c.lead_source or "",
+         str(c.balance), c.status, c.tax_exempt, c.lead_source or "",
          c.created_at, c.updated_at]
         for c in customers
     ]
@@ -397,9 +406,9 @@ def backup_payments():
     payments = Payment.query.join(Customer).order_by(Payment.payment_date.desc()).all()
     rows = [
         [p.id, p.customer.name, p.customer.city or "",
-         float(p.amount), float(p.amount_sold or 0),
+         str(p.amount), str(p.amount_sold or 0),
          p.payment_date, p.receipt_number,
-         float(p.previous_balance), p.notes or "",
+         str(p.previous_balance), p.notes or "",
          p.recorder.username if p.recorder else ""]
         for p in payments
     ]
@@ -416,7 +425,7 @@ def backup_balances():
     """Download outstanding balances as CSV."""
     customers = Customer.query.filter(Customer.balance > 0).order_by(Customer.balance.desc()).all()
     rows = [
-        [c.name, c.city or "", c.phone or "", float(c.balance), c.tax_exempt]
+        [c.name, c.city or "", c.phone or "", str(c.balance), c.tax_exempt]
         for c in customers
     ]
     return _csv_response(
@@ -453,13 +462,13 @@ def backup_full():
     writer.writerow(["=== CUSTOMERS ==="])
     writer.writerow(["id", "name", "address", "city", "phone", "balance", "status", "tax_exempt"])
     for c in Customer.query.order_by(Customer.name).all():
-        writer.writerow([c.id, c.name, c.address or "", c.city or "", c.phone or "", float(c.balance), c.status, c.tax_exempt])
+        writer.writerow([c.id, c.name, c.address or "", c.city or "", c.phone or "", str(c.balance), c.status, c.tax_exempt])
 
     writer.writerow([])
     writer.writerow(["=== PAYMENTS ==="])
     writer.writerow(["id", "customer", "city", "amount_paid", "amount_sold", "date", "receipt", "previous_balance", "notes"])
     for p in Payment.query.join(Customer).order_by(Payment.payment_date.desc()).all():
-        writer.writerow([p.id, p.customer.name, p.customer.city or "", float(p.amount), float(p.amount_sold or 0), p.payment_date, p.receipt_number, float(p.previous_balance), p.notes or ""])
+        writer.writerow([p.id, p.customer.name, p.customer.city or "", str(p.amount), str(p.amount_sold or 0), p.payment_date, p.receipt_number, str(p.previous_balance), p.notes or ""])
 
     writer.writerow([])
     writer.writerow(["=== ROUTE HISTORY ==="])
@@ -471,7 +480,7 @@ def backup_full():
     writer.writerow(["=== INVOICES ==="])
     writer.writerow(["id", "customer", "city", "amount", "invoice_number", "date", "description", "status"])
     for inv in Invoice.query.join(Customer).order_by(Invoice.invoice_date.desc()).all():
-        writer.writerow([inv.id, inv.customer.name, inv.customer.city or "", float(inv.amount), inv.invoice_number or "", inv.invoice_date, inv.description or "", inv.status])
+        writer.writerow([inv.id, inv.customer.name, inv.customer.city or "", str(inv.amount), inv.invoice_number or "", inv.invoice_date, inv.description or "", inv.status])
 
     writer.writerow([])
     writer.writerow(["=== NOTES ==="])
@@ -493,7 +502,7 @@ def backup_invoices():
     invoices = Invoice.query.join(Customer).order_by(Invoice.invoice_date.desc()).all()
     rows = [
         [inv.id, inv.customer.name, inv.customer.city or "",
-         float(inv.amount), inv.invoice_number or "",
+         str(inv.amount), inv.invoice_number or "",
          inv.invoice_date, inv.description or "", inv.status]
         for inv in invoices
     ]

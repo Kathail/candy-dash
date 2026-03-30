@@ -11,7 +11,7 @@
 <div class="max-w-2xl mx-auto space-y-3">
 
   {# ── Date Selector ── #}
-  <div class="flex items-center justify-between bg-gray-800 rounded-xl border border-gray-700 px-3 py-2 animate-fade-in-up">
+  <div class="flex items-center justify-between bg-panel rounded-xl border border-app px-3 py-2 animate-fade-in-up">
     <a href="{{ url_for('route.index', date=prev_date.isoformat()) }}" aria-label="Previous day"
        class="p-2 rounded-lg hover:bg-gray-700 text-gray-500 min-w-[44px] min-h-[44px] flex items-center justify-center btn-press">
       <svg aria-hidden="true" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -101,8 +101,8 @@
 
       {# Stop Card #}
       <div id="stop-{{ stop.id }}" x-data="{ showPay: false }"
-           class="bg-gray-800 rounded-xl border overflow-hidden animate-fade-in-up stagger-{{ loop.index0 % 8 + 1 }}
-                  {{ 'border-green-700/40 animate-pop-in' if stop.completed else 'border-gray-700' }}">
+           class="bg-panel rounded-xl border overflow-hidden animate-fade-in-up stagger-{{ loop.index0 % 8 + 1 }}
+                  {{ 'border-green-700/40 animate-pop-in' if stop.completed else 'border-app' }}">
         <div class="p-4">
 
           {# Name + balance row #}
@@ -133,7 +133,7 @@
           <div class="ml-9 mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5">
             {% if stop.customer.address %}
             <a href="https://maps.google.com/?q={{ stop.customer.address|urlencode }}" target="_blank" rel="noopener"
-               class="inline-flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 min-h-[28px]">
+               class="inline-flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 min-h-[44px]">
               <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
               </svg>
@@ -142,7 +142,7 @@
             {% endif %}
             {% if stop.customer.phone %}
             <a href="tel:{{ stop.customer.phone }}"
-               class="inline-flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 min-h-[28px]">
+               class="inline-flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 min-h-[44px]">
               <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
               </svg>
@@ -209,14 +209,14 @@
                     hx-target="#stop-{{ stop.id }}" hx-swap="outerHTML"
                     hx-disabled-elt="this"
                     hx-confirm="Undo this stop completion?"
-                    class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 bg-gray-700 text-gray-400 text-sm font-medium rounded-xl hover:bg-gray-600 transition-colors min-h-[44px] disabled:opacity-50 btn-press">
+                    class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 bg-gray-700 text-muted text-sm font-medium rounded-xl hover:bg-gray-600 transition-colors min-h-[44px] disabled:opacity-50 btn-press">
               Undo
             </button>
             {% endif %}
           </div>
 
           {# Payment form #}
-          <div x-show="showPay" x-transition.duration.200ms x-cloak class="mt-3 pt-3 border-t border-gray-700">
+          <div x-show="showPay" x-transition.duration.200ms x-cloak class="mt-3 pt-3 border-t border-app">
             <form hx-post="{{ url_for('route.complete_stop', id=stop.id) }}"
                   hx-target="#stop-{{ stop.id }}" hx-swap="outerHTML"
                   class="flex flex-col gap-2">
@@ -243,9 +243,9 @@
     {% endfor %}
 
   {% else %}
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-10 text-center animate-fade-in-up">
+    <div class="bg-panel rounded-xl border border-app p-10 text-center animate-fade-in-up">
       <div class="text-4xl mb-3">&#128506;</div>
-      <p class="text-sm font-medium text-gray-400">No stops scheduled for this date.</p>
+      <p class="text-sm font-medium text-muted">No stops scheduled for this date.</p>
       <a href="{{ url_for('planner.index') }}" class="inline-flex items-center gap-1.5 mt-3 text-sm text-indigo-400 hover:text-indigo-300 font-medium btn-press">
         <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
@@ -261,7 +261,7 @@
 
 {# ── Sticky Bottom Bar ── #}
 {% if stops %}
-<div class="fixed bottom-16 lg:bottom-0 left-0 right-0 lg:pl-64 bg-gray-900/95 backdrop-blur-sm border-t border-gray-700 px-4 py-2.5 z-30">
+<div class="fixed bottom-16 lg:bottom-0 left-0 right-0 lg:pl-64 bg-app/95 backdrop-blur-sm border-t border-app px-4 py-2.5 z-30">
   <div class="max-w-2xl mx-auto flex items-center gap-3">
     {# Mini progress #}
     <div class="flex-1 min-w-0">
@@ -271,7 +271,7 @@
                       {{ 'bg-green-500' if completed_count == total_count else 'bg-indigo-500' }}"
                style="width: {{ (completed_count / total_count * 100)|int if total_count else 0 }}%"></div>
         </div>
-        <span class="text-2xs font-semibold text-gray-400 whitespace-nowrap">{{ completed_count }}/{{ total_count }}</span>
+        <span class="text-2xs font-semibold text-muted whitespace-nowrap">{{ completed_count }}/{{ total_count }}</span>
       </div>
       <p class="text-2xs text-gray-500 mt-0.5">{{ collected_today|currency }} collected</p>
     </div>

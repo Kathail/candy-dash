@@ -138,32 +138,32 @@ def sync():
 
     results = []
 
-    for entry in payments_data:
-        offline_id = entry.get("offline_id", "")
-        customer_id = entry.get("customer_id")
-        result = {"offline_id": offline_id, "customer_id": customer_id}
+    try:
+        for entry in payments_data:
+            offline_id = entry.get("offline_id", "")
+            customer_id = entry.get("customer_id")
+            result = {"offline_id": offline_id, "customer_id": customer_id}
 
-        if not customer_id:
-            result["status"] = "error"
-            result["message"] = "Missing customer_id."
-            results.append(result)
-            continue
+            if not customer_id:
+                result["status"] = "error"
+                result["message"] = "Missing customer_id."
+                results.append(result)
+                continue
 
-        try:
-            amount = Decimal(str(entry.get("amount", "0")))
-        except (InvalidOperation, TypeError, ValueError):
-            result["status"] = "error"
-            result["message"] = "Invalid amount."
-            results.append(result)
-            continue
+            try:
+                amount = Decimal(str(entry.get("amount", "0")))
+            except (InvalidOperation, TypeError, ValueError):
+                result["status"] = "error"
+                result["message"] = "Invalid amount."
+                results.append(result)
+                continue
 
-        if amount <= 0:
-            result["status"] = "error"
-            result["message"] = "Amount must be greater than zero."
-            results.append(result)
-            continue
+            if amount <= 0:
+                result["status"] = "error"
+                result["message"] = "Amount must be greater than zero."
+                results.append(result)
+                continue
 
-        try:
             # Idempotency: skip if this offline_id was already processed
             if offline_id:
                 existing = Payment.query.filter(
@@ -212,19 +212,27 @@ def sync():
             db.session.add(payment)
             db.session.add(log)
             audit("offline_sync", f"Synced offline payment ${amount:,.2f} for customer #{customer_id} '{customer.name}'. Receipt #{receipt_number}")
-            db.session.commit()
 
             result["status"] = "ok"
             result["receipt_number"] = receipt_number
             result["previous_balance"] = float(previous_balance)
             result["new_balance"] = float(customer.balance)
+            results.append(result)
 
-        except Exception:
-            logging.exception("Operation failed")
-            db.session.rollback()
-            result["status"] = "error"
-            result["message"] = "An internal error occurred while processing this payment."
+        db.session.commit()
 
-        results.append(result)
+    except Exception:
+        logging.exception("Operation failed")
+        db.session.rollback()
+        # Mark any pending results as errors and add a final error result
+        for result in results:
+            if result.get("status") == "ok" and "message" not in result:
+                result["status"] = "error"
+                result["message"] = "Rolled back due to a later failure in the batch."
+        results.append({
+            "offline_id": "",
+            "status": "error",
+            "message": "An internal error occurred. All payments in this batch were rolled back.",
+        })
 
     return jsonify({"results": results})

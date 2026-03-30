@@ -159,7 +159,7 @@ def financial():
     if fmt in ("csv", "xlsx"):
         headers = ["Customer", "City", "Payment Count", "Total"]
         rows = [
-            (row.name, row.city or "", row.count, float(row.total))
+            (row.name, row.city or "", row.count, str(row.total))
             for row in by_customer
         ]
         filename = f"financial_report_{start.strftime('%Y%m%d')}_{end.strftime('%Y%m%d')}"
@@ -206,7 +206,7 @@ def tax():
     if fmt in ("csv", "xlsx"):
         headers = ["Customer", "City", "Tax Exempt", "Payment Count", "Total"]
         export_rows = [
-            (r.name, r.city or "", "Yes" if r.tax_exempt else "No", r.count, float(r.total))
+            (r.name, r.city or "", "Yes" if r.tax_exempt else "No", r.count, str(r.total))
             for r in rows
         ]
         filename = f"tax_report_{start.strftime('%Y%m%d')}_{end.strftime('%Y%m%d')}"
@@ -245,7 +245,7 @@ def collections():
 
     if fmt in ("csv", "xlsx"):
         headers = ["Sales Rep", "Payment Count", "Total"]
-        export_rows = [(r.username, r.count, float(r.total)) for r in rows]
+        export_rows = [(r.username, r.count, str(r.total)) for r in rows]
         filename = f"collections_report_{start.strftime('%Y%m%d')}_{end.strftime('%Y%m%d')}"
         if fmt == "csv":
             return _csv_response(export_rows, headers, f"{filename}.csv")

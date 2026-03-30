@@ -85,6 +85,7 @@ def create_app():
     def readonly_guard():
         from flask_login import current_user as cu
         from flask import request as req, flash, redirect, jsonify, url_for as _url_for
+        from app.helpers import safe_redirect
         if not cu.is_authenticated:
             return
         if cu.role not in ("demo", "bookkeeper"):
@@ -97,14 +98,14 @@ def create_app():
             if req.headers.get("X-Requested-With") == "XMLHttpRequest":
                 return jsonify({"error": f"{label} — this action is disabled."}), 403
             flash(f"{label} — this action is disabled.", "warning")
-            return redirect(req.referrer or _url_for("dashboard.index"))
+            return redirect(safe_redirect(req.referrer))
         # Demo-only: block report exports and API access
         if is_demo:
             blocked_prefixes = ("reports.", "api.")
             if req.endpoint and any(req.endpoint.startswith(p) for p in blocked_prefixes):
                 if req.args.get("format") in ("csv", "xlsx"):
                     flash("Demo mode — exports are disabled.", "warning")
-                    return redirect(req.referrer or _url_for("dashboard.index"))
+                    return redirect(safe_redirect(req.referrer))
                 if req.endpoint.startswith("api."):
                     return jsonify({"error": "Demo mode — API disabled."}), 403
 

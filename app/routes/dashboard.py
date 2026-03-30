@@ -8,6 +8,7 @@ from flask_login import login_required, current_user
 from sqlalchemy import func
 
 from app import db
+from app.helpers import TZ_DISPLAY
 from app.models import Customer, RouteStop, Payment
 
 bp = Blueprint("dashboard", __name__, url_prefix="")
@@ -194,7 +195,7 @@ def index():
         })
 
     # Greeting based on time of day
-    hour = datetime.now().hour
+    hour = datetime.now(TZ_DISPLAY).hour
     if hour < 12:
         greeting = "Good morning"
     elif hour < 17:

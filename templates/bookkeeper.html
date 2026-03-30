@@ -10,13 +10,13 @@
   <div class="flex items-center justify-between animate-fade-in-up">
     <div>
       <h1 class="text-xl font-bold text-gray-100">Bookkeeping</h1>
-      <p class="text-xs text-gray-500 mt-0.5">{{ period_label }} · {{ today.strftime('%B %d, %Y') }}</p>
+      <p class="text-xs text-faint mt-0.5">{{ period_label }} · {{ today.strftime('%B %d, %Y') }}</p>
     </div>
-    <div class="flex items-center gap-1 bg-gray-800 rounded-lg border border-gray-700 p-1">
+    <div class="flex items-center gap-1 bg-panel rounded-lg border border-app p-1">
       {% for val, label in [('today', 'Today'), ('week', 'Week'), ('month', 'Month'), ('quarter', 'Qtr')] %}
       <a href="{{ url_for('bookkeeper.index', period=val) }}"
          class="px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors btn-press
-                {{ 'bg-indigo-600 text-white' if period == val else 'text-gray-400 hover:text-gray-200' }}">
+                {{ 'bg-indigo-600 text-white' if period == val else 'text-muted hover:text-gray-200' }}">
         {{ label }}
       </a>
       {% endfor %}
@@ -42,18 +42,18 @@
 
   {# -- KPI Cards -- #}
   <div class="grid grid-cols-2 gap-3 animate-fade-in-up stagger-1">
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4">
+    <div class="bg-panel rounded-xl border border-app p-4">
       <div class="flex items-center gap-2.5">
         <div class="w-9 h-9 rounded-lg bg-green-500/15 flex items-center justify-center flex-shrink-0">
           <span class="text-sm font-black text-green-400">$</span>
         </div>
         <div>
           <p class="text-lg font-bold text-green-400">{{ payment_total|currency }}</p>
-          <p class="text-2xs text-gray-500">{{ payment_count }} payments · {{ period_label|lower }}</p>
+          <p class="text-2xs text-faint">{{ payment_count }} payments · {{ period_label|lower }}</p>
         </div>
       </div>
     </div>
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4">
+    <div class="bg-panel rounded-xl border border-app p-4">
       <div class="flex items-center gap-2.5">
         <div class="w-9 h-9 rounded-lg bg-orange-500/15 flex items-center justify-center flex-shrink-0">
           <svg aria-hidden="true" class="w-4.5 h-4.5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -62,22 +62,22 @@
         </div>
         <div>
           <p class="text-lg font-bold text-gray-100">${{ '{:,.2f}'.format(total_outstanding) }}</p>
-          <p class="text-2xs text-gray-500">{{ customers_with_balance }} owe</p>
+          <p class="text-2xs text-faint">{{ customers_with_balance }} owe</p>
         </div>
       </div>
     </div>
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4">
+    <div class="bg-panel rounded-xl border border-app p-4">
       <div class="flex items-center gap-2.5">
         <div class="w-9 h-9 rounded-lg bg-indigo-500/15 flex items-center justify-center flex-shrink-0">
           <span class="text-sm font-black text-indigo-400">$</span>
         </div>
         <div>
           <p class="text-lg font-bold text-gray-100">${{ '{:,.2f}'.format(avg_payment) }}</p>
-          <p class="text-2xs text-gray-500">avg payment</p>
+          <p class="text-2xs text-faint">avg payment</p>
         </div>
       </div>
     </div>
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4">
+    <div class="bg-panel rounded-xl border border-app p-4">
       <div class="flex items-center gap-2.5">
         <div class="w-9 h-9 rounded-lg bg-blue-500/15 flex items-center justify-center flex-shrink-0">
           <svg aria-hidden="true" class="w-4.5 h-4.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -86,7 +86,7 @@
         </div>
         <div>
           <p class="text-lg font-bold text-gray-100">{{ active_customers }}</p>
-          <p class="text-2xs text-gray-500">active customers</p>
+          <p class="text-2xs text-faint">active customers</p>
         </div>
       </div>
     </div>
@@ -104,12 +104,12 @@
     <div class="flex-1 h-px bg-gray-700"></div>
     <span class="text-2xs text-gray-600">{{ period_label|lower }}</span>
   </div>
-  <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden divide-y divide-gray-700/60 animate-fade-in-up">
+  <div class="bg-panel rounded-xl border border-app overflow-hidden divide-y divide-gray-700/60 animate-fade-in-up">
     {% for row in city_collections %}
     <div class="flex items-center gap-3 px-4 py-3">
       <div class="flex-1 min-w-0">
         <p class="text-sm font-medium text-gray-200">{{ row.city or 'No City' }}</p>
-        <p class="text-2xs text-gray-500">{{ row.count }} payment{{ 's' if row.count != 1 else '' }}</p>
+        <p class="text-2xs text-faint">{{ row.count }} payment{{ 's' if row.count != 1 else '' }}</p>
       </div>
       <span class="text-sm font-bold text-green-400">${{ '{:,.2f}'.format(row.total) }}</span>
     </div>
@@ -127,12 +127,12 @@
     <div class="flex-1 h-px bg-gray-700"></div>
     <span class="text-2xs text-gray-600">{{ customers_with_balance }} accounts</span>
   </div>
-  <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden divide-y divide-gray-700/60 animate-fade-in-up">
+  <div class="bg-panel rounded-xl border border-app overflow-hidden divide-y divide-gray-700/60 animate-fade-in-up">
     {% for customer in top_balances %}
     <div class="flex items-center gap-3 px-4 py-3">
       <div class="flex-1 min-w-0">
         <p class="text-sm font-medium text-gray-200 truncate">{{ customer.name }}</p>
-        <p class="text-2xs text-gray-500">{{ customer.city or '—' }}</p>
+        <p class="text-2xs text-faint">{{ customer.city or '—' }}</p>
       </div>
       <span class="text-sm font-bold text-amber-400">{{ customer.balance|currency }}</span>
     </div>
@@ -151,12 +151,12 @@
     <h2 class="text-xs font-bold text-green-400 uppercase tracking-wider">Recent Payments</h2>
     <div class="flex-1 h-px bg-gray-700"></div>
   </div>
-  <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden divide-y divide-gray-700/60 animate-fade-in-up">
+  <div class="bg-panel rounded-xl border border-app overflow-hidden divide-y divide-gray-700/60 animate-fade-in-up">
     {% for payment in recent_payments %}
     <div class="flex items-center gap-3 px-4 py-3">
       <div class="flex-1 min-w-0">
         <p class="text-sm font-medium text-gray-200 truncate">{{ payment.customer.name }}</p>
-        <p class="text-2xs text-gray-500">{{ payment.receipt_number }} · {{ payment.payment_date|dateformat }}</p>
+        <p class="text-2xs text-faint">{{ payment.receipt_number }} · {{ payment.payment_date|dateformat }}</p>
       </div>
       <span class="text-sm font-bold text-green-400">{{ payment.amount|currency }}</span>
     </div>
@@ -175,12 +175,12 @@
     <h2 class="text-xs font-bold text-purple-400 uppercase tracking-wider">Activity</h2>
     <div class="flex-1 h-px bg-gray-700"></div>
   </div>
-  <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden divide-y divide-gray-700/60 animate-fade-in-up">
+  <div class="bg-panel rounded-xl border border-app overflow-hidden divide-y divide-gray-700/60 animate-fade-in-up">
     {% for entry in recent_activity %}
     <div class="flex items-center gap-3 px-4 py-3">
       <div class="flex-1 min-w-0">
         <p class="text-sm text-gray-200 truncate">{{ entry.description or entry.action }}</p>
-        <p class="text-2xs text-gray-500">{{ entry.customer.name }} · {{ entry.created_at|dateformat }}</p>
+        <p class="text-2xs text-faint">{{ entry.customer.name }} · {{ entry.created_at|dateformat }}</p>
       </div>
     </div>
     {% endfor %}
@@ -198,12 +198,12 @@
     <div class="flex-1 h-px bg-gray-700"></div>
   </div>
   <div class="flex gap-2 animate-fade-in-up">
-    <a href="{{ url_for('reports.financial', format='csv') }}"
-       class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-800 border border-gray-700 text-gray-300 text-sm font-medium rounded-xl hover:bg-gray-700 transition-colors min-h-[44px] btn-press">
+    <a href="{{ url_for('reports.financial', format='csv', start_date=start_date, end_date=end_date) }}"
+       class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-panel border border-app text-gray-300 text-sm font-medium rounded-xl hover:bg-gray-700 transition-colors min-h-[44px] btn-press">
       Financial CSV
     </a>
-    <a href="{{ url_for('reports.tax', format='csv') }}"
-       class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-800 border border-gray-700 text-gray-300 text-sm font-medium rounded-xl hover:bg-gray-700 transition-colors min-h-[44px] btn-press">
+    <a href="{{ url_for('reports.tax', format='csv', start_date=start_date, end_date=end_date) }}"
+       class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-panel border border-app text-gray-300 text-sm font-medium rounded-xl hover:bg-gray-700 transition-colors min-h-[44px] btn-press">
       Tax CSV
     </a>
   </div>

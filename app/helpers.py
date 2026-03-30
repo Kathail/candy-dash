@@ -152,6 +152,9 @@ def generate_receipt_number(payment_date=None, max_retries=5):
 
 def generate_receipt_pdf(payment, customer):
     """Generate a PDF receipt for a payment. Returns bytes."""
+    import os
+    from reportlab.platypus import Image
+
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=letter, topMargin=0.5 * inch)
     styles = getSampleStyleSheet()
@@ -165,12 +168,23 @@ def generate_receipt_pdf(payment, customer):
 
     elements = []
 
-    elements.append(Paragraph("Candy Route Planner", title_style))
+    # Logo
+    logo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static", "img", "logo.png")
+    if os.path.exists(logo_path):
+        try:
+            logo = Image(logo_path, width=1.2 * inch, height=1.2 * inch)
+            logo.hAlign = "CENTER"
+            elements.append(logo)
+            elements.append(Spacer(1, 12))
+        except Exception:
+            pass
+
+    elements.append(Paragraph("Northern Sweet Supply", title_style))
     elements.append(Paragraph("Payment Receipt", normal_center))
     elements.append(Spacer(1, 0.3 * inch))
 
     data = [
-        ["Receipt #:", payment.receipt_number],
+        ["Invoice #:", payment.receipt_number],
         ["Date:", format_date(payment.payment_date, "%B %d, %Y")],
         ["Customer:", customer.name],
         ["", ""],

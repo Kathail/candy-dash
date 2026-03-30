@@ -1,6 +1,5 @@
 """Bookkeeper dashboard — read-only financial overview in one place."""
 
-import logging
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 

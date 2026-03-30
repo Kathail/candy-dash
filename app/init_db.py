@@ -6,6 +6,8 @@ import secrets
 from decimal import Decimal
 from pathlib import Path
 
+from sqlalchemy import text
+
 from app import db
 from app.models import User, Customer
 
@@ -148,11 +150,26 @@ def init_database():
             role="bookkeeper",
             is_active=True,
         )
-        bk_password = os.environ.get("BOOKKEEPER_PASSWORD", "miranda123")
+        bk_password = os.environ.get("BOOKKEEPER_PASSWORD")
+        generated_bk = False
+        if not bk_password:
+            bk_password = secrets.token_urlsafe(12)
+            generated_bk = True
         bk.set_password(bk_password)
         db.session.add(bk)
         db.session.commit()
-        print(f"  Bookkeeper user created (username: miranda)")
+        if generated_bk:
+            print(f"  Bookkeeper user created (username: miranda, generated password: {bk_password})")
+        else:
+            print(f"  Bookkeeper user created (username: miranda) with BOOKKEEPER_PASSWORD from environment.")
+
+    # Add unique index on invoice_number (partial: non-NULL only)
+    try:
+        with db.engine.connect() as conn:
+            conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_invoices_invoice_number ON invoices (invoice_number) WHERE invoice_number IS NOT NULL"))
+            conn.commit()
+    except Exception:
+        pass
 
     # Seed customers/leads from seed_data.json if table is empty
     _seed_customers()

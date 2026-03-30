@@ -67,11 +67,11 @@
 
   {% else %}
   {# No route — compact #}
-  <div class="bg-gray-800 rounded-xl border border-gray-700 p-5 animate-fade-in-up">
+  <div class="bg-panel rounded-xl border border-app p-5 animate-fade-in-up">
     <div class="flex items-center gap-3">
       <img src="{{ url_for('static', filename='img/logo.png') }}" alt="" class="w-10 h-10 rounded-lg object-contain flex-shrink-0">
       <div>
-        <p class="text-gray-400 text-sm">{% if greeting == 'Good morning' %}&#9728;{% elif greeting == 'Good afternoon' %}&#127774;{% else %}&#127769;{% endif %} {{ greeting }}, {{ current_user.username|capitalize }}!</p>
+        <p class="text-muted text-sm">{% if greeting == 'Good morning' %}&#9728;{% elif greeting == 'Good afternoon' %}&#127774;{% else %}&#127769;{% endif %} {{ greeting }}, {{ current_user.username|capitalize }}!</p>
         <p class="text-lg font-bold text-gray-100 mt-0.5">{{ today.strftime('%A, %B %d') }}</p>
       </div>
     </div>
@@ -108,8 +108,8 @@
     {% endif %}
 
     {# Stop card #}
-    <div class="bg-gray-800 rounded-xl border overflow-hidden animate-fade-in-up stagger-{{ loop.index0 % 8 + 1 }}
-                {{ 'border-green-700/40' if stop.completed else 'border-gray-700' }}">
+    <div class="bg-panel rounded-xl border overflow-hidden animate-fade-in-up stagger-{{ loop.index0 % 8 + 1 }}
+                {{ 'border-green-700/40' if stop.completed else 'border-app' }}">
       <a href="{{ url_for('customers.profile', id=stop.customer.id) }}" class="block p-4 hover:bg-gray-700/30 transition-colors btn-press">
         <div class="flex items-center gap-2.5">
           {% if stop.completed %}
@@ -125,7 +125,7 @@
           {% endif %}
           <div class="flex-1 min-w-0">
             <p class="text-sm font-semibold {{ 'text-gray-500' if stop.completed else 'text-gray-100' }} truncate">{{ stop.customer.name }}</p>
-            <p class="text-2xs text-gray-500">{{ stop.customer.city or 'No city' }}</p>
+            <p class="text-2xs text-faint">{{ stop.customer.city or 'No city' }}</p>
           </div>
           {% if stop.customer.balance > 0 and not stop.completed %}
           <span class="text-sm font-bold text-amber-400 flex-shrink-0">{{ stop.customer.balance|currency }}</span>
@@ -158,13 +158,13 @@
     <div class="flex-1 h-px bg-gray-700"></div>
     <a href="{{ url_for('balances.index') }}" class="text-2xs text-indigo-400 hover:text-indigo-300 font-medium btn-press">View all</a>
   </div>
-  <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden divide-y divide-gray-700/60 animate-fade-in-up">
+  <div class="bg-panel rounded-xl border border-app overflow-hidden divide-y divide-gray-700/60 animate-fade-in-up">
     {% for customer in top_balances %}
     <a href="{{ url_for('customers.profile', id=customer.id) }}"
        class="flex items-center gap-3 px-4 py-3 hover:bg-gray-700/50 transition-colors btn-press">
       <div class="flex-1 min-w-0">
         <p class="text-sm font-semibold text-gray-100 truncate">{{ customer.name }}</p>
-        <p class="text-2xs text-gray-500">{{ customer.city or '—' }}</p>
+        <p class="text-2xs text-faint">{{ customer.city or '—' }}</p>
       </div>
       <span class="text-sm font-bold text-amber-400">{{ customer.balance|currency }}</span>
       <svg aria-hidden="true" class="w-4 h-4 text-gray-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -190,7 +190,7 @@
     <div class="flex-1 h-px bg-gray-700"></div>
     <a href="{{ url_for('planner.index') }}" class="text-2xs text-indigo-400 hover:text-indigo-300 font-medium btn-press">Planner</a>
   </div>
-  <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden divide-y divide-gray-700/60 animate-fade-in-up">
+  <div class="bg-panel rounded-xl border border-app overflow-hidden divide-y divide-gray-700/60 animate-fade-in-up">
     {% for day in week_schedule %}
     <a href="{{ url_for('route.index', date=day.date.isoformat()) }}"
        class="flex items-center gap-3 px-4 py-3 hover:bg-gray-700/50 transition-colors btn-press">
@@ -228,13 +228,13 @@
     <div class="flex-1 h-px bg-gray-700"></div>
     <span class="text-2xs text-gray-600">30+ days</span>
   </div>
-  <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden divide-y divide-gray-700/60 animate-fade-in-up">
+  <div class="bg-panel rounded-xl border border-app overflow-hidden divide-y divide-gray-700/60 animate-fade-in-up">
     {% for store in attention_list %}
     <a href="{{ url_for('customers.profile', id=store.id) }}"
        class="flex items-center gap-3 px-4 py-3 hover:bg-gray-700/50 transition-colors btn-press">
       <div class="flex-1 min-w-0">
         <p class="text-sm font-semibold text-gray-100 truncate">{{ store.name }}</p>
-        <p class="text-2xs text-gray-500">{{ store.city }}</p>
+        <p class="text-2xs text-faint">{{ store.city }}</p>
       </div>
       {% if store.days_since is not none %}
       <span class="px-2 py-0.5 text-2xs font-semibold rounded-full
@@ -266,7 +266,7 @@
       <div class="flex-1 h-px bg-gray-700"></div>
       <a href="{{ url_for('analytics.index') }}" class="text-2xs text-indigo-400 hover:text-indigo-300 font-medium btn-press">Analytics</a>
     </div>
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-5 mt-2">
+    <div class="bg-panel rounded-xl border border-app p-5 mt-2">
       <canvas id="weekChart" height="140"></canvas>
     </div>
   </div>

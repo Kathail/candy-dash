@@ -1,5 +1,6 @@
 """Customers blueprint – CRUD, payments, notes, status."""
 
+import io
 from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation
 
@@ -10,7 +11,7 @@ from flask_login import login_required, current_user
 
 from app import db
 from app.models import Customer, Payment, Invoice, Note, ActivityLog, RouteStop, VALID_CUSTOMER_STATUSES
-from app.helpers import admin_required, generate_receipt_number, audit
+from app.helpers import admin_required, generate_receipt_number, generate_receipt_pdf, audit, safe_redirect
 import logging
 
 bp = Blueprint("customers", __name__, url_prefix="/customers")
@@ -326,7 +327,7 @@ def record_payment(id):
     Falls back to legacy 'amount' field as amount_paid for backwards compat.
     """
     is_fetch = request.headers.get("X-Requested-With") == "fetch"
-    redirect_to = request.form.get("next") or url_for("customers.profile", id=id)
+    redirect_to = safe_redirect(request.form.get("next")) or url_for("customers.profile", id=id)
 
     def _error(msg):
         if is_fetch:
@@ -428,14 +429,16 @@ def delete_payment(id, payment_id):
     try:
         # Lock the customer row to prevent concurrent balance updates
         customer = db.session.query(Customer).filter_by(id=id).with_for_update().one()
-        customer.balance = customer.balance + payment.amount
+        # Reverse both legs: undo the sale (amount_sold) and undo the payment (amount)
+        customer.balance = customer.balance - (payment.amount_sold or Decimal("0")) + payment.amount
 
         db.session.add(ActivityLog(
             customer_id=customer.id,
             user_id=current_user.id,
             action="payment_deleted",
             description=(
-                f"Payment #{payment.receipt_number} of ${payment.amount:,.2f} deleted. "
+                f"Payment #{payment.receipt_number} of ${payment.amount:,.2f} deleted"
+                f" (sold: ${(payment.amount_sold or Decimal('0')):,.2f}). "
                 f"Balance restored to ${customer.balance:,.2f}."
             ),
         ))
@@ -573,19 +576,29 @@ def add_invoice(id):
         status="unpaid",
         created_by=current_user.id,
     )
-    db.session.add(invoice)
 
-    # Add the invoice amount to customer balance
-    customer.balance += amount
+    try:
+        db.session.add(invoice)
 
-    db.session.add(ActivityLog(
-        customer_id=customer.id,
-        user_id=current_user.id,
-        action="invoice_added",
-        description=f"Invoice ${amount:,.2f} added. Balance: ${customer.balance:,.2f}.",
-    ))
-    audit("invoice_added", f"Invoice ${amount:,.2f} for '{customer.name}'")
-    db.session.commit()
+        # Lock the customer row for safe balance update
+        customer = db.session.query(Customer).filter_by(id=id).with_for_update().one()
+
+        # Add the invoice amount to customer balance
+        customer.balance += amount
+
+        db.session.add(ActivityLog(
+            customer_id=customer.id,
+            user_id=current_user.id,
+            action="invoice_added",
+            description=f"Invoice ${amount:,.2f} added. Balance: ${customer.balance:,.2f}.",
+        ))
+        audit("invoice_added", f"Invoice ${amount:,.2f} for '{customer.name}'")
+        db.session.commit()
+    except Exception:
+        logging.exception("Invoice creation failed")
+        db.session.rollback()
+        flash("An error occurred while adding the invoice.", "error")
+        return redirect(url_for("customers.profile", id=id))
 
     flash(f"Invoice for ${amount:,.2f} added.", "success")
     return redirect(url_for("customers.profile", id=id))
@@ -730,7 +743,6 @@ def delete_note(id, note_id):
 @login_required
 def invoice_pdf(id, invoice_id):
     """Generate a PDF invoice with company logo."""
-    import io
     from reportlab.lib.pagesizes import letter
     from reportlab.lib.units import inch
     from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
@@ -807,5 +819,29 @@ def invoice_pdf(id, invoice_id):
     doc.build(elements)
     buf.seek(0)
 
-    filename = f"invoice_{invoice.invoice_number or invoice.id}_{customer.name.replace(' ', '_')}.pdf"
+    import re
+    safe_name = re.sub(r'[^\w-]', '_', customer.name)
+    filename = f"invoice_{invoice.invoice_number or invoice.id}_{safe_name}.pdf"
+    return send_file(buf, mimetype="application/pdf", as_attachment=False, download_name=filename)
+
+
+# ---------------------------------------------------------------------------
+# Payment receipt PDF
+# ---------------------------------------------------------------------------
+
+@bp.route("/<int:id>/payments/<int:payment_id>/pdf")
+@login_required
+def payment_receipt_pdf(id, payment_id):
+    """Generate a PDF receipt for a single payment."""
+    payment = Payment.query.get_or_404(payment_id)
+    if payment.customer_id != id:
+        abort(404)
+    customer = Customer.query.get_or_404(id)
+
+    pdf_bytes = generate_receipt_pdf(payment, customer)
+    buf = io.BytesIO(pdf_bytes)
+
+    import re
+    safe_name = re.sub(r'[^\w-]', '_', customer.name)
+    filename = f"{payment.receipt_number}_{safe_name}.pdf"
     return send_file(buf, mimetype="application/pdf", as_attachment=False, download_name=filename)

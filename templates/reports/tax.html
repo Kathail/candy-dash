@@ -13,7 +13,7 @@
       <svg class="w-3.5 h-3.5 text-gray-600" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
       </svg>
-      <span class="text-gray-400">Tax</span>
+      <span class="text-muted">Tax</span>
     </nav>
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
       <div>
@@ -39,15 +39,15 @@
 
   {# ── KPI Cards ── #}
   <div class="grid grid-cols-3 gap-3">
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 animate-fade-in-up stagger-1">
+    <div class="bg-panel rounded-xl border border-app p-4 animate-fade-in-up stagger-1">
       <p class="text-2xs font-semibold text-gray-500 uppercase tracking-wider">Taxable</p>
       <p class="text-xl font-bold text-indigo-400 mt-1">{{ taxable_total|currency }}</p>
     </div>
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 animate-fade-in-up stagger-2">
+    <div class="bg-panel rounded-xl border border-app p-4 animate-fade-in-up stagger-2">
       <p class="text-2xs font-semibold text-gray-500 uppercase tracking-wider">Exempt</p>
       <p class="text-xl font-bold text-blue-400 mt-1">{{ exempt_total|currency }}</p>
     </div>
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 animate-fade-in-up stagger-3">
+    <div class="bg-panel rounded-xl border border-app p-4 animate-fade-in-up stagger-3">
       <p class="text-2xs font-semibold text-gray-500 uppercase tracking-wider">Total</p>
       <p class="text-xl font-bold text-gray-100 mt-1">{{ (taxable_total + exempt_total)|currency }}</p>
     </div>
@@ -59,8 +59,8 @@
     {% if taxable_rows.append(row) %}{% endif %}
   {% endfor %}
 
-  <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden animate-fade-in-up stagger-4">
-    <div class="px-5 py-4 border-b border-gray-700 flex items-center gap-2">
+  <div class="bg-panel rounded-xl border border-app overflow-hidden animate-fade-in-up stagger-4">
+    <div class="px-5 py-4 border-b border-app flex items-center gap-2">
       <div class="w-2 h-2 rounded-full bg-indigo-500" aria-hidden="true"></div>
       <h2 class="text-sm font-semibold text-gray-100">Taxable</h2>
       <span class="text-2xs text-gray-500 ml-auto">{{ taxable_total|currency }}</span>
@@ -96,8 +96,8 @@
     {% if exempt_rows.append(row) %}{% endif %}
   {% endfor %}
 
-  <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden animate-fade-in-up stagger-5">
-    <div class="px-5 py-4 border-b border-gray-700 flex items-center gap-2">
+  <div class="bg-panel rounded-xl border border-app overflow-hidden animate-fade-in-up stagger-5">
+    <div class="px-5 py-4 border-b border-app flex items-center gap-2">
       <div class="w-4 h-4 flex items-center justify-center text-blue-400" aria-hidden="true">
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>

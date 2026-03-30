@@ -7,6 +7,7 @@
   <title>Login - Candy Dash</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}">
   <script defer src="{{ url_for('static', filename='vendor/alpine.min.js') }}"></script>
+  <style>[x-cloak] { display: none !important; }</style>
 </head>
 <body class="h-full bg-gradient-to-br from-gray-950 to-gray-900 flex items-center justify-center p-4">
 
@@ -32,24 +33,24 @@
     {% endwith %}
 
     {# Login card #}
-    <div class="bg-gray-800 rounded-2xl shadow-xl p-6 sm:p-8">
+    <div class="bg-panel rounded-2xl shadow-xl p-6 sm:p-8">
       <h2 class="text-lg font-semibold text-gray-100 mb-6 text-center">Sign in to your account</h2>
 
       <form method="POST" action="{{ url_for('auth.login') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
         <div class="mb-4">
-          <label for="username" class="block text-sm font-medium text-gray-400 mb-1">Username</label>
+          <label for="username" class="block text-sm font-medium text-muted mb-1">Username</label>
           <input type="text" id="username" name="username" required autofocus autocomplete="username"
                  class="w-full bg-gray-700 border border-gray-600 text-gray-200 placeholder-gray-500 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 min-h-[44px]">
         </div>
 
         <div class="mb-6" x-data="{ showPw: false }">
-          <label for="password" class="block text-sm font-medium text-gray-400 mb-1">Password</label>
+          <label for="password" class="block text-sm font-medium text-muted mb-1">Password</label>
           <div class="relative">
             <input :type="showPw ? 'text' : 'password'" id="password" name="password" required autocomplete="current-password"
                    class="w-full bg-gray-700 border border-gray-600 text-gray-200 placeholder-gray-500 rounded-lg px-3 py-2.5 pr-10 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 min-h-[44px]">
-            <button type="button" @click="showPw = !showPw" class="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-500 hover:text-gray-300" tabindex="-1">
+            <button type="button" @click="showPw = !showPw" class="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-500 hover:text-gray-300" tabindex="-1" aria-label="Toggle password visibility">
               <svg x-show="!showPw" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
@@ -64,7 +65,7 @@
         <div class="flex items-center mb-6">
           <input type="checkbox" id="remember" name="remember" value="1"
                  class="w-5 h-5 text-indigo-600 border-gray-600 rounded focus:ring-indigo-500 bg-gray-700">
-          <label for="remember" class="ml-2 text-sm text-gray-400">Remember me</label>
+          <label for="remember" class="ml-2 text-sm text-muted">Remember me</label>
         </div>
 
         <button type="submit"
@@ -73,7 +74,7 @@
         </button>
       </form>
 
-      <div class="mt-4 pt-4 border-t border-gray-700">
+      <div class="mt-4 pt-4 border-t border-app">
         <a href="{{ url_for('auth.demo') }}"
            class="btn-press w-full inline-flex items-center justify-center gap-2 bg-gray-700 border border-gray-600 text-gray-300 rounded-lg px-4 py-2.5 text-sm font-medium hover:bg-gray-600 min-h-[44px] transition-colors">
           <svg aria-hidden="true" class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

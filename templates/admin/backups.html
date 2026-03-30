@@ -15,15 +15,15 @@
 
   {# -- Stats -- #}
   <div class="grid grid-cols-3 gap-3 animate-fade-in-up stagger-1">
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 text-center">
+    <div class="bg-panel rounded-xl border border-app p-4 text-center">
       <p class="text-lg font-bold text-gray-100">{{ customer_count }}</p>
       <p class="text-2xs text-gray-500">customers</p>
     </div>
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 text-center">
+    <div class="bg-panel rounded-xl border border-app p-4 text-center">
       <p class="text-lg font-bold text-gray-100">{{ payment_count }}</p>
       <p class="text-2xs text-gray-500">payments</p>
     </div>
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 text-center">
+    <div class="bg-panel rounded-xl border border-app p-4 text-center">
       <p class="text-lg font-bold text-gray-100">{{ stop_count }}</p>
       <p class="text-2xs text-gray-500">route stops</p>
     </div>
@@ -40,7 +40,7 @@
     <div class="flex-1 h-px bg-gray-700"></div>
   </div>
   <a href="{{ url_for('admin.backup_full') }}"
-     class="block bg-gray-800 rounded-xl border border-gray-700 p-4 hover:border-indigo-500/40 transition-all btn-press animate-fade-in-up">
+     class="block bg-panel rounded-xl border border-app p-4 hover:border-indigo-500/40 transition-all btn-press animate-fade-in-up">
     <div class="flex items-center gap-3">
       <div class="w-10 h-10 rounded-lg bg-indigo-500/15 flex items-center justify-center flex-shrink-0">
         <svg aria-hidden="true" class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -66,6 +66,14 @@
     <div class="flex-1 h-px bg-gray-700"></div>
   </div>
   <div class="space-y-2 animate-fade-in-up">
+    {% set color_classes = {
+      'blue':   {'hover': 'hover:border-blue-500/40',   'bg': 'bg-blue-500/15',   'text': 'text-blue-400'},
+      'green':  {'hover': 'hover:border-green-500/40',  'bg': 'bg-green-500/15',  'text': 'text-green-400'},
+      'amber':  {'hover': 'hover:border-amber-500/40',  'bg': 'bg-amber-500/15',  'text': 'text-amber-400'},
+      'purple': {'hover': 'hover:border-purple-500/40', 'bg': 'bg-purple-500/15', 'text': 'text-purple-400'},
+      'orange': {'hover': 'hover:border-orange-500/40', 'bg': 'bg-orange-500/15', 'text': 'text-orange-400'},
+      'cyan':   {'hover': 'hover:border-cyan-500/40',   'bg': 'bg-cyan-500/15',   'text': 'text-cyan-400'},
+    } %}
     {% set downloads = [
       ('admin.backup_customers', 'Customers', 'All customer data', customer_count ~ ' records', 'blue'),
       ('admin.backup_payments', 'Payments', 'Payment history', payment_count ~ ' records', 'green'),
@@ -76,9 +84,9 @@
     ] %}
     {% for endpoint, title, desc, count, color in downloads %}
     <a href="{{ url_for(endpoint) }}"
-       class="flex items-center gap-3 px-4 py-3 bg-gray-800 rounded-xl border border-gray-700 hover:border-{{ color }}-500/40 transition-all btn-press">
-      <div class="w-9 h-9 rounded-lg bg-{{ color }}-500/15 flex items-center justify-center flex-shrink-0">
-        <svg aria-hidden="true" class="w-4 h-4 text-{{ color }}-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+       class="flex items-center gap-3 px-4 py-3 bg-panel rounded-xl border border-app {{ color_classes[color].hover }} transition-all btn-press">
+      <div class="w-9 h-9 rounded-lg {{ color_classes[color].bg }} flex items-center justify-center flex-shrink-0">
+        <svg aria-hidden="true" class="w-4 h-4 {{ color_classes[color].text }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
         </svg>
       </div>

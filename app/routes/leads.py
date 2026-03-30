@@ -7,6 +7,7 @@ from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import login_required, current_user
 
 from app import db
+from app.helpers import admin_required, staff_required
 from app.models import Customer, ActivityLog
 import logging
 
@@ -116,6 +117,7 @@ def index():
 
 
 @bp.route("/new", methods=["GET", "POST"])
+@staff_required
 def new():
     """Create a new lead."""
     if request.method == "POST":
@@ -152,6 +154,7 @@ def new():
 
 
 @bp.route("/<int:id>/edit", methods=["GET", "POST"])
+@staff_required
 def edit(id):
     """Edit an existing lead."""
     lead = db.session.get(Customer, id)
@@ -180,6 +183,7 @@ def edit(id):
 
 
 @bp.route("/<int:id>/convert", methods=["POST"])
+@staff_required
 def convert(id):
     """Convert a lead to an active customer."""
     lead = db.session.get(Customer, id)
@@ -204,6 +208,7 @@ def convert(id):
 
 
 @bp.route("/import-csv", methods=["POST"])
+@admin_required
 def import_csv():
     """Import leads from a CSV file upload (admin only)."""
     csv_file = request.files.get("csv_file")

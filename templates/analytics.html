@@ -12,11 +12,11 @@
   {# -- Header + Range -- #}
   <div class="flex items-center justify-between">
     <h1 class="text-xl font-bold text-gray-100">Analytics</h1>
-    <div class="flex items-center gap-1 bg-gray-800 rounded-lg border border-gray-700 p-1" x-data="analyticsRange()">
+    <div class="flex items-center gap-1 bg-panel rounded-lg border border-app p-1" x-data="analyticsRange()">
       {% for val, label in [('3', '3M'), ('6', '6M'), ('12', '1Y')] %}
       <button type="button" @click="range = '{{ val }}'; navigate()"
               class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors btn-press
-                     {{ 'bg-indigo-600 text-white' if months == val|int else 'text-gray-400 hover:text-gray-200' }}">
+                     {{ 'bg-indigo-600 text-white' if months|string == val|string else 'text-muted hover:text-gray-200' }}">
         {{ label }}
       </button>
       {% endfor %}
@@ -26,14 +26,14 @@
   {# -- KPI Scoreboard -- #}
   <div class="grid grid-cols-2 gap-3 animate-fade-in-up stagger-1">
     {# Revenue #}
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4">
+    <div class="bg-panel rounded-xl border border-app p-4">
       <div class="flex items-center gap-2.5">
         <div class="w-9 h-9 rounded-lg bg-green-500/15 flex items-center justify-center flex-shrink-0">
           <span aria-hidden="true" class="text-sm font-black text-green-400">$</span>
         </div>
         <div>
           <p class="text-lg font-bold {{ 'text-green-400' if has_revenue else 'text-gray-100' }}">${{ '{:,.0f}'.format(total_revenue) }}</p>
-          <p class="text-2xs text-gray-500">revenue</p>
+          <p class="text-2xs text-faint">revenue</p>
         </div>
       </div>
       {% if revenue_delta is not none %}
@@ -51,7 +51,7 @@
     </div>
 
     {# Outstanding #}
-    <a href="{{ url_for('balances.index') }}" class="bg-gray-800 rounded-xl border border-gray-700 p-4 hover:border-orange-500/40 transition-all btn-press">
+    <a href="{{ url_for('balances.index') }}" class="bg-panel rounded-xl border border-app p-4 hover:border-orange-500/40 transition-all btn-press">
       <div class="flex items-center gap-2.5">
         <div class="w-9 h-9 rounded-lg bg-orange-500/15 flex items-center justify-center flex-shrink-0">
           <svg aria-hidden="true" class="w-4.5 h-4.5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -60,13 +60,13 @@
         </div>
         <div>
           <p class="text-lg font-bold text-gray-100">${{ '{:,.0f}'.format(total_outstanding) }}</p>
-          <p class="text-2xs text-gray-500">owed by {{ balance_stats.count }}</p>
+          <p class="text-2xs text-faint">owed by {{ balance_stats.count }}</p>
         </div>
       </div>
     </a>
 
     {# Payments + Avg Order (compact) #}
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4">
+    <div class="bg-panel rounded-xl border border-app p-4">
       <div class="flex items-center gap-2.5">
         <div class="w-9 h-9 rounded-lg bg-blue-500/15 flex items-center justify-center flex-shrink-0">
           <svg aria-hidden="true" class="w-4.5 h-4.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -75,13 +75,13 @@
         </div>
         <div>
           <p class="text-lg font-bold text-gray-100">{{ total_payments }}</p>
-          <p class="text-2xs text-gray-500">payments</p>
+          <p class="text-2xs text-faint">payments</p>
         </div>
       </div>
     </div>
 
     {# Completion rate #}
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4">
+    <div class="bg-panel rounded-xl border border-app p-4">
       <div class="flex items-center gap-2.5">
         <div class="w-9 h-9 rounded-lg bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
           <svg aria-hidden="true" class="w-4.5 h-4.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -90,7 +90,7 @@
         </div>
         <div>
           <p class="text-lg font-bold {{ 'text-green-400' if completion_rate >= 80 else 'text-amber-400' if completion_rate >= 50 else 'text-gray-100' }}">{{ completion_rate }}%</p>
-          <p class="text-2xs text-gray-500">route completion</p>
+          <p class="text-2xs text-faint">route completion</p>
         </div>
       </div>
     </div>
@@ -98,7 +98,7 @@
 
   {# -- Revenue Chart (only if there's data) -- #}
   {% if has_revenue %}
-  <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 animate-fade-in-up stagger-2">
+  <div class="bg-panel rounded-xl border border-app p-4 animate-fade-in-up stagger-2">
     <div class="flex items-center justify-between mb-3">
       <h2 class="text-sm font-semibold text-gray-100">Revenue</h2>
       <span class="text-2xs text-gray-600">vs previous</span>
@@ -113,16 +113,16 @@
   {% if attention_list %}
   <div class="animate-fade-in-up stagger-3">
     <div class="flex items-center justify-between px-1 mb-2">
-      <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider">Needs a Visit</h2>
+      <h2 class="text-sm font-semibold text-muted uppercase tracking-wider">Needs a Visit</h2>
       <span class="text-2xs text-gray-600">30+ days</span>
     </div>
-    <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden divide-y divide-gray-700/60">
+    <div class="bg-panel rounded-xl border border-app overflow-hidden divide-y divide-gray-700/60">
       {% for store in attention_list %}
       <a href="{{ url_for('customers.profile', id=store.id) }}"
          class="flex items-center gap-3 px-4 py-3 hover:bg-gray-700/50 transition-colors btn-press">
         <div class="flex-1 min-w-0">
           <p class="text-sm font-medium text-gray-200 truncate">{{ store.name }}</p>
-          <p class="text-2xs text-gray-500">{{ store.city }}</p>
+          <p class="text-2xs text-faint">{{ store.city }}</p>
         </div>
         {% if store.days_since is not none %}
         <span class="px-2 py-0.5 text-2xs font-semibold rounded-full
@@ -145,10 +145,10 @@
   {% if top_stores and has_revenue %}
   <div class="animate-fade-in-up stagger-4">
     <div class="flex items-center justify-between px-1 mb-2">
-      <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider">Top Stores</h2>
+      <h2 class="text-sm font-semibold text-muted uppercase tracking-wider">Top Stores</h2>
       <span class="text-2xs text-gray-600">by revenue</span>
     </div>
-    <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden divide-y divide-gray-700/60">
+    <div class="bg-panel rounded-xl border border-app overflow-hidden divide-y divide-gray-700/60">
       {% for store in top_stores[:5] %}
       <a href="{{ url_for('customers.profile', id=store.id) }}"
          class="flex items-center gap-3 px-4 py-3 hover:bg-gray-700/50 transition-colors btn-press">
@@ -157,7 +157,7 @@
         </span>
         <div class="flex-1 min-w-0">
           <p class="text-sm font-medium text-gray-200 truncate">{{ store.name }}</p>
-          <p class="text-2xs text-gray-500">{{ store.city }} · {{ store.payment_count }} payment{{ 's' if store.payment_count != 1 else '' }}</p>
+          <p class="text-2xs text-faint">{{ store.city }} · {{ store.payment_count }} payment{{ 's' if store.payment_count != 1 else '' }}</p>
         </div>
         <span class="text-sm font-bold text-green-400">${{ '{:,.0f}'.format(store.revenue) }}</span>
       </a>
@@ -170,23 +170,23 @@
   {% if balance_stats.count > 0 %}
   <div class="animate-fade-in-up stagger-5">
     <div class="flex items-center justify-between px-1 mb-2">
-      <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider">Balances</h2>
+      <h2 class="text-sm font-semibold text-muted uppercase tracking-wider">Balances</h2>
       <a href="{{ url_for('balances.index') }}" class="text-xs text-indigo-400 hover:text-indigo-300 font-medium btn-press">View all</a>
     </div>
     <div class="grid grid-cols-2 gap-3">
-      <div class="bg-gray-800 rounded-xl border border-gray-700 p-4">
-        <p class="text-2xs text-gray-500">Total Owed</p>
+      <div class="bg-panel rounded-xl border border-app p-4">
+        <p class="text-2xs text-faint">Total Owed</p>
         <p class="text-lg font-bold text-gray-100 mt-0.5">${{ '{:,.2f}'.format(balance_stats.total) }}</p>
       </div>
-      <div class="bg-gray-800 rounded-xl border border-gray-700 p-4">
-        <p class="text-2xs text-gray-500">Average</p>
+      <div class="bg-panel rounded-xl border border-app p-4">
+        <p class="text-2xs text-faint">Average</p>
         <p class="text-lg font-bold text-gray-100 mt-0.5">${{ '{:,.2f}'.format(balance_stats.average) }}</p>
       </div>
       {% if balance_stats.highest_id %}
-      <a href="{{ url_for('customers.profile', id=balance_stats.highest_id) }}" class="col-span-2 bg-gray-800 rounded-xl border border-gray-700 p-4 hover:border-amber-500/40 transition-all btn-press">
+      <a href="{{ url_for('customers.profile', id=balance_stats.highest_id) }}" class="col-span-2 bg-panel rounded-xl border border-app p-4 hover:border-amber-500/40 transition-all btn-press">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-2xs text-gray-500">Highest Balance</p>
+            <p class="text-2xs text-faint">Highest Balance</p>
             <p class="text-sm font-medium text-gray-200 mt-0.5">{{ balance_stats.highest_name }}</p>
           </div>
           <span class="text-lg font-bold text-amber-400">${{ '{:,.2f}'.format(balance_stats.highest_amount) }}</span>
@@ -201,7 +201,7 @@
   {% if has_revenue %}
   <div class="hidden lg:grid grid-cols-2 gap-6 animate-fade-in-up">
     {# Collections by City #}
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-5">
+    <div class="bg-panel rounded-xl border border-app p-5">
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-sm font-semibold text-gray-100">By City</h2>
       </div>
@@ -211,7 +211,7 @@
     </div>
 
     {# Best Days #}
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-5">
+    <div class="bg-panel rounded-xl border border-app p-5">
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-sm font-semibold text-gray-100">Best Days</h2>
         <span class="text-2xs text-gray-600">avg per transaction</span>
@@ -222,7 +222,7 @@
     </div>
 
     {# Route Efficiency #}
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-5">
+    <div class="bg-panel rounded-xl border border-app p-5">
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-sm font-semibold text-gray-100">Route Efficiency</h2>
       </div>
@@ -232,7 +232,7 @@
     </div>
 
     {# Customer Breakdown #}
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-5">
+    <div class="bg-panel rounded-xl border border-app p-5">
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-sm font-semibold text-gray-100">Customers</h2>
       </div>
@@ -241,7 +241,7 @@
         <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div class="text-center">
             <p class="text-2xl font-bold text-gray-100">{{ charts.status_distribution.total }}</p>
-            <p class="text-2xs text-gray-500">total</p>
+            <p class="text-2xs text-faint">total</p>
           </div>
         </div>
       </div>

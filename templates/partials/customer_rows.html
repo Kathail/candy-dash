@@ -2,7 +2,7 @@
 
 <div class="space-y-2">
   {% for customer in pagination.items %}
-  <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 card-lift animate-fade-in-up stagger-{{ loop.index0 % 8 + 1 }}">
+  <div class="bg-panel rounded-xl border border-app p-4 card-lift animate-fade-in-up stagger-{{ loop.index0 % 8 + 1 }}">
     <div class="flex items-center gap-3">
       {# Avatar #}
       {% set colors = ['bg-indigo-500/20 text-indigo-400', 'bg-purple-500/20 text-purple-400', 'bg-blue-500/20 text-blue-400', 'bg-emerald-500/20 text-emerald-400', 'bg-amber-500/20 text-amber-400', 'bg-rose-500/20 text-rose-400'] %}
@@ -96,11 +96,11 @@
 
 {% else %}
 {# ── Empty State ── #}
-<div class="bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-10 text-center animate-fade-in-up">
+<div class="bg-panel rounded-xl shadow-sm border border-app p-10 text-center animate-fade-in-up">
   <div class="text-4xl mb-3" aria-hidden="true">
     {% if q or status_filter or city_filter %}&#128270;{% else %}&#128075;{% endif %}
   </div>
-  <p class="text-sm font-medium text-gray-400">
+  <p class="text-sm font-medium text-muted">
     {% if q or status_filter or city_filter %}
     No customers match your search.
     {% else %}

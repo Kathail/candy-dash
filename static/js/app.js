@@ -44,6 +44,7 @@
             "/api/customers/search?q=" + encodeURIComponent(this.query),
             { signal: this._controller.signal }
           );
+          if (!res.ok) { this.results = []; this.loading = false; return; }
           this.results = await res.json();
           this.open = true;
         } catch (e) {
@@ -151,6 +152,7 @@
             "/api/customers/search?q=" + encodeURIComponent(this.customerQuery),
             { signal: this._controller.signal }
           );
+          if (!res.ok) { this.custResults = []; return; }
           this.custResults = await res.json();
           this.custDropdown = true;
         } catch (e) {
@@ -181,13 +183,20 @@
               notes: this.notes,
             }),
           });
+          if (!res.ok) {
+            let msg = "Failed to record transaction.";
+            try { const d = await res.json(); msg = d.error || msg; } catch (_) {}
+            document.dispatchEvent(new CustomEvent("show-toast", { detail: { message: msg, category: "error" } }));
+            this.submitting = false;
+            return;
+          }
           const data = await res.json();
           if (data.ok) {
             document.dispatchEvent(new CustomEvent("show-toast", {
               detail: { message: "Transaction recorded. Invoice #" + data.receipt_number, category: "success" },
             }));
             this.close();
-            setTimeout(() => window.location.reload(), 1500);
+            window.location.reload();
           } else {
             document.dispatchEvent(new CustomEvent("show-toast", {
               detail: { message: data.error || "Failed to record transaction.", category: "error" },

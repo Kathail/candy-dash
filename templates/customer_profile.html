@@ -22,7 +22,7 @@
     <svg class="w-3.5 h-3.5 text-gray-600" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
     </svg>
-    <span class="text-gray-400 truncate">{{ customer.name }}</span>
+    <span class="text-muted truncate">{{ customer.name }}</span>
   </nav>
 
   <!-- Header -->
@@ -66,7 +66,7 @@
   <!-- Info + Balance Cards -->
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 animate-fade-in-up">
     <!-- Info Card -->
-    <div class="lg:col-span-2 bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-5">
+    <div class="lg:col-span-2 bg-panel rounded-xl shadow-sm border border-app p-5">
       <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Customer Info</h3>
       <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
         {% if customer.address %}
@@ -102,15 +102,15 @@
         {% endif %}
       </dl>
       {% if customer.notes %}
-      <div class="mt-4 pt-4 border-t border-gray-700">
+      <dl class="mt-4 pt-4 border-t border-app">
         <dt class="text-xs font-medium text-gray-500 mb-1">Notes</dt>
         <dd class="text-sm text-gray-300 whitespace-pre-line">{{ customer.notes }}</dd>
-      </div>
+      </dl>
       {% endif %}
     </div>
 
     <!-- Balance Card -->
-    <div class="bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-5 flex flex-col" x-data="{ showPayment: false }">
+    <div class="bg-panel rounded-xl shadow-sm border border-app p-5 flex flex-col" x-data="{ showPayment: false }">
       <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Balance</h3>
       <p class="text-3xl font-bold {{ 'text-amber-400' if customer.balance and customer.balance > 0 else 'text-green-400' }} mb-4">
         {{ customer.balance|currency }}
@@ -124,7 +124,7 @@
       </div>
 
       <!-- Inline Payment Form -->
-      <div x-show="showPayment" x-transition class="mt-4 pt-4 border-t border-gray-700">
+      <div x-show="showPayment" x-transition class="mt-4 pt-4 border-t border-app">
         <form method="post" action="{{ url_for('customers.record_payment', id=customer.id) }}" class="space-y-3">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <div class="grid grid-cols-2 gap-3">
@@ -186,12 +186,12 @@
       <form method="POST" action="{{ url_for('customers.add_note_entry', id=customer.id) }}" class="flex gap-2">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="text" name="text" placeholder="Add a note..." required
-               class="flex-1 rounded-xl border-gray-700 bg-gray-800 text-gray-200 placeholder-gray-500 text-sm min-h-[44px]" style="padding-left: 1rem;">
+               class="flex-1 rounded-xl border-app bg-panel text-gray-200 placeholder-gray-500 text-sm min-h-[44px]" style="padding-left: 1rem;">
         <button type="submit" class="px-4 py-2 bg-purple-600 text-white text-sm font-semibold rounded-xl hover:bg-purple-500 transition-colors btn-press min-h-[44px]">Add</button>
       </form>
     </div>
     {% if notes %}
-    <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden divide-y divide-gray-700/60">
+    <div class="bg-panel rounded-xl border border-app overflow-hidden divide-y divide-gray-700/60">
       {% for note in notes %}
       <div class="flex items-start gap-3 px-4 py-3">
         <div class="flex-1 min-w-0">
@@ -234,29 +234,29 @@
       {% endif %}
     </div>
     <div x-show="showInvoiceForm" x-transition x-cloak class="mb-2">
-      <form method="POST" action="{{ url_for('customers.add_invoice', id=customer.id) }}" class="bg-gray-800 rounded-xl border border-gray-700 p-4 space-y-3">
+      <form method="POST" action="{{ url_for('customers.add_invoice', id=customer.id) }}" class="bg-panel rounded-xl border border-app p-4 space-y-3">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-2xs font-semibold text-gray-500 uppercase mb-1">Amount ($)</label>
-            <input type="number" name="amount" step="0.01" min="0.01" required placeholder="0.00"
+            <label for="invoice-amount" class="block text-2xs font-semibold text-gray-500 uppercase mb-1">Amount ($)</label>
+            <input type="number" name="amount" id="invoice-amount" step="0.01" min="0.01" required placeholder="0.00"
                    class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 text-sm min-h-[44px]">
           </div>
           <div>
-            <label class="block text-2xs font-semibold text-gray-500 uppercase mb-1">Date</label>
-            <input type="date" name="invoice_date" value="{{ today if today is defined else '' }}"
+            <label for="invoice-date" class="block text-2xs font-semibold text-gray-500 uppercase mb-1">Date</label>
+            <input type="date" name="invoice_date" id="invoice-date" value="{{ today if today is defined else '' }}"
                    class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 text-sm min-h-[44px]">
           </div>
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-2xs font-semibold text-gray-500 uppercase mb-1">Invoice # (optional)</label>
-            <input type="text" name="invoice_number" placeholder="INV-001"
+            <label for="invoice-number" class="block text-2xs font-semibold text-gray-500 uppercase mb-1">Invoice # (optional)</label>
+            <input type="text" name="invoice_number" id="invoice-number" placeholder="INV-001"
                    class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 text-sm min-h-[44px]">
           </div>
           <div>
-            <label class="block text-2xs font-semibold text-gray-500 uppercase mb-1">Description</label>
-            <input type="text" name="description" placeholder="Optional"
+            <label for="invoice-description" class="block text-2xs font-semibold text-gray-500 uppercase mb-1">Description</label>
+            <input type="text" name="description" id="invoice-description" placeholder="Optional"
                    class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 text-sm min-h-[44px]">
           </div>
         </div>
@@ -266,7 +266,7 @@
       </form>
     </div>
     {% if invoices %}
-    <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden divide-y divide-gray-700/60">
+    <div class="bg-panel rounded-xl border border-app overflow-hidden divide-y divide-gray-700/60">
       {% for inv in invoices %}
       <div x-data="{ showPay: false, payType: 'cash' }">
       <div class="flex items-center gap-3 px-4 py-3">
@@ -286,7 +286,7 @@
               {{ inv.status }}
             </span>
             {% if inv.status == 'paid' and inv.payment_type %}
-            <span class="px-1.5 py-0.5 text-2xs font-semibold rounded-full bg-gray-700 text-gray-400">{{ inv.payment_type }}</span>
+            <span class="px-1.5 py-0.5 text-2xs font-semibold rounded-full bg-gray-700 text-muted">{{ inv.payment_type }}</span>
             {% endif %}
           </div>
           <p class="text-2xs text-gray-500 mt-0.5">{{ inv.invoice_date|dateformat }}{% if inv.description %} · {{ inv.description }}{% endif %}</p>
@@ -344,7 +344,7 @@
   <!-- Tabs -->
   <div x-data="{ tab: 'payments' }" class="animate-fade-in-up">
     <!-- Tab Headers -->
-    <div class="border-b border-gray-700">
+    <div class="border-b border-app">
       <div class="flex gap-6 -mb-px overflow-x-auto" role="tablist" aria-label="Customer details">
         <button @click="tab = 'payments'" role="tab"
                 :aria-selected="(tab === 'payments').toString()"
@@ -352,7 +352,7 @@
                 :class="tab === 'payments' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-300 hover:border-gray-600'"
                 class="btn-press whitespace-nowrap pb-3 px-1 border-b-2 text-sm font-medium transition-colors">
           Payments
-          <span class="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-gray-700 text-gray-400">{{ payments|length }}</span>
+          <span class="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-gray-700 text-muted">{{ payments|length }}</span>
         </button>
         <button @click="tab = 'activity'" role="tab"
                 :aria-selected="(tab === 'activity').toString()"
@@ -360,7 +360,7 @@
                 :class="tab === 'activity' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-300 hover:border-gray-600'"
                 class="btn-press whitespace-nowrap pb-3 px-1 border-b-2 text-sm font-medium transition-colors">
           Activity
-          <span class="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-gray-700 text-gray-400">{{ activity|length }}</span>
+          <span class="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-gray-700 text-muted">{{ activity|length }}</span>
         </button>
         <button @click="tab = 'routes'" role="tab"
                 :aria-selected="(tab === 'routes').toString()"
@@ -368,7 +368,7 @@
                 :class="tab === 'routes' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-300 hover:border-gray-600'"
                 class="btn-press whitespace-nowrap pb-3 px-1 border-b-2 text-sm font-medium transition-colors">
           Routes
-          <span class="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-gray-700 text-gray-400">{{ route_history|length }}</span>
+          <span class="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-gray-700 text-muted">{{ route_history|length }}</span>
         </button>
       </div>
     </div>
@@ -376,18 +376,18 @@
     <!-- Payment History Tab -->
     <div x-show="tab === 'payments'" id="panel-payments" role="tabpanel" aria-labelledby="tab-payments" class="mt-4">
       {% if payments %}
-      <div class="bg-gray-800 rounded-xl shadow-sm border border-gray-700 overflow-hidden">
+      <div class="bg-panel rounded-xl shadow-sm border border-app overflow-hidden">
         <div class="overflow-x-auto">
           <table class="w-full">
             <thead>
-              <tr class="border-b border-gray-700 bg-gray-900">
-                <th class="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Date</th>
-                <th class="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Amount</th>
-                <th class="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Invoice #</th>
-                <th class="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider hidden sm:table-cell">Type</th>
-                <th class="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider hidden sm:table-cell">Previous Bal.</th>
-                <th class="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider hidden md:table-cell">Recorded By</th>
-                <th class="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Actions</th>
+              <tr class="border-b border-app bg-app">
+                <th class="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Date</th>
+                <th class="text-right px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Amount</th>
+                <th class="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Invoice #</th>
+                <th class="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider hidden sm:table-cell">Type</th>
+                <th class="text-right px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider hidden sm:table-cell">Previous Bal.</th>
+                <th class="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider hidden md:table-cell">Recorded By</th>
+                <th class="text-right px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-700">
@@ -396,11 +396,13 @@
                 <td class="px-4 py-3 text-sm text-gray-100">{{ payment.payment_date|dateformat }}</td>
                 <td class="px-4 py-3 text-sm font-semibold text-green-400 text-right">{{ payment.amount|currency }}</td>
                 <td class="px-4 py-3 text-sm font-mono">
-                  <span class="text-indigo-400">{{ payment.receipt_number }}</span>
+                  <a href="{{ url_for('customers.payment_receipt_pdf', id=customer.id, payment_id=payment.id) }}"
+                     target="_blank"
+                     class="text-indigo-400 hover:text-indigo-300 hover:underline transition-colors">{{ payment.receipt_number }}</a>
                 </td>
                 <td class="px-4 py-3 hidden sm:table-cell">
                   {% if payment.payment_type %}
-                  <span class="px-1.5 py-0.5 text-2xs font-semibold rounded-full bg-gray-700 text-gray-400">{{ payment.payment_type }}</span>
+                  <span class="px-1.5 py-0.5 text-2xs font-semibold rounded-full bg-gray-700 text-muted">{{ payment.payment_type }}</span>
                   {% endif %}
                 </td>
                 <td class="px-4 py-3 text-sm text-gray-500 text-right hidden sm:table-cell">{{ payment.previous_balance|currency }}</td>
@@ -433,7 +435,7 @@
         </div>
       </div>
       {% else %}
-      <div class="bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-8 text-center">
+      <div class="bg-panel rounded-xl shadow-sm border border-app p-8 text-center">
         <p class="text-sm text-gray-500">No payments recorded yet.</p>
       </div>
       {% endif %}
@@ -442,7 +444,7 @@
     <!-- Activity Log Tab -->
     <div x-show="tab === 'activity'" x-cloak id="panel-activity" role="tabpanel" aria-labelledby="tab-activity" class="mt-4">
       {% if activity %}
-      <div class="bg-gray-800 rounded-xl shadow-sm border border-gray-700">
+      <div class="bg-panel rounded-xl shadow-sm border border-app">
         <ul class="divide-y divide-gray-700">
           {% for entry in activity %}
           <li class="px-5 py-3 flex items-start gap-3">
@@ -491,7 +493,7 @@
         </ul>
       </div>
       {% else %}
-      <div class="bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-8 text-center">
+      <div class="bg-panel rounded-xl shadow-sm border border-app p-8 text-center">
         <p class="text-sm text-gray-500">No activity recorded yet.</p>
       </div>
       {% endif %}
@@ -500,15 +502,15 @@
     <!-- Route History Tab -->
     <div x-show="tab === 'routes'" x-cloak id="panel-routes" role="tabpanel" aria-labelledby="tab-routes" class="mt-4">
       {% if route_history %}
-      <div class="bg-gray-800 rounded-xl shadow-sm border border-gray-700 overflow-hidden">
+      <div class="bg-panel rounded-xl shadow-sm border border-app overflow-hidden">
         <div class="overflow-x-auto">
           <table class="w-full">
             <thead>
-              <tr class="border-b border-gray-700 bg-gray-900">
-                <th class="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Date</th>
-                <th class="text-center px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
-                <th class="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider hidden sm:table-cell">Completed At</th>
-                <th class="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider hidden md:table-cell">Notes</th>
+              <tr class="border-b border-app bg-app">
+                <th class="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Date</th>
+                <th class="text-center px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Status</th>
+                <th class="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider hidden sm:table-cell">Completed At</th>
+                <th class="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider hidden md:table-cell">Notes</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-700">
@@ -546,7 +548,7 @@
         </div>
       </div>
       {% else %}
-      <div class="bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-8 text-center">
+      <div class="bg-panel rounded-xl shadow-sm border border-app p-8 text-center">
         <p class="text-sm text-gray-500">No route history yet.</p>
       </div>
       {% endif %}

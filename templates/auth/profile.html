@@ -13,7 +13,7 @@
   </div>
 
   {# ── Account Info ── #}
-  <div class="bg-gray-800 rounded-xl border border-gray-700 p-5 animate-fade-in-up stagger-1">
+  <div class="bg-panel rounded-xl border border-app p-5 animate-fade-in-up stagger-1">
     <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Account</h2>
     <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
       <div>
@@ -47,17 +47,17 @@
 
   {# ── Stats ── #}
   <div class="grid grid-cols-3 gap-3 animate-fade-in-up stagger-2">
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 text-center">
+    <div class="bg-panel rounded-xl border border-app p-4 text-center">
       <p class="text-2xs font-semibold text-gray-500 uppercase tracking-wider">Payments</p>
       <p class="text-xl font-bold text-gray-100 mt-1">{{ payments_recorded }}</p>
       <p class="text-2xs text-gray-500">recorded</p>
     </div>
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 text-center">
+    <div class="bg-panel rounded-xl border border-app p-4 text-center">
       <p class="text-2xs font-semibold text-gray-500 uppercase tracking-wider">Stops</p>
       <p class="text-xl font-bold text-gray-100 mt-1">{{ stops_completed }}</p>
       <p class="text-2xs text-gray-500">completed</p>
     </div>
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 text-center">
+    <div class="bg-panel rounded-xl border border-app p-4 text-center">
       <p class="text-2xs font-semibold text-gray-500 uppercase tracking-wider">Collected</p>
       <p class="text-xl font-bold text-green-400 mt-1">{{ total_collected|currency }}</p>
       <p class="text-2xs text-gray-500">total</p>
@@ -67,7 +67,7 @@
   {# ── Actions ── #}
   <div class="space-y-3 animate-fade-in-up stagger-3">
     <a href="{{ url_for('auth.change_password') }}"
-       class="flex items-center justify-between bg-gray-800 rounded-xl border border-gray-700 px-5 py-4 hover:bg-gray-700/50 transition">
+       class="flex items-center justify-between bg-panel rounded-xl border border-app px-5 py-4 hover:bg-gray-700/50 transition">
       <div class="flex items-center gap-3">
         <div class="w-9 h-9 rounded-lg bg-indigo-500/15 flex items-center justify-center">
           <svg aria-hidden="true" class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -86,7 +86,7 @@
 
     {% if current_user.is_admin %}
     <a href="{{ url_for('admin.index') }}"
-       class="flex items-center justify-between bg-gray-800 rounded-xl border border-gray-700 px-5 py-4 hover:bg-gray-700/50 transition">
+       class="flex items-center justify-between bg-panel rounded-xl border border-app px-5 py-4 hover:bg-gray-700/50 transition">
       <div class="flex items-center gap-3">
         <div class="w-9 h-9 rounded-lg bg-red-500/15 flex items-center justify-center">
           <svg aria-hidden="true" class="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

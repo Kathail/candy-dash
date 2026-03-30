@@ -7,6 +7,7 @@
   "use strict";
 
   const QUEUE_KEY = "paymentQueue";
+  let _syncing = false;
 
   function showToast(message, category) {
     document.dispatchEvent(new CustomEvent("show-toast", {
@@ -73,8 +74,9 @@
    */
   function syncPayments() {
     const queue = getQueue();
-    if (queue.length === 0) return Promise.resolve();
+    if (queue.length === 0 || _syncing) return Promise.resolve();
 
+    _syncing = true;
     return fetch("/api/sync", {
       method: "POST",
       headers: {
@@ -100,7 +102,8 @@
       .catch((err) => {
         console.error("[OfflineQueue] Sync error:", err);
         showToast("Failed to sync offline payments. Will retry when connected.", "error");
-      });
+      })
+      .finally(() => { _syncing = false; });
   }
 
   // ── Internal helpers ──────────────────────────────────────────────────

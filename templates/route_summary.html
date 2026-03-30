@@ -30,19 +30,19 @@
 
   {# ── KPI Cards ── #}
   <div class="grid grid-cols-3 gap-3">
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 animate-fade-in-up stagger-1">
+    <div class="bg-panel rounded-xl border border-app p-4 animate-fade-in-up stagger-1">
       <p class="text-2xs font-semibold text-gray-500 uppercase tracking-wider">Stops</p>
       <p class="text-xl font-bold text-gray-100 mt-1">{{ completed_stops }}/{{ total_stops }}</p>
       <div class="mt-2 h-1.5 bg-gray-700 rounded-full overflow-hidden">
         <div class="h-full rounded-full transition-all {{ 'bg-green-500' if pct == 100 else 'bg-indigo-500' }}" style="width: {{ pct }}%"></div>
       </div>
     </div>
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 animate-fade-in-up stagger-2">
+    <div class="bg-panel rounded-xl border border-app p-4 animate-fade-in-up stagger-2">
       <p class="text-2xs font-semibold text-gray-500 uppercase tracking-wider">Collected</p>
       <p class="text-xl font-bold text-green-400 mt-1">{{ payment_sum|currency }}</p>
       <p class="text-2xs text-gray-500 mt-1">{{ payment_count }} payment{{ 's' if payment_count != 1 else '' }}</p>
     </div>
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 animate-fade-in-up stagger-3">
+    <div class="bg-panel rounded-xl border border-app p-4 animate-fade-in-up stagger-3">
       <p class="text-2xs font-semibold text-gray-500 uppercase tracking-wider">Tomorrow</p>
       <p class="text-xl font-bold text-gray-100 mt-1">{{ next_day_stops }}</p>
       <a href="{{ url_for('route.index', date=next_date.isoformat()) }}" class="text-2xs text-indigo-400 hover:text-indigo-300 mt-1 inline-block">
@@ -54,7 +54,7 @@
   {# ── Download Receipts ── #}
   {% if payment_count > 0 %}
   <a href="{{ url_for('route.receipts_zip', date_str=route_date.isoformat()) }}"
-     class="flex items-center justify-between bg-gray-800 rounded-xl border border-gray-700 px-4 py-3.5 hover:bg-gray-700/50 transition card-lift animate-fade-in-up stagger-4">
+     class="flex items-center justify-between bg-panel rounded-xl border border-app px-4 py-3.5 hover:bg-gray-700/50 transition card-lift animate-fade-in-up stagger-4">
     <div class="flex items-center gap-3">
       <div class="w-9 h-9 rounded-lg bg-indigo-500/15 flex items-center justify-center">
         <svg aria-hidden="true" class="w-4.5 h-4.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -75,8 +75,8 @@
   {# ── Completed Stops ── #}
   {% set completed_list = stops|selectattr('completed')|list %}
   {% if completed_list %}
-  <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden animate-fade-in-up stagger-5">
-    <div class="px-4 py-3 border-b border-gray-700 flex items-center gap-2">
+  <div class="bg-panel rounded-xl border border-app overflow-hidden animate-fade-in-up stagger-5">
+    <div class="px-4 py-3 border-b border-app flex items-center gap-2">
       <div class="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center">
         <svg aria-hidden="true" class="w-3 h-3 text-green-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
       </div>
@@ -92,7 +92,7 @@
         </div>
         <div class="flex-1 min-w-0">
           <a href="{{ url_for('customers.profile', id=stop.customer.id) }}" class="text-sm font-medium text-gray-100 hover:text-indigo-400 transition truncate block">{{ stop.customer.name }}</a>
-          <p class="text-2xs text-gray-500">{{ stop.customer.city or 'No city' }}</p>
+          <p class="text-2xs text-gray-500">{{ stop.customer.city or 'No City' }}</p>
         </div>
         {% if stop.completed_at %}
         <span class="text-2xs text-gray-500 flex-shrink-0">{{ stop.completed_at|dateformat('%I:%M %p') }}</span>
@@ -106,8 +106,8 @@
   {# ── Missed Stops ── #}
   {% set missed_list = stops|rejectattr('completed')|list %}
   {% if missed_list %}
-  <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden animate-fade-in-up stagger-6">
-    <div class="px-4 py-3 border-b border-gray-700 flex items-center gap-2">
+  <div class="bg-panel rounded-xl border border-app overflow-hidden animate-fade-in-up stagger-6">
+    <div class="px-4 py-3 border-b border-app flex items-center gap-2">
       <div class="w-5 h-5 rounded-full bg-red-500/20 flex items-center justify-center">
         <svg aria-hidden="true" class="w-3 h-3 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -125,7 +125,7 @@
         </div>
         <div class="flex-1 min-w-0">
           <a href="{{ url_for('customers.profile', id=stop.customer.id) }}" class="text-sm font-medium text-gray-100 hover:text-indigo-400 transition truncate block">{{ stop.customer.name }}</a>
-          <p class="text-2xs text-gray-500">{{ stop.customer.city or 'No city' }}</p>
+          <p class="text-2xs text-gray-500">{{ stop.customer.city or 'No City' }}</p>
         </div>
         <span class="text-2xs font-medium text-red-400 bg-red-500/10 px-2 py-0.5 rounded-full flex-shrink-0">Missed</span>
       </div>
@@ -136,8 +136,8 @@
 
   {# ── Tomorrow Preview ── #}
   {% if next_day_stops_list %}
-  <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden animate-fade-in-up stagger-7">
-    <div class="px-4 py-3 border-b border-gray-700 flex items-center gap-2">
+  <div class="bg-panel rounded-xl border border-app overflow-hidden animate-fade-in-up stagger-7">
+    <div class="px-4 py-3 border-b border-app flex items-center gap-2">
       <div class="w-5 h-5 rounded-full bg-purple-500/20 flex items-center justify-center">
         <svg aria-hidden="true" class="w-3 h-3 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
@@ -149,12 +149,12 @@
     <div class="divide-y divide-gray-700/50">
       {% for stop in next_day_stops_list %}
       <div class="flex items-center gap-3 px-4 py-2.5">
-        <div class="w-6 h-6 rounded-full bg-gray-700 text-gray-400 flex items-center justify-center text-2xs font-bold flex-shrink-0">
+        <div class="w-6 h-6 rounded-full bg-gray-700 text-muted flex items-center justify-center text-2xs font-bold flex-shrink-0">
           {{ stop.sequence }}
         </div>
         <a href="{{ url_for('customers.profile', id=stop.customer.id) }}" class="flex-1 min-w-0 hover:opacity-80 transition">
           <p class="text-sm font-medium text-gray-200 truncate">{{ stop.customer.name }}</p>
-          <p class="text-2xs text-gray-500">{{ stop.customer.city or 'No city' }}</p>
+          <p class="text-2xs text-gray-500">{{ stop.customer.city or 'No City' }}</p>
         </a>
       </div>
       {% endfor %}
@@ -172,11 +172,11 @@
       Dashboard
     </a>
     <a href="{{ url_for('route.index', date=route_date.isoformat()) }}"
-       class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-gray-800 border border-gray-600 text-sm font-medium rounded-xl text-gray-300 hover:bg-gray-700 transition min-h-[44px] btn-press">
+       class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-panel border border-gray-600 text-sm font-medium rounded-xl text-gray-300 hover:bg-gray-700 transition min-h-[44px] btn-press">
       &larr; Route
     </a>
     <a href="{{ url_for('planner.index', date=route_date.isoformat()) }}"
-       class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-gray-800 border border-gray-600 text-sm font-medium rounded-xl text-gray-300 hover:bg-gray-700 transition min-h-[44px] btn-press">
+       class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-panel border border-gray-600 text-sm font-medium rounded-xl text-gray-300 hover:bg-gray-700 transition min-h-[44px] btn-press">
       Planner
     </a>
   </div>

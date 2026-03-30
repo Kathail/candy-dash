@@ -13,7 +13,7 @@
     </script>
     <title>{% block title %}Candy Dash{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#0b1220" />
+    <meta name="theme-color" content="#111827" />
     <meta name="csrf-token" content="{{ csrf_token() }}" />
 
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -172,7 +172,7 @@
                          :class="'toast toast-' + toast.cat"
                          class="flex items-start gap-2">
                         <span class="flex-1" x-text="toast.msg"></span>
-                        <button @click="dismiss(toast.id)" class="shrink-0 p-1 hover:opacity-70">&times;</button>
+                        <button @click="dismiss(toast.id)" class="shrink-0 p-1 hover:opacity-70" aria-label="Dismiss notification">&times;</button>
                     </div>
                 </template>
             </div>

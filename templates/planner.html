@@ -22,13 +22,13 @@
   </div>
 
   {# ── Calendar ── #}
-  <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 animate-fade-in-up stagger-1">
+  <div class="bg-panel rounded-xl border border-app p-4 animate-fade-in-up stagger-1">
     <div class="flex items-center justify-between mb-3">
-      <button type="button" @click="prevMonth()" aria-label="Previous month" class="p-2 rounded-lg hover:bg-gray-700 text-gray-400 min-w-[44px] min-h-[44px] flex items-center justify-center btn-press">
+      <button type="button" @click="prevMonth()" aria-label="Previous month" class="p-2 rounded-lg hover:bg-gray-700 text-muted min-w-[44px] min-h-[44px] flex items-center justify-center btn-press">
         <svg aria-hidden="true" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
       </button>
       <h2 class="text-base font-bold text-gray-100" x-text="monthYearLabel"></h2>
-      <button type="button" @click="nextMonth()" aria-label="Next month" class="p-2 rounded-lg hover:bg-gray-700 text-gray-400 min-w-[44px] min-h-[44px] flex items-center justify-center btn-press">
+      <button type="button" @click="nextMonth()" aria-label="Next month" class="p-2 rounded-lg hover:bg-gray-700 text-muted min-w-[44px] min-h-[44px] flex items-center justify-center btn-press">
         <svg aria-hidden="true" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
       </button>
     </div>
@@ -57,9 +57,9 @@
 
     {# ── Add Customers Panel ── #}
     <div class="lg:col-span-1 order-1 lg:order-2">
-      <div class="bg-gray-800 rounded-xl border border-gray-700 lg:sticky lg:top-20 overflow-hidden animate-fade-in-up">
+      <div class="bg-panel rounded-xl border border-app lg:sticky lg:top-20 overflow-hidden animate-fade-in-up">
 
-        <div class="p-4 space-y-3 border-b border-gray-700">
+        <div class="p-4 space-y-3 border-b border-app">
           <h3 class="text-sm font-semibold text-gray-100">Add Customers</h3>
           <div>
             <label for="city-picker" class="sr-only">Select a city</label>
@@ -83,7 +83,7 @@
 
           {# Bulk add #}
           <template x-if="selectedCity && !customerSearch && currentCityGroup && currentCityGroup.addable > 1">
-            <div class="p-3 border-b border-gray-700">
+            <div class="p-3 border-b border-app">
               <button type="button" @click="addCity(selectedCity)" :disabled="adding"
                       class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-500 disabled:opacity-50 transition btn-press min-h-[44px]">
                 <svg aria-hidden="true" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
@@ -123,7 +123,7 @@
         </div>
 
         {# ── Recurring Schedules ── #}
-        <div class="border-t border-gray-700">
+        <div class="border-t border-app">
           <button type="button" @click="showRecurring = !showRecurring"
                   class="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-700/30 transition text-left">
             <span class="text-sm font-semibold text-gray-100">Recurring</span>
@@ -192,12 +192,24 @@
     <div class="lg:col-span-2 space-y-3 order-2 lg:order-1">
       <div x-ref="stopList" x-init="initSortable()" class="space-y-2">
         <template x-for="stop in stops" :key="stop.id">
-          <div class="bg-gray-800 rounded-xl border border-gray-700 p-3.5 flex items-center gap-3 group animate-fade-in-up"
+          <div class="bg-panel rounded-xl border border-app p-3.5 flex items-center gap-3 group animate-fade-in-up"
                :data-stop-id="stop.id">
-            <div class="drag-handle text-gray-400 hover:text-indigo-400 transition p-1.5 -ml-1 rounded-lg hover:bg-indigo-500/10 cursor-grab active:cursor-grabbing" title="Drag to reorder">
+            <div class="drag-handle text-muted hover:text-indigo-400 transition p-1.5 -ml-1 rounded-lg hover:bg-indigo-500/10 cursor-grab active:cursor-grabbing hidden lg:block" title="Drag to reorder">
               <svg aria-hidden="true" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                 <path stroke-linecap="round" d="M4 8h16M4 12h16M4 16h16"/>
               </svg>
+            </div>
+            <div class="flex flex-col gap-0.5 lg:hidden -ml-1">
+              <button type="button" @click="moveStop(stops.indexOf(stop), -1)" aria-label="Move stop up"
+                      class="p-1 rounded text-muted hover:text-indigo-400 hover:bg-indigo-500/10 transition btn-press disabled:opacity-30"
+                      :disabled="stops.indexOf(stop) === 0">
+                <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"/></svg>
+              </button>
+              <button type="button" @click="moveStop(stops.indexOf(stop), 1)" aria-label="Move stop down"
+                      class="p-1 rounded text-muted hover:text-indigo-400 hover:bg-indigo-500/10 transition btn-press disabled:opacity-30"
+                      :disabled="stops.indexOf(stop) === stops.length - 1">
+                <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+              </button>
             </div>
             <div class="shrink-0 w-7 h-7 bg-indigo-500/20 text-indigo-400 rounded-full flex items-center justify-center text-xs font-bold" x-text="stop.sequence"></div>
             <a :href="'/customers/' + stop.customer_id" class="flex-1 min-w-0 hover:opacity-80 transition">
@@ -211,15 +223,15 @@
               </span>
             </template>
             <button type="button" @click="removeStop(stop.id, stop.customer_id)" aria-label="Remove stop"
-                    class="p-1.5 rounded-lg text-gray-600 hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100 btn-press shrink-0">
+                    class="p-1.5 rounded-lg text-gray-600 hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-100 lg:opacity-0 lg:group-hover:opacity-100 btn-press shrink-0">
               <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
           </div>
         </template>
 
-        <div x-show="stops.length === 0" class="bg-gray-800 rounded-xl border border-gray-700 p-10 text-center animate-fade-in-up">
+        <div x-show="stops.length === 0" class="bg-panel rounded-xl border border-app p-10 text-center animate-fade-in-up">
           <div class="text-4xl mb-3" aria-hidden="true">&#128506;</div>
-          <p class="text-sm font-medium text-gray-400">No stops planned yet.</p>
+          <p class="text-sm font-medium text-muted">No stops planned yet.</p>
           <p class="text-xs text-gray-500 mt-1">Pick a city and add customers, or search by name.</p>
         </div>
       </div>
@@ -323,7 +335,7 @@ function plannerApp() {
 
     async removeStop(stopId, customerId) {
       try {
-        const resp = await fetch('/planner/remove-stop/' + stopId, {
+        const resp = await fetch('{{ url_for("planner.remove_stop", id=0) }}'.replace('0', stopId), {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': csrfToken() },
           body: new URLSearchParams({ csrf_token: csrfToken() }),
@@ -364,7 +376,7 @@ function plannerApp() {
 
     async deleteRecurring(id) {
       try {
-        const resp = await fetch('/planner/recurring/' + id + '/delete', {
+        const resp = await fetch('{{ url_for("planner.recurring_delete", id=0) }}'.replace('0', id), {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': csrfToken() },
           body: new URLSearchParams({ csrf_token: csrfToken() }),
@@ -388,8 +400,11 @@ function plannerApp() {
     // ── Calendar ──
 
     async fetchAllStops() {
-      try { this.allStops = await (await fetch('{{ url_for("planner.all_stops") }}')).json(); }
-      catch (e) { console.error('Failed to fetch stops:', e); }
+      try {
+        const resp = await fetch('{{ url_for("planner.all_stops") }}');
+        if (!resp.ok) throw new Error(resp.status);
+        this.allStops = await resp.json();
+      } catch (e) { console.error('Failed to fetch stops:', e); }
     },
     get monthYearLabel() { return new Date(this.currentYear, this.currentMonth).toLocaleString('default', { month: 'long', year: 'numeric' }); },
     get selectedDateFormatted() { return new Date(this.selectedDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }); },
@@ -431,6 +446,16 @@ function plannerApp() {
 
     // ── Drag reorder ──
 
+    moveStop(index, direction) {
+      const newIndex = index + direction;
+      if (newIndex < 0 || newIndex >= this.stops.length) return;
+      const temp = this.stops[index];
+      this.stops[index] = this.stops[newIndex];
+      this.stops[newIndex] = temp;
+      this.stops.forEach((s, i) => s.sequence = i + 1);
+      this.saveOrder();
+    },
+
     initSortable() {
       this.$nextTick(() => {
         const list = this.$refs.stopList;
@@ -457,8 +482,10 @@ function plannerApp() {
     },
     async saveOrder() {
       const ids = Array.from(this.$refs.stopList.querySelectorAll('[data-stop-id]')).map(el => parseInt(el.dataset.stopId));
-      try { await fetch('{{ url_for("planner.reorder") }}', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() }, body: JSON.stringify({ stop_ids: ids }) }); }
-      catch (e) { console.error('Reorder failed:', e); }
+      try {
+        const resp = await fetch('{{ url_for("planner.reorder") }}', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() }, body: JSON.stringify({ stop_ids: ids }) });
+        if (!resp.ok) throw new Error(resp.status);
+      } catch (e) { this.toast('Failed to save order', 'error'); }
       // Update local sequence numbers
       ids.forEach((id, i) => { const s = this.stops.find(s => s.id === id); if (s) s.sequence = i + 1; });
     },

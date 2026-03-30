@@ -27,13 +27,35 @@
 
   {# -- Aging Buckets -- #}
   {% if bucket_totals %}
+  {% set bucket_styles = {
+    'green': {
+      'active': 'border-green-500/40',
+      'inactive': 'border-app hover:border-green-500/30',
+      'text': 'text-green-400',
+    },
+    'yellow': {
+      'active': 'border-yellow-500/40',
+      'inactive': 'border-app hover:border-yellow-500/30',
+      'text': 'text-yellow-400',
+    },
+    'orange': {
+      'active': 'border-orange-500/40',
+      'inactive': 'border-app hover:border-orange-500/30',
+      'text': 'text-orange-400',
+    },
+    'red': {
+      'active': 'border-red-500/40',
+      'inactive': 'border-app hover:border-red-500/30',
+      'text': 'text-red-400',
+    },
+  } %}
   <div class="grid grid-cols-4 gap-2 animate-fade-in-up stagger-1">
     {% set buckets = [('0-30', 'green', '0-30d'), ('31-60', 'yellow', '31-60d'), ('61-90', 'orange', '61-90d'), ('90+', 'red', '90+d')] %}
     {% for key, color, label in buckets %}
     <a href="{{ url_for('balances.index', bucket=key, city=city_filter, sort=sort) }}"
-       class="bg-gray-800 rounded-xl border p-3 text-center btn-press transition-all
-              {{ 'border-' ~ color ~ '-500/40' if bucket_filter == key else 'border-gray-700 hover:border-' ~ color ~ '-500/30' }}">
-      <p class="text-lg font-bold text-{{ color }}-400">{{ (bucket_totals.get(key, 0)) | currency }}</p>
+       class="bg-panel rounded-xl border p-3 text-center btn-press transition-all
+              {{ bucket_styles[color].active if bucket_filter == key else bucket_styles[color].inactive }}">
+      <p class="text-lg font-bold {{ bucket_styles[color].text }}">{{ (bucket_totals.get(key, 0)) | currency }}</p>
       <p class="text-2xs text-gray-500 mt-0.5">{{ label }}</p>
     </a>
     {% endfor %}
@@ -41,46 +63,49 @@
   {% endif %}
 
   {# -- Filters -- #}
-  <div class="flex gap-2 animate-fade-in-up stagger-2" x-data="{ showFilters: {{ 'true' if city_filter or (sort != 'balance_desc') else 'false' }} }">
-    <button @click="showFilters = !showFilters"
-            :class="showFilters ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-gray-800 text-gray-400 border-gray-700'"
-            class="flex items-center gap-1.5 px-3 min-h-[44px] rounded-xl border text-sm font-medium transition-colors btn-press">
-      <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
-      </svg>
-      Filters
-      {% if city_filter or bucket_filter %}
-      <span class="w-2 h-2 rounded-full bg-indigo-400"></span>
+  <div x-data="{ showFilters: {{ 'true' if city_filter or (sort != 'balance_desc') else 'false' }} }">
+    <div class="flex gap-2 animate-fade-in-up stagger-2">
+      <button @click="showFilters = !showFilters"
+              :class="showFilters ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-gray-800 text-gray-400 border-gray-700'"
+              class="flex items-center gap-1.5 px-3 min-h-[44px] rounded-xl border text-sm font-medium transition-colors btn-press">
+        <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+        </svg>
+        Filters
+        {% if city_filter or bucket_filter %}
+        <span class="w-2 h-2 rounded-full bg-indigo-400"></span>
+        {% endif %}
+      </button>
+      {% if bucket_filter or city_filter %}
+      <a href="{{ url_for('balances.index') }}" class="inline-flex items-center gap-1 px-3 min-h-[44px] text-sm text-gray-500 hover:text-gray-300 transition-colors btn-press">
+        Clear
+      </a>
       {% endif %}
-    </button>
-    {% if bucket_filter or city_filter %}
-    <a href="{{ url_for('balances.index') }}" class="inline-flex items-center gap-1 px-3 min-h-[44px] text-sm text-gray-500 hover:text-gray-300 transition-colors btn-press">
-      Clear
-    </a>
-    {% endif %}
-  </div>
-
-  <div x-data="{ showFilters: {{ 'true' if city_filter or (sort != 'balance_desc') else 'false' }} }"
-       x-show="showFilters" x-transition x-cloak
-       class="bg-gray-800 rounded-xl border border-gray-700 p-4 animate-fade-in-up">
-    <div class="flex flex-wrap gap-3">
-      <select name="city"
-              onchange="window.location='{{ url_for('balances.index') }}?city='+this.value+'&bucket={{ bucket_filter }}&sort={{ sort }}'"
-              class="min-h-[44px] rounded-lg border-gray-600 text-sm bg-gray-700 text-gray-200">
-        <option value="">All Cities</option>
-        {% for city in cities %}
-        <option value="{{ city }}" {% if city == city_filter %}selected{% endif %}>{{ city }}</option>
-        {% endfor %}
-      </select>
-      <select name="sort"
-              onchange="window.location='{{ url_for('balances.index') }}?sort='+this.value+'&city={{ city_filter }}&bucket={{ bucket_filter }}'"
-              class="min-h-[44px] rounded-lg border-gray-600 text-sm bg-gray-700 text-gray-200">
-        <option value="balance_desc" {% if sort == 'balance_desc' %}selected{% endif %}>Balance High-Low</option>
-        <option value="balance_asc" {% if sort == 'balance_asc' %}selected{% endif %}>Balance Low-High</option>
-        <option value="name_asc" {% if sort == 'name_asc' %}selected{% endif %}>Name A-Z</option>
-        <option value="name_desc" {% if sort == 'name_desc' %}selected{% endif %}>Name Z-A</option>
-      </select>
     </div>
+
+    <form method="get" action="{{ url_for('balances.index') }}"
+          x-show="showFilters" x-transition x-cloak
+          class="bg-panel rounded-xl border border-app p-4 animate-fade-in-up mt-2">
+      {% if bucket_filter %}
+      <input type="hidden" name="bucket" value="{{ bucket_filter }}">
+      {% endif %}
+      <div class="flex flex-wrap gap-3">
+        <select name="city" onchange="this.form.submit()"
+                class="min-h-[44px] rounded-lg border-gray-600 text-sm bg-gray-700 text-gray-200">
+          <option value="">All Cities</option>
+          {% for city in cities %}
+          <option value="{{ city }}" {% if city == city_filter %}selected{% endif %}>{{ city }}</option>
+          {% endfor %}
+        </select>
+        <select name="sort" onchange="this.form.submit()"
+                class="min-h-[44px] rounded-lg border-gray-600 text-sm bg-gray-700 text-gray-200">
+          <option value="balance_desc" {% if sort == 'balance_desc' %}selected{% endif %}>Balance High-Low</option>
+          <option value="balance_asc" {% if sort == 'balance_asc' %}selected{% endif %}>Balance Low-High</option>
+          <option value="name_asc" {% if sort == 'name_asc' %}selected{% endif %}>Name A-Z</option>
+          <option value="name_desc" {% if sort == 'name_desc' %}selected{% endif %}>Name Z-A</option>
+        </select>
+      </div>
+    </form>
   </div>
 
   {# -- Section Header -- #}
@@ -102,7 +127,7 @@
       {% for item in customers %}
       {% set customer = item.customer %}
       {% set bucket = item.bucket %}
-      <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden animate-fade-in-up stagger-{{ loop.index0 % 8 + 1 }}" x-data="{ showPay: false }">
+      <div class="bg-panel rounded-xl border border-app overflow-hidden animate-fade-in-up stagger-{{ loop.index0 % 8 + 1 }}" x-data="{ showPay: false }">
         <a href="{{ url_for('customers.profile', id=customer.id) }}"
            class="flex items-center gap-3 px-4 py-3 hover:bg-gray-700/30 transition-colors btn-press">
           <div class="flex-1 min-w-0">
@@ -122,7 +147,7 @@
         </a>
 
         {# Payment form #}
-        <div x-show="showPay" x-transition.duration.200ms x-cloak class="px-4 pb-4 pt-1 border-t border-gray-700">
+        <div x-show="showPay" x-transition.duration.200ms x-cloak class="px-4 pb-4 pt-1 border-t border-app">
           <form method="post" action="{{ url_for('customers.record_payment', id=customer.id) }}"
                 class="flex flex-col gap-2">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -147,7 +172,7 @@
     </div>
 
     {% else %}
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-10 text-center animate-fade-in-up">
+    <div class="bg-panel rounded-xl border border-app p-10 text-center animate-fade-in-up">
       <img src="{{ url_for('static', filename='img/logo.png') }}" alt="" class="w-12 h-12 mx-auto mb-3 rounded-lg object-contain opacity-50">
       <p class="text-sm text-gray-500">No outstanding balances.</p>
     </div>

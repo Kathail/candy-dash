@@ -1,9 +1,9 @@
 """Outstanding balances management routes."""
 
-from datetime import datetime, timezone, timedelta
+from datetime import date, datetime, timezone
 from decimal import Decimal, InvalidOperation
 
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import login_required, current_user
 from sqlalchemy import func
 
@@ -18,8 +18,13 @@ bp = Blueprint("balances", __name__, url_prefix="/balances")
 @bp.before_request
 @login_required
 def before_request():
-    """Require login for all balance routes."""
-    pass
+    """Require login for all balance routes; block writes for demo/bookkeeper."""
+    if current_user.role in ("demo", "bookkeeper") and request.method in ("POST", "PUT", "DELETE"):
+        label = "Demo mode" if current_user.is_demo else "View-only mode"
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return jsonify({"error": f"{label} — this action is disabled."}), 403
+        flash(f"{label} — this action is disabled.", "warning")
+        return redirect(request.referrer or url_for("dashboard.index"))
 
 
 def _compute_aging_buckets(customers):
@@ -50,7 +55,9 @@ def _compute_aging_buckets(customers):
             result[c.id] = "90+"
             continue
 
-        if isinstance(reference_date, datetime) and reference_date.tzinfo is None:
+        if isinstance(reference_date, date) and not isinstance(reference_date, datetime):
+            reference_date = datetime.combine(reference_date, datetime.min.time(), tzinfo=timezone.utc)
+        elif isinstance(reference_date, datetime) and reference_date.tzinfo is None:
             reference_date = reference_date.replace(tzinfo=timezone.utc)
         delta = (now - reference_date).days
 

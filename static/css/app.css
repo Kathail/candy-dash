@@ -7,12 +7,12 @@
    ========================================================================== */
 
 :root {
-  --bg:             #0b1220;
-  --bg-panel:       #111827;
-  --bg-panel-hover: #1f2937;
-  --bg-input:       #020617;
+  --bg:             #111827;
+  --bg-panel:       #1a2332;
+  --bg-panel-hover: #243044;
+  --bg-input:       #0f1726;
 
-  --border:         #1f2937;
+  --border:         #2d3a4d;
 
   --text:           #e5e7eb;
   --text-muted:     #9ca3af;
@@ -74,19 +74,19 @@ body {
 
 /* ==========================================================================
    Global Form Styling (dark theme baseline)
-   #4: Scoped to .theme-input instead of global selector to avoid
-   fighting with Tailwind classes on date/search/number inputs.
+   Scoped to .theme-input for inputs; select/textarea get global
+   baseline because they aren't wrapped in .theme-input.
    ========================================================================== */
 
-select,
-textarea {
+select.theme-input,
+textarea.theme-input {
   background-color: var(--bg-input);
   border-color: var(--border);
   color: var(--text);
 }
 
-select::placeholder,
-textarea::placeholder {
+select.theme-input::placeholder,
+textarea.theme-input::placeholder {
   color: var(--text-muted);
 }
 
@@ -385,14 +385,18 @@ textarea::placeholder {
 }
 
 /* Staggered card entry */
-.stagger-1 { animation-delay: 0.03s; }
-.stagger-2 { animation-delay: 0.06s; }
-.stagger-3 { animation-delay: 0.09s; }
-.stagger-4 { animation-delay: 0.12s; }
-.stagger-5 { animation-delay: 0.15s; }
-.stagger-6 { animation-delay: 0.18s; }
-.stagger-7 { animation-delay: 0.21s; }
-.stagger-8 { animation-delay: 0.24s; }
+.stagger-1  { animation-delay: 0.03s; }
+.stagger-2  { animation-delay: 0.06s; }
+.stagger-3  { animation-delay: 0.09s; }
+.stagger-4  { animation-delay: 0.12s; }
+.stagger-5  { animation-delay: 0.15s; }
+.stagger-6  { animation-delay: 0.18s; }
+.stagger-7  { animation-delay: 0.21s; }
+.stagger-8  { animation-delay: 0.24s; }
+.stagger-9  { animation-delay: 0.27s; }
+.stagger-10 { animation-delay: 0.30s; }
+.stagger-11 { animation-delay: 0.33s; }
+.stagger-12 { animation-delay: 0.36s; }
 
 /* Respect user motion preferences (WCAG 2.3.3) */
 @media (prefers-reduced-motion: reduce) {
@@ -536,13 +540,16 @@ textarea::placeholder {
   }
 
   /* #13: Hide interactive elements that don't make sense on paper */
-  button:not(.no-print-hide),
+  button[type="submit"],
+  button[data-confirm],
+  form:not(.no-print-hide),
   a[href*="format=csv"],
   a[href*="format=xlsx"],
   input[type="date"],
   input[type="search"],
   [x-data="globalSearch()"],
-  [role="group"][aria-label="Date range presets"] {
+  [role="group"][aria-label="Date range presets"],
+  .no-print {
     display: none !important;
   }
 }
