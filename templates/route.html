@@ -6,7 +6,7 @@
 {% block content %}
 {% set completed_count = stops|selectattr('completed')|list|length %}
 {% set total_count = stops|length %}
-{% set pct = [((collected_today / collection_target * 100)|int) if collection_target > 0 else 0, 100]|min %}
+{% set pct = [((completed_count / total_count * 100)|int) if total_count > 0 else 0, 100]|min %}
 
 <div class="max-w-2xl mx-auto space-y-3">
 
