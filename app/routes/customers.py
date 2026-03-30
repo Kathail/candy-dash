@@ -401,6 +401,15 @@ def record_payment(id):
             )
             db.session.add(invoice)
 
+        # Mark unpaid invoices as paid if balance is now zero
+        if new_balance == 0 and amount_paid > 0:
+            unpaid_invoices = Invoice.query.filter_by(
+                customer_id=customer.id, status="unpaid"
+            ).all()
+            for inv in unpaid_invoices:
+                inv.status = "paid"
+                inv.payment_type = payment_type
+
         # Build description
         parts = []
         if amount_sold > 0:
