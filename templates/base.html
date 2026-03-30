@@ -60,10 +60,18 @@
         <div class="h-full w-1/3 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-r-full animate-loading-bar"></div>
     </div>
 
-    {# ── Flash messages as hidden data for JS to pick up ── #}
+    {# ── Flash messages as hidden data for JS to pick up (deduped) ── #}
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
-    <script type="application/json" id="flash-messages">{{ messages|tojson }}</script>
+    {% set seen = [] %}
+    {% set unique = [] %}
+    {% for cat, msg in messages %}
+      {% if msg not in seen %}
+        {% if seen.append(msg) %}{% endif %}
+        {% if unique.append([cat, msg]) %}{% endif %}
+      {% endif %}
+    {% endfor %}
+    <script type="application/json" id="flash-messages">{{ unique|tojson }}</script>
     {% endif %}
     {% endwith %}
 

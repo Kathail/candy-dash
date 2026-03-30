@@ -70,9 +70,11 @@
   <div class="bg-gray-800 rounded-xl border border-gray-700 p-5 animate-fade-in-up">
     <div class="flex items-center gap-3">
       <img src="{{ url_for('static', filename='img/logo.png') }}" alt="" class="w-10 h-10 rounded-lg object-contain flex-shrink-0">
-      <p class="text-gray-400 text-sm">{{ greeting }}, {{ current_user.username }}</p>
+      <div>
+        <p class="text-gray-400 text-sm">{% if greeting == 'Good morning' %}&#9728;{% elif greeting == 'Good afternoon' %}&#127774;{% else %}&#127769;{% endif %} {{ greeting }}, {{ current_user.username|capitalize }}!</p>
+        <p class="text-lg font-bold text-gray-100 mt-0.5">{{ today.strftime('%A, %B %d') }}</p>
+      </div>
     </div>
-    <p class="text-lg font-bold text-gray-100 mt-1">{{ today.strftime('%A, %B %d') }}</p>
     <div class="flex gap-2 mt-4">
       <a href="{{ url_for('planner.index') }}"
          class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-500 transition-colors min-h-[44px] btn-press">

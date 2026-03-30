@@ -12,7 +12,7 @@ from sqlalchemy import func
 
 from app import db
 from app.helpers import admin_required, audit
-from app.models import User, Customer, Payment, RouteStop, ActivityLog, AdminAuditLog, VALID_ROLES
+from app.models import User, Customer, Payment, Invoice, Note, RouteStop, ActivityLog, AdminAuditLog, VALID_ROLES
 import logging
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
@@ -467,8 +467,54 @@ def backup_full():
     for s in RouteStop.query.join(Customer).order_by(RouteStop.route_date.desc()).all():
         writer.writerow([s.route_date, s.customer.name, s.customer.city or "", s.completed, s.completed_at])
 
+    writer.writerow([])
+    writer.writerow(["=== INVOICES ==="])
+    writer.writerow(["id", "customer", "city", "amount", "invoice_number", "date", "description", "status"])
+    for inv in Invoice.query.join(Customer).order_by(Invoice.invoice_date.desc()).all():
+        writer.writerow([inv.id, inv.customer.name, inv.customer.city or "", float(inv.amount), inv.invoice_number or "", inv.invoice_date, inv.description or "", inv.status])
+
+    writer.writerow([])
+    writer.writerow(["=== NOTES ==="])
+    writer.writerow(["customer", "note", "author", "date"])
+    for n in Note.query.join(Customer).order_by(Note.created_at.desc()).all():
+        writer.writerow([n.customer.name, n.text, n.user.username if n.user else "", n.created_at])
+
     return Response(
         output.getvalue(),
         mimetype="text/csv",
         headers={"Content-Disposition": f"attachment; filename=candy_dash_backup_{date.today().isoformat()}.csv"},
+    )
+
+
+@bp.route("/backups/invoices.csv")
+@admin_required
+def backup_invoices():
+    """Download all invoices as CSV."""
+    invoices = Invoice.query.join(Customer).order_by(Invoice.invoice_date.desc()).all()
+    rows = [
+        [inv.id, inv.customer.name, inv.customer.city or "",
+         float(inv.amount), inv.invoice_number or "",
+         inv.invoice_date, inv.description or "", inv.status]
+        for inv in invoices
+    ]
+    return _csv_response(
+        rows,
+        ["id", "customer", "city", "amount", "invoice_number", "date", "description", "status"],
+        f"invoices_{date.today().isoformat()}.csv",
+    )
+
+
+@bp.route("/backups/notes.csv")
+@admin_required
+def backup_notes():
+    """Download all notes as CSV."""
+    notes = Note.query.join(Customer).order_by(Note.created_at.desc()).all()
+    rows = [
+        [n.customer.name, n.text, n.user.username if n.user else "", n.created_at]
+        for n in notes
+    ]
+    return _csv_response(
+        rows,
+        ["customer", "note", "author", "date"],
+        f"notes_{date.today().isoformat()}.csv",
     )

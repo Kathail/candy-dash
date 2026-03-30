@@ -4,12 +4,12 @@ from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation
 
 from flask import (
-    Blueprint, render_template, request, redirect, url_for, flash, abort, jsonify,
+    Blueprint, render_template, request, redirect, url_for, flash, abort, jsonify, Response, send_file,
 )
 from flask_login import login_required, current_user
 
 from app import db
-from app.models import Customer, Payment, ActivityLog, RouteStop, VALID_CUSTOMER_STATUSES
+from app.models import Customer, Payment, Invoice, Note, ActivityLog, RouteStop, VALID_CUSTOMER_STATUSES
 from app.helpers import admin_required, generate_receipt_number, audit
 import logging
 
@@ -181,12 +181,29 @@ def profile(id):
         .all()
     )
 
+    invoices = (
+        Invoice.query
+        .filter_by(customer_id=customer.id)
+        .order_by(Invoice.invoice_date.desc())
+        .all()
+    )
+
+    notes = (
+        Note.query
+        .filter_by(customer_id=customer.id)
+        .order_by(Note.created_at.desc())
+        .limit(50)
+        .all()
+    )
+
     return render_template(
         "customer_profile.html",
         customer=customer,
         payments=payments,
         activity=activity,
         route_history=route_history,
+        invoices=invoices,
+        notes=notes,
     )
 
 
@@ -338,6 +355,7 @@ def record_payment(id):
         return _error("Enter an amount sold or paid.")
 
     notes = request.form.get("notes", "").strip() or None
+    payment_type = request.form.get("payment_type", "cash").strip() or "cash"
 
     try:
         customer = db.session.query(Customer).filter_by(id=id).with_for_update().one()
@@ -356,6 +374,7 @@ def record_payment(id):
             customer_id=customer.id,
             amount=amount_paid,
             amount_sold=amount_sold,
+            payment_type=payment_type,
             receipt_number=receipt_number,
             previous_balance=previous_balance,
             notes=notes,
@@ -369,7 +388,7 @@ def record_payment(id):
             parts.append(f"Sold ${amount_sold:,.2f}")
         if amount_paid > 0:
             parts.append(f"Paid ${amount_paid:,.2f}")
-        desc = ". ".join(parts) + f". Receipt #{receipt_number}. Balance: ${previous_balance:,.2f} → ${new_balance:,.2f}."
+        desc = ". ".join(parts) + f". Invoice #{receipt_number}. Balance: ${previous_balance:,.2f} → ${new_balance:,.2f}."
 
         db.session.add(ActivityLog(
             customer_id=customer.id,
@@ -388,7 +407,7 @@ def record_payment(id):
     if is_fetch:
         return jsonify({"ok": True, "receipt_number": receipt_number, "new_balance": float(new_balance)})
 
-    flash(f"Transaction recorded. Receipt #{receipt_number}.", "success")
+    flash(f"Transaction recorded. Invoice #{receipt_number}.", "success")
     return redirect(redirect_to)
 
 
@@ -516,3 +535,277 @@ def toggle_tax_exempt(id):
 
     flash(f"Tax exempt {'enabled' if customer.tax_exempt else 'disabled'} for {customer.name}.", "success")
     return redirect(url_for("customers.profile", id=customer.id))
+
+
+# ---------------------------------------------------------------------------
+# Invoices
+# ---------------------------------------------------------------------------
+
+@bp.route("/<int:id>/invoices/add", methods=["POST"])
+@login_required
+def add_invoice(id):
+    """Add an invoice to a customer."""
+    customer = Customer.query.get_or_404(id)
+
+    try:
+        amount = Decimal(request.form.get("amount", "0") or "0")
+    except (InvalidOperation, ValueError):
+        flash("Invalid amount.", "error")
+        return redirect(url_for("customers.profile", id=id))
+
+    if amount <= 0:
+        flash("Amount must be greater than zero.", "error")
+        return redirect(url_for("customers.profile", id=id))
+
+    invoice_date_str = request.form.get("invoice_date", "")
+    try:
+        from datetime import date as date_type
+        invoice_date = date_type.fromisoformat(invoice_date_str) if invoice_date_str else date_type.today()
+    except ValueError:
+        invoice_date = date_type.today()
+
+    invoice = Invoice(
+        customer_id=customer.id,
+        invoice_number=request.form.get("invoice_number", "").strip() or None,
+        amount=amount,
+        invoice_date=invoice_date,
+        description=request.form.get("description", "").strip() or None,
+        status="unpaid",
+        created_by=current_user.id,
+    )
+    db.session.add(invoice)
+
+    # Add the invoice amount to customer balance
+    customer.balance += amount
+
+    db.session.add(ActivityLog(
+        customer_id=customer.id,
+        user_id=current_user.id,
+        action="invoice_added",
+        description=f"Invoice ${amount:,.2f} added. Balance: ${customer.balance:,.2f}.",
+    ))
+    audit("invoice_added", f"Invoice ${amount:,.2f} for '{customer.name}'")
+    db.session.commit()
+
+    flash(f"Invoice for ${amount:,.2f} added.", "success")
+    return redirect(url_for("customers.profile", id=id))
+
+
+@bp.route("/<int:id>/invoices/<int:invoice_id>/delete", methods=["POST"])
+@login_required
+@admin_required
+def delete_invoice(id, invoice_id):
+    """Delete an invoice and reverse the balance change."""
+    invoice = Invoice.query.get_or_404(invoice_id)
+    if invoice.customer_id != id:
+        abort(404)
+
+    try:
+        customer = db.session.query(Customer).filter_by(id=id).with_for_update().one()
+        customer.balance = max(customer.balance - invoice.amount, Decimal("0"))
+
+        db.session.add(ActivityLog(
+            customer_id=customer.id,
+            user_id=current_user.id,
+            action="invoice_deleted",
+            description=f"Invoice #{invoice.invoice_number or invoice.id} (${invoice.amount:,.2f}) deleted. Balance: ${customer.balance:,.2f}.",
+        ))
+
+        db.session.delete(invoice)
+        audit("invoice_deleted", f"Deleted invoice ${invoice.amount:,.2f} for '{customer.name}'")
+        db.session.commit()
+    except Exception:
+        logging.exception("Invoice deletion failed")
+        db.session.rollback()
+        flash("Failed to delete invoice.", "error")
+        return redirect(url_for("customers.profile", id=id))
+
+    flash("Invoice deleted and balance adjusted.", "success")
+    return redirect(url_for("customers.profile", id=id))
+
+
+@bp.route("/<int:id>/invoices/<int:invoice_id>/mark-paid", methods=["POST"])
+@login_required
+def mark_invoice_paid(id, invoice_id):
+    """Mark an invoice as paid and reduce customer balance."""
+    invoice = Invoice.query.get_or_404(invoice_id)
+    if invoice.customer_id != id:
+        abort(404)
+    if invoice.status == "paid":
+        flash("Invoice already paid.", "warning")
+        return redirect(url_for("customers.profile", id=id))
+
+    try:
+        customer = db.session.query(Customer).filter_by(id=id).with_for_update().one()
+        previous_balance = customer.balance
+        customer.balance = max(previous_balance - invoice.amount, Decimal("0"))
+        pay_type = request.form.get("payment_type", "cash")
+        invoice.status = "paid"
+        invoice.payment_type = pay_type
+
+        # Record as a payment
+        receipt_number = generate_receipt_number()
+        payment = Payment(
+            customer_id=customer.id,
+            amount=invoice.amount,
+            amount_sold=Decimal("0"),
+            payment_type=pay_type,
+            receipt_number=receipt_number,
+            previous_balance=previous_balance,
+            notes=f"Invoice #{invoice.invoice_number or invoice.id} paid",
+            recorded_by=current_user.id,
+        )
+        db.session.add(payment)
+
+        db.session.add(ActivityLog(
+            customer_id=customer.id,
+            user_id=current_user.id,
+            action="payment_recorded",
+            description=f"Invoice #{invoice.invoice_number or invoice.id} paid. ${invoice.amount:,.2f}. Balance: ${previous_balance:,.2f} → ${customer.balance:,.2f}.",
+        ))
+        audit("invoice_paid", f"Invoice #{invoice.invoice_number or invoice.id} (${invoice.amount:,.2f}) for '{customer.name}'")
+        db.session.commit()
+    except Exception:
+        logging.exception("Invoice payment failed")
+        db.session.rollback()
+        flash("Failed to process payment.", "error")
+        return redirect(url_for("customers.profile", id=id))
+
+    flash(f"Invoice paid. Invoice #{receipt_number}.", "success")
+    return redirect(url_for("customers.profile", id=id))
+
+
+# ---------------------------------------------------------------------------
+# Notes (individual entries)
+# ---------------------------------------------------------------------------
+
+@bp.route("/<int:id>/notes/add", methods=["POST"])
+@login_required
+def add_note_entry(id):
+    """Add a note entry to a customer."""
+    customer = Customer.query.get_or_404(id)
+    text = request.form.get("text", "").strip()
+
+    if not text:
+        flash("Note cannot be empty.", "warning")
+        return redirect(url_for("customers.profile", id=id))
+
+    note = Note(
+        customer_id=customer.id,
+        user_id=current_user.id,
+        text=text,
+    )
+    db.session.add(note)
+
+    db.session.add(ActivityLog(
+        customer_id=customer.id,
+        user_id=current_user.id,
+        action="note_added",
+        description=text,
+    ))
+    db.session.commit()
+
+    flash("Note added.", "success")
+    return redirect(url_for("customers.profile", id=id))
+
+
+@bp.route("/<int:id>/notes/<int:note_id>/delete", methods=["POST"])
+@login_required
+def delete_note(id, note_id):
+    """Delete a note entry."""
+    note = Note.query.get_or_404(note_id)
+    if note.customer_id != id:
+        abort(404)
+    db.session.delete(note)
+    db.session.commit()
+    flash("Note deleted.", "success")
+    return redirect(url_for("customers.profile", id=id))
+
+
+# ---------------------------------------------------------------------------
+# Invoice PDF
+# ---------------------------------------------------------------------------
+
+@bp.route("/<int:id>/invoices/<int:invoice_id>/pdf")
+@login_required
+def invoice_pdf(id, invoice_id):
+    """Generate a PDF invoice with company logo."""
+    import io
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib.units import inch
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib import colors
+    import os
+
+    invoice = Invoice.query.get_or_404(invoice_id)
+    if invoice.customer_id != id:
+        abort(404)
+    customer = Customer.query.get_or_404(id)
+
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=letter, topMargin=0.5 * inch, bottomMargin=0.5 * inch)
+    styles = getSampleStyleSheet()
+    elements = []
+
+    # Logo
+    logo_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "static", "img", "logo.png")
+    if os.path.exists(logo_path):
+        try:
+            logo = Image(logo_path, width=1.2 * inch, height=1.2 * inch)
+            elements.append(logo)
+            elements.append(Spacer(1, 12))
+        except Exception:
+            pass
+
+    # Title
+    title_style = ParagraphStyle("InvTitle", parent=styles["Title"], fontSize=20, spaceAfter=6)
+    elements.append(Paragraph("INVOICE", title_style))
+    elements.append(Spacer(1, 12))
+
+    # Invoice details
+    detail_style = ParagraphStyle("Detail", parent=styles["Normal"], fontSize=11, spaceAfter=4)
+    if invoice.invoice_number:
+        elements.append(Paragraph(f"<b>Invoice #:</b> {invoice.invoice_number}", detail_style))
+    elements.append(Paragraph(f"<b>Date:</b> {invoice.invoice_date}", detail_style))
+    elements.append(Paragraph(f"<b>Status:</b> {invoice.status.upper()}", detail_style))
+    elements.append(Spacer(1, 16))
+
+    # Customer info
+    elements.append(Paragraph("<b>Bill To:</b>", detail_style))
+    elements.append(Paragraph(customer.name, detail_style))
+    if customer.address:
+        elements.append(Paragraph(customer.address, detail_style))
+    if customer.city:
+        elements.append(Paragraph(customer.city, detail_style))
+    if customer.phone:
+        elements.append(Paragraph(customer.phone, detail_style))
+    elements.append(Spacer(1, 20))
+
+    # Amount table
+    data = [
+        ["Description", "Amount"],
+        [invoice.description or "Goods/Services", f"${invoice.amount:,.2f}"],
+        ["", ""],
+        ["Total", f"${invoice.amount:,.2f}"],
+    ]
+    t = Table(data, colWidths=[4 * inch, 2 * inch])
+    t.setStyle(TableStyle([
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (-1, -1), 11),
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#374151")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("ALIGN", (1, 0), (1, -1), "RIGHT"),
+        ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
+        ("LINEBELOW", (0, 0), (-1, 0), 1, colors.HexColor("#4b5563")),
+        ("LINEABOVE", (0, -1), (-1, -1), 1, colors.HexColor("#4b5563")),
+        ("TOPPADDING", (0, 0), (-1, -1), 8),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+    ]))
+    elements.append(t)
+
+    doc.build(elements)
+    buf.seek(0)
+
+    filename = f"invoice_{invoice.invoice_number or invoice.id}_{customer.name.replace(' ', '_')}.pdf"
+    return send_file(buf, mimetype="application/pdf", as_attachment=False, download_name=filename)

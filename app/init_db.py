@@ -56,6 +56,24 @@ def init_database():
 
     db.create_all()
 
+    # Add payment_type column to invoices if missing
+    try:
+        db.session.execute(db.text(
+            "ALTER TABLE invoices ADD COLUMN payment_type VARCHAR(20)"
+        ))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
+    # Add payment_type column to payments if missing
+    try:
+        db.session.execute(db.text(
+            "ALTER TABLE payments ADD COLUMN payment_type VARCHAR(20) DEFAULT 'cash'"
+        ))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
     # Add amount_sold column to payments if missing
     try:
         db.session.execute(db.text(
@@ -64,6 +82,9 @@ def init_database():
         db.session.commit()
     except Exception:
         db.session.rollback()
+
+    # Create invoices and notes tables if missing
+    db.create_all()
 
     # Migrate old roles (sales, manager) to owner
     try:

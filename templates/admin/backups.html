@@ -71,6 +71,8 @@
       ('admin.backup_payments', 'Payments', 'Payment history', payment_count ~ ' records', 'green'),
       ('admin.backup_balances', 'Outstanding Balances', 'Customers with balance > $0', customers_with_balance|default(0) ~ ' accounts', 'amber'),
       ('admin.backup_routes', 'Route History', 'All route stops', stop_count ~ ' stops', 'purple'),
+      ('admin.backup_invoices', 'Invoices', 'All invoices', '', 'orange'),
+      ('admin.backup_notes', 'Notes', 'All customer notes', '', 'cyan'),
     ] %}
     {% for endpoint, title, desc, count, color in downloads %}
     <a href="{{ url_for(endpoint) }}"

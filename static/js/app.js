@@ -81,6 +81,8 @@
         },
 
         add(msg, cat) {
+          // Deduplicate: skip if same message already showing
+          if (this.toasts.some((t) => t.msg === msg && t.show)) return;
           const id = this.nextId++;
           this.toasts.push({ id, msg, cat, show: true });
           setTimeout(() => this.dismiss(id), 5000);
@@ -182,7 +184,7 @@
           const data = await res.json();
           if (data.ok) {
             document.dispatchEvent(new CustomEvent("show-toast", {
-              detail: { message: "Transaction recorded. Receipt #" + data.receipt_number, category: "success" },
+              detail: { message: "Transaction recorded. Invoice #" + data.receipt_number, category: "success" },
             }));
             this.close();
             setTimeout(() => window.location.reload(), 1500);

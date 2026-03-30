@@ -139,6 +139,19 @@
                      class="block w-full rounded-lg bg-gray-700 border-gray-600 text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm min-h-[44px]">
             </div>
           </div>
+          <div x-data="{ pt: 'cash' }">
+            <label class="block text-xs font-medium text-gray-500 mb-1">Payment Type</label>
+            <input type="hidden" name="payment_type" :value="pt">
+            <div class="flex flex-wrap gap-1.5 mb-3">
+              {% for val, label in [('cash', 'Cash'), ('cheque', 'Cheque'), ('credit', 'Credit'), ('debit', 'Debit'), ('etransfer', 'E-Transfer'), ('other', 'Other')] %}
+              <button type="button" @click="pt = '{{ val }}'"
+                      :class="pt === '{{ val }}' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-gray-700 text-gray-400 border-gray-600 hover:bg-gray-600'"
+                      class="px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-colors btn-press">
+                {{ label }}
+              </button>
+              {% endfor %}
+            </div>
+          </div>
           <div>
             <label for="profile-payment-notes" class="block text-xs font-medium text-gray-500 mb-1">Notes</label>
             <input type="text" id="profile-payment-notes" name="notes" placeholder="Optional"
@@ -153,19 +166,179 @@
     </div>
   </div>
 
-  <!-- Add Note Form -->
-  <div class="bg-gray-800 rounded-xl shadow-sm border border-gray-700 p-5 animate-fade-in-up">
-    <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Add Note</h3>
-    <form method="POST" action="{{ url_for('customers.add_note', id=customer.id) }}" class="flex gap-3">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <label for="customer-note" class="sr-only">Add a note</label>
-      <input type="text" id="customer-note" name="note" placeholder="Type a note..."
-             class="flex-1 rounded-lg border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
-      <button type="submit"
-              class="btn-press px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-500 transition-colors">
-        Add
+  {# -- Notes Section -- #}
+  <div class="animate-fade-in-up" x-data="{ showNoteForm: false }">
+    <div class="flex items-center gap-2 mb-2">
+      <div class="w-5 h-5 rounded-md bg-purple-500/15 flex items-center justify-center">
+        <svg aria-hidden="true" class="w-3 h-3 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
+        </svg>
+      </div>
+      <h2 class="text-xs font-bold text-purple-400 uppercase tracking-wider">Notes</h2>
+      <div class="flex-1 h-px bg-gray-700"></div>
+      {% if current_user.can_write %}
+      <button @click="showNoteForm = !showNoteForm" class="text-2xs text-indigo-400 hover:text-indigo-300 font-medium btn-press">
+        <span x-text="showNoteForm ? 'Cancel' : '+ Add'"></span>
       </button>
-    </form>
+      {% endif %}
+    </div>
+    <div x-show="showNoteForm" x-transition x-cloak class="mb-2">
+      <form method="POST" action="{{ url_for('customers.add_note_entry', id=customer.id) }}" class="flex gap-2">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="text" name="text" placeholder="Add a note..." required
+               class="flex-1 rounded-xl border-gray-700 bg-gray-800 text-gray-200 placeholder-gray-500 text-sm min-h-[44px]" style="padding-left: 1rem;">
+        <button type="submit" class="px-4 py-2 bg-purple-600 text-white text-sm font-semibold rounded-xl hover:bg-purple-500 transition-colors btn-press min-h-[44px]">Add</button>
+      </form>
+    </div>
+    {% if notes %}
+    <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden divide-y divide-gray-700/60">
+      {% for note in notes %}
+      <div class="flex items-start gap-3 px-4 py-3">
+        <div class="flex-1 min-w-0">
+          <p class="text-sm text-gray-200">{{ note.text }}</p>
+          <p class="text-2xs text-gray-500 mt-1">{{ note.user.username if note.user else '—' }} · {{ note.created_at|dateformat }}</p>
+        </div>
+        {% if current_user.can_write %}
+        <form method="POST" action="{{ url_for('customers.delete_note', id=customer.id, note_id=note.id) }}"
+              onsubmit="return confirm('Delete this note?')">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="p-1 text-gray-600 hover:text-red-400 transition-colors btn-press" aria-label="Delete note">
+            <svg aria-hidden="true" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </form>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-sm text-gray-600 px-1">No notes yet.</p>
+    {% endif %}
+  </div>
+
+  {# -- Invoices Section -- #}
+  <div class="animate-fade-in-up" x-data="{ showInvoiceForm: false }">
+    <div class="flex items-center gap-2 mb-2">
+      <div class="w-5 h-5 rounded-md bg-amber-500/15 flex items-center justify-center">
+        <svg aria-hidden="true" class="w-3 h-3 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+      </div>
+      <h2 class="text-xs font-bold text-amber-400 uppercase tracking-wider">Invoices</h2>
+      <div class="flex-1 h-px bg-gray-700"></div>
+      {% if current_user.can_write %}
+      <button @click="showInvoiceForm = !showInvoiceForm" class="text-2xs text-indigo-400 hover:text-indigo-300 font-medium btn-press">
+        <span x-text="showInvoiceForm ? 'Cancel' : '+ Add'"></span>
+      </button>
+      {% endif %}
+    </div>
+    <div x-show="showInvoiceForm" x-transition x-cloak class="mb-2">
+      <form method="POST" action="{{ url_for('customers.add_invoice', id=customer.id) }}" class="bg-gray-800 rounded-xl border border-gray-700 p-4 space-y-3">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-2xs font-semibold text-gray-500 uppercase mb-1">Amount ($)</label>
+            <input type="number" name="amount" step="0.01" min="0.01" required placeholder="0.00"
+                   class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 text-sm min-h-[44px]">
+          </div>
+          <div>
+            <label class="block text-2xs font-semibold text-gray-500 uppercase mb-1">Date</label>
+            <input type="date" name="invoice_date" value="{{ today if today is defined else '' }}"
+                   class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 text-sm min-h-[44px]">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-2xs font-semibold text-gray-500 uppercase mb-1">Invoice # (optional)</label>
+            <input type="text" name="invoice_number" placeholder="INV-001"
+                   class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 text-sm min-h-[44px]">
+          </div>
+          <div>
+            <label class="block text-2xs font-semibold text-gray-500 uppercase mb-1">Description</label>
+            <input type="text" name="description" placeholder="Optional"
+                   class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 text-sm min-h-[44px]">
+          </div>
+        </div>
+        <button type="submit" class="w-full px-4 py-2.5 bg-amber-600 text-white text-sm font-semibold rounded-xl hover:bg-amber-500 transition-colors btn-press min-h-[44px]">
+          Add Invoice
+        </button>
+      </form>
+    </div>
+    {% if invoices %}
+    <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden divide-y divide-gray-700/60">
+      {% for inv in invoices %}
+      <div x-data="{ showPay: false, payType: 'cash' }">
+      <div class="flex items-center gap-3 px-4 py-3">
+        <a href="{{ url_for('customers.invoice_pdf', id=customer.id, invoice_id=inv.id) }}" target="_blank" class="p-1.5 text-blue-500/70 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors btn-press flex-shrink-0" title="View PDF">
+          <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+          </svg>
+        </a>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2">
+            <p class="text-sm font-medium text-gray-200">${{ '{:,.2f}'.format(inv.amount) }}</p>
+            {% if inv.invoice_number %}
+            <span class="text-2xs text-gray-500">#{{ inv.invoice_number }}</span>
+            {% endif %}
+            <span class="px-1.5 py-0.5 text-2xs font-semibold rounded-full
+                         {{ 'bg-green-500/20 text-green-400' if inv.status == 'paid' else 'bg-amber-500/20 text-amber-400' }}">
+              {{ inv.status }}
+            </span>
+            {% if inv.status == 'paid' and inv.payment_type %}
+            <span class="px-1.5 py-0.5 text-2xs font-semibold rounded-full bg-gray-700 text-gray-400">{{ inv.payment_type }}</span>
+            {% endif %}
+          </div>
+          <p class="text-2xs text-gray-500 mt-0.5">{{ inv.invoice_date|dateformat }}{% if inv.description %} · {{ inv.description }}{% endif %}</p>
+        </div>
+        {% if current_user.can_write %}
+        <div class="flex items-center gap-1">
+          {% if inv.status == 'unpaid' %}
+          <button type="button" @click="showPay = !showPay" class="p-1.5 text-green-500/70 hover:text-green-400 hover:bg-green-500/10 rounded-lg transition-colors btn-press" title="Mark paid">
+            <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+          </button>
+          {% endif %}
+          <form method="POST" action="{{ url_for('customers.delete_invoice', id=customer.id, invoice_id=inv.id) }}"
+                onsubmit="return confirm('Delete this invoice? Balance will be adjusted.')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="p-1.5 text-gray-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors btn-press" title="Delete">
+              <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+              </svg>
+            </button>
+          </form>
+        </div>
+        {% endif %}
+        {# Payment type pills (shown when checkmark clicked) #}
+        {% if inv.status == 'unpaid' and current_user.can_write %}
+        <div x-show="showPay" x-transition x-cloak class="px-4 pb-3 border-t border-gray-700/50 mt-1 pt-2">
+          <form method="POST" action="{{ url_for('customers.mark_invoice_paid', id=customer.id, invoice_id=inv.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="payment_type" :value="payType">
+            <div class="flex flex-wrap gap-1.5 mb-2">
+              {% for val, label in [('cash', 'Cash'), ('cheque', 'Cheque'), ('credit', 'Credit'), ('debit', 'Debit'), ('etransfer', 'E-Transfer'), ('other', 'Other')] %}
+              <button type="button" @click="payType = '{{ val }}'"
+                      :class="payType === '{{ val }}' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-gray-700 text-gray-400 border-gray-600 hover:bg-gray-600'"
+                      class="px-2.5 py-1 text-2xs font-semibold rounded-lg border transition-colors btn-press">
+                {{ label }}
+              </button>
+              {% endfor %}
+            </div>
+            <button type="submit" class="w-full px-3 py-2 bg-green-600 text-white text-xs font-semibold rounded-xl hover:bg-green-500 transition-colors btn-press min-h-[36px]">
+              Mark Paid
+            </button>
+          </form>
+        </div>
+        {% endif %}
+      </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-sm text-gray-600 px-1">No invoices yet.</p>
+    {% endif %}
   </div>
 
   <!-- Tabs -->
@@ -178,7 +351,7 @@
                 aria-controls="panel-payments" id="tab-payments"
                 :class="tab === 'payments' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-300 hover:border-gray-600'"
                 class="btn-press whitespace-nowrap pb-3 px-1 border-b-2 text-sm font-medium transition-colors">
-          Payment History
+          Payments
           <span class="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-gray-700 text-gray-400">{{ payments|length }}</span>
         </button>
         <button @click="tab = 'activity'" role="tab"
@@ -186,7 +359,7 @@
                 aria-controls="panel-activity" id="tab-activity"
                 :class="tab === 'activity' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-300 hover:border-gray-600'"
                 class="btn-press whitespace-nowrap pb-3 px-1 border-b-2 text-sm font-medium transition-colors">
-          Activity Log
+          Activity
           <span class="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-gray-700 text-gray-400">{{ activity|length }}</span>
         </button>
         <button @click="tab = 'routes'" role="tab"
@@ -194,7 +367,7 @@
                 aria-controls="panel-routes" id="tab-routes"
                 :class="tab === 'routes' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-300 hover:border-gray-600'"
                 class="btn-press whitespace-nowrap pb-3 px-1 border-b-2 text-sm font-medium transition-colors">
-          Route History
+          Routes
           <span class="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-gray-700 text-gray-400">{{ route_history|length }}</span>
         </button>
       </div>
@@ -210,7 +383,8 @@
               <tr class="border-b border-gray-700 bg-gray-900">
                 <th class="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Date</th>
                 <th class="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Amount</th>
-                <th class="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Receipt #</th>
+                <th class="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Invoice #</th>
+                <th class="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider hidden sm:table-cell">Type</th>
                 <th class="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider hidden sm:table-cell">Previous Bal.</th>
                 <th class="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider hidden md:table-cell">Recorded By</th>
                 <th class="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Actions</th>
@@ -221,7 +395,14 @@
               <tr class="hover:bg-gray-700">
                 <td class="px-4 py-3 text-sm text-gray-100">{{ payment.payment_date|dateformat }}</td>
                 <td class="px-4 py-3 text-sm font-semibold text-green-400 text-right">{{ payment.amount|currency }}</td>
-                <td class="px-4 py-3 text-sm text-gray-400 font-mono">{{ payment.receipt_number }}</td>
+                <td class="px-4 py-3 text-sm font-mono">
+                  <span class="text-indigo-400">{{ payment.receipt_number }}</span>
+                </td>
+                <td class="px-4 py-3 hidden sm:table-cell">
+                  {% if payment.payment_type %}
+                  <span class="px-1.5 py-0.5 text-2xs font-semibold rounded-full bg-gray-700 text-gray-400">{{ payment.payment_type }}</span>
+                  {% endif %}
+                </td>
                 <td class="px-4 py-3 text-sm text-gray-500 text-right hidden sm:table-cell">{{ payment.previous_balance|currency }}</td>
                 <td class="px-4 py-3 text-sm text-gray-500 hidden md:table-cell">{{ payment.recorder.username if payment.recorder else '-' }}</td>
                 <td class="px-4 py-3 text-right">

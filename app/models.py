@@ -94,6 +94,43 @@ class RouteStop(db.Model):
         return f"<RouteStop {self.customer.name if self.customer else self.customer_id} on {self.route_date}>"
 
 
+class Invoice(db.Model):
+    __tablename__ = "invoices"
+
+    id = db.Column(db.Integer, primary_key=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=False, index=True)
+    invoice_number = db.Column(db.String(50), nullable=True)
+    amount = db.Column(db.Numeric(10, 2), nullable=False)
+    invoice_date = db.Column(db.Date, nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    status = db.Column(db.String(20), nullable=False, default="unpaid")  # unpaid, paid, void
+    payment_type = db.Column(db.String(20), nullable=True)  # set when paid
+    created_by = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    customer = db.relationship("Customer", backref=db.backref("invoices", lazy="dynamic", order_by="Invoice.invoice_date.desc()"))
+    creator = db.relationship("User", foreign_keys=[created_by])
+
+    def __repr__(self):
+        return f"<Invoice {self.invoice_number or self.id} ${self.amount}>"
+
+
+class Note(db.Model):
+    __tablename__ = "notes"
+
+    id = db.Column(db.Integer, primary_key=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    text = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+
+    customer = db.relationship("Customer", backref=db.backref("note_entries", lazy="dynamic", order_by="Note.created_at.desc()"))
+    user = db.relationship("User", foreign_keys=[user_id])
+
+    def __repr__(self):
+        return f"<Note {self.id} for customer {self.customer_id}>"
+
+
 class Payment(db.Model):
     __tablename__ = "payments"
 
@@ -101,6 +138,7 @@ class Payment(db.Model):
     customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=False, index=True)
     amount = db.Column(db.Numeric(10, 2), nullable=False)
     amount_sold = db.Column(db.Numeric(10, 2), nullable=True, default=0)
+    payment_type = db.Column(db.String(20), nullable=True, default="cash")  # cash, cheque, credit, debit, etransfer, other
     payment_date = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
     receipt_number = db.Column(db.String(20), unique=True, nullable=False)
     previous_balance = db.Column(db.Numeric(10, 2), nullable=False)

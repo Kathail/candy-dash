@@ -97,7 +97,7 @@ def format_date(value, fmt="%b %d, %Y"):
 
 
 def generate_receipt_number(payment_date=None, max_retries=5):
-    """Generate a unique receipt number in format RCP-YYYYMMDD-XXXX.
+    """Generate a unique invoice number in format INV-YYYYMMDD-XXXX.
 
     Uses SELECT ... FOR UPDATE (Postgres) to prevent race conditions.
     Falls back to UUID suffix if sequence collides after retries.
@@ -110,7 +110,7 @@ def generate_receipt_number(payment_date=None, max_retries=5):
         payment_date = datetime.now(timezone.utc)
 
     date_str = payment_date.strftime("%Y%m%d")
-    prefix = f"RCP-{date_str}-"
+    prefix = f"INV-{date_str}-"
 
     for attempt in range(max_retries):
         try:
