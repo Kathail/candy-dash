@@ -29,6 +29,8 @@
         <dd class="mt-1">
           {% if current_user.role == 'admin' %}
           <span class="inline-flex px-2 py-0.5 text-xs font-semibold rounded-full bg-red-500/20 text-red-400">Admin</span>
+          {% elif current_user.role == 'bookkeeper' %}
+          <span class="inline-flex px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-500/20 text-amber-400">Bookkeeper</span>
           {% elif current_user.role == 'demo' %}
           <span class="inline-flex px-2 py-0.5 text-xs font-semibold rounded-full bg-purple-500/20 text-purple-400">Demo</span>
           {% else %}
@@ -84,7 +86,7 @@
       </svg>
     </a>
 
-    {% if current_user.is_admin %}
+    {% if current_user.is_admin or current_user.role == 'owner' %}
     <a href="{{ url_for('admin.index') }}"
        class="flex items-center justify-between bg-panel rounded-xl border border-app px-5 py-4 hover:bg-gray-700/50 transition">
       <div class="flex items-center gap-3">
