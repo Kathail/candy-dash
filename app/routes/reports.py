@@ -10,7 +10,7 @@ from sqlalchemy import func
 
 from app import db
 from app.helpers import format_currency, format_date, staff_required, csv_response
-from app.models import Customer, Payment, User
+from app.models import Customer, Payment, Invoice, User
 
 bp = Blueprint("reports", __name__, url_prefix="/reports")
 
@@ -99,30 +99,33 @@ def index():
 
 @bp.route("/financial")
 def financial():
-    """Financial report: payment summary, by city, by customer for date range."""
+    """Sales report: total sales by city and customer for date range."""
     start, end = _parse_date_range()
     fmt = request.args.get("format", "").lower()
 
-    # Overall summary
+    start_date = start.date() if hasattr(start, 'date') else start
+    end_date = end.date() if hasattr(end, 'date') else end
+
+    # Overall summary (sales from invoices)
     summary = db.session.query(
-        func.count(Payment.id).label("count"),
-        func.coalesce(func.sum(Payment.amount), Decimal("0")).label("total"),
+        func.count(Invoice.id).label("count"),
+        func.coalesce(func.sum(Invoice.amount), Decimal("0")).label("total"),
     ).filter(
-        Payment.payment_date >= start,
-        Payment.payment_date <= end,
+        Invoice.invoice_date >= start_date,
+        Invoice.invoice_date <= end_date,
     ).first()
 
     # By city
     by_city = (
         db.session.query(
             Customer.city,
-            func.count(Payment.id).label("count"),
-            func.coalesce(func.sum(Payment.amount), Decimal("0")).label("total"),
+            func.count(Invoice.id).label("count"),
+            func.coalesce(func.sum(Invoice.amount), Decimal("0")).label("total"),
         )
-        .join(Payment, Payment.customer_id == Customer.id)
-        .filter(Payment.payment_date >= start, Payment.payment_date <= end)
+        .join(Invoice, Invoice.customer_id == Customer.id)
+        .filter(Invoice.invoice_date >= start_date, Invoice.invoice_date <= end_date)
         .group_by(Customer.city)
-        .order_by(func.sum(Payment.amount).desc())
+        .order_by(func.sum(Invoice.amount).desc())
         .all()
     )
 
@@ -131,25 +134,25 @@ def financial():
         db.session.query(
             Customer.name,
             Customer.city,
-            func.count(Payment.id).label("count"),
-            func.coalesce(func.sum(Payment.amount), Decimal("0")).label("total"),
+            func.count(Invoice.id).label("count"),
+            func.coalesce(func.sum(Invoice.amount), Decimal("0")).label("total"),
         )
-        .join(Payment, Payment.customer_id == Customer.id)
-        .filter(Payment.payment_date >= start, Payment.payment_date <= end)
+        .join(Invoice, Invoice.customer_id == Customer.id)
+        .filter(Invoice.invoice_date >= start_date, Invoice.invoice_date <= end_date)
         .group_by(Customer.id, Customer.name, Customer.city)
-        .order_by(func.sum(Payment.amount).desc())
+        .order_by(func.sum(Invoice.amount).desc())
         .limit(500)
         .all()
     )
 
     # Export
     if fmt in ("csv", "xlsx"):
-        headers = ["Customer", "City", "Payment Count", "Total"]
+        headers = ["Customer", "City", "Sales Count", "Total"]
         rows = [
             (row.name, row.city or "", row.count, str(row.total))
             for row in by_customer
         ]
-        filename = f"financial_report_{start.strftime('%Y%m%d')}_{end.strftime('%Y%m%d')}"
+        filename = f"sales_report_{start.strftime('%Y%m%d')}_{end.strftime('%Y%m%d')}"
         if fmt == "csv":
             return csv_response(rows, headers, f"{filename}.csv")
         return _xlsx_response(rows, headers, f"{filename}.xlsx")
@@ -166,22 +169,25 @@ def financial():
 
 @bp.route("/tax")
 def tax():
-    """Tax report: payments grouped by tax-exempt vs taxable customers."""
+    """Tax report: sales grouped by tax-exempt vs taxable customers."""
     start, end = _parse_date_range()
     fmt = request.args.get("format", "").lower()
+
+    start_date = start.date() if hasattr(start, 'date') else start
+    end_date = end.date() if hasattr(end, 'date') else end
 
     rows = (
         db.session.query(
             Customer.name,
             Customer.city,
             Customer.tax_exempt,
-            func.count(Payment.id).label("count"),
-            func.coalesce(func.sum(Payment.amount), Decimal("0")).label("total"),
+            func.count(Invoice.id).label("count"),
+            func.coalesce(func.sum(Invoice.amount), Decimal("0")).label("total"),
         )
-        .join(Payment, Payment.customer_id == Customer.id)
-        .filter(Payment.payment_date >= start, Payment.payment_date <= end)
+        .join(Invoice, Invoice.customer_id == Customer.id)
+        .filter(Invoice.invoice_date >= start_date, Invoice.invoice_date <= end_date)
         .group_by(Customer.id, Customer.name, Customer.city, Customer.tax_exempt)
-        .order_by(Customer.tax_exempt.desc(), func.sum(Payment.amount).desc())
+        .order_by(Customer.tax_exempt.desc(), func.sum(Invoice.amount).desc())
         .limit(500)
         .all()
     )
@@ -191,7 +197,7 @@ def tax():
     exempt_total = sum(r.total for r in rows if r.tax_exempt)
 
     if fmt in ("csv", "xlsx"):
-        headers = ["Customer", "City", "Tax Exempt", "Payment Count", "Total"]
+        headers = ["Customer", "City", "Tax Exempt", "Sales Count", "Total"]
         export_rows = [
             (r.name, r.city or "", "Yes" if r.tax_exempt else "No", r.count, str(r.total))
             for r in rows
@@ -213,27 +219,30 @@ def tax():
 
 @bp.route("/collections")
 def collections():
-    """Collections report by sales rep (recorded_by) for date range."""
+    """Sales report by rep for date range."""
     start, end = _parse_date_range()
     fmt = request.args.get("format", "").lower()
+
+    start_date = start.date() if hasattr(start, 'date') else start
+    end_date = end.date() if hasattr(end, 'date') else end
 
     rows = (
         db.session.query(
             User.username,
-            func.count(Payment.id).label("count"),
-            func.coalesce(func.sum(Payment.amount), Decimal("0")).label("total"),
+            func.count(Invoice.id).label("count"),
+            func.coalesce(func.sum(Invoice.amount), Decimal("0")).label("total"),
         )
-        .join(Payment, Payment.recorded_by == User.id)
-        .filter(Payment.payment_date >= start, Payment.payment_date <= end)
+        .join(Invoice, Invoice.created_by == User.id)
+        .filter(Invoice.invoice_date >= start_date, Invoice.invoice_date <= end_date)
         .group_by(User.id, User.username)
-        .order_by(func.sum(Payment.amount).desc())
+        .order_by(func.sum(Invoice.amount).desc())
         .all()
     )
 
     if fmt in ("csv", "xlsx"):
-        headers = ["Sales Rep", "Payment Count", "Total"]
+        headers = ["Sales Rep", "Sales Count", "Total"]
         export_rows = [(r.username, r.count, str(r.total)) for r in rows]
-        filename = f"collections_report_{start.strftime('%Y%m%d')}_{end.strftime('%Y%m%d')}"
+        filename = f"sales_by_rep_{start.strftime('%Y%m%d')}_{end.strftime('%Y%m%d')}"
         if fmt == "csv":
             return csv_response(export_rows, headers, f"{filename}.csv")
         return _xlsx_response(export_rows, headers, f"{filename}.xlsx")

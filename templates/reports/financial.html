@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
-{% block title %}Financial Report - Candy Dash{% endblock %}
-{% block page_title %}Financial Report{% endblock %}
+{% block title %}Sales Report - Candy Dash{% endblock %}
+{% block page_title %}Sales Report{% endblock %}
 
 {% block content %}
 <div class="max-w-4xl mx-auto space-y-6">
@@ -13,11 +13,11 @@
       <svg class="w-3.5 h-3.5 text-gray-600" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
       </svg>
-      <span class="text-muted">Financial</span>
+      <span class="text-muted">Sales</span>
     </nav>
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
       <div>
-        <h1 class="text-2xl font-bold text-gray-100">Financial Report</h1>
+        <h1 class="text-2xl font-bold text-gray-100">Sales Report</h1>
         <p class="text-xs text-gray-500 mt-0.5">{{ start|dateformat }} &ndash; {{ end|dateformat }}</p>
       </div>
       <div class="flex gap-1.5">
@@ -44,11 +44,11 @@
   {# ── KPI Cards ── #}
   <div class="grid grid-cols-2 gap-3">
     <div class="bg-panel rounded-xl border border-app p-4 animate-fade-in-up stagger-1">
-      <p class="text-2xs font-semibold text-gray-500 uppercase tracking-wider">Total Collected</p>
+      <p class="text-2xs font-semibold text-gray-500 uppercase tracking-wider">Total Sales</p>
       <p class="text-xl font-bold text-green-400 mt-1">{{ summary.total|currency }}</p>
     </div>
     <div class="bg-panel rounded-xl border border-app p-4 animate-fade-in-up stagger-2">
-      <p class="text-2xs font-semibold text-gray-500 uppercase tracking-wider">Payments</p>
+      <p class="text-2xs font-semibold text-gray-500 uppercase tracking-wider">Invoices</p>
       <p class="text-xl font-bold text-gray-100 mt-1">{{ summary.count }}</p>
     </div>
   </div>
@@ -95,7 +95,7 @@
           </div>
           <div>
             <p class="text-sm font-medium text-gray-100">{{ row.name or 'Unknown' }}</p>
-            <p class="text-2xs text-gray-500">{{ row.count }} payment{{ 's' if row.count != 1 else '' }}</p>
+            <p class="text-2xs text-gray-500">{{ row.count }} sale{{ 's' if row.count != 1 else '' }}</p>
           </div>
         </div>
         <span class="text-sm font-bold text-gray-100">{{ row.total|currency }}</span>
