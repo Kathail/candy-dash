@@ -104,7 +104,7 @@ def create_app():
         label = "Demo mode" if is_demo else "View-only mode"
 
         # Block all writes except logout
-        if req.method in ("POST", "PUT", "DELETE") and req.endpoint != "auth.logout":
+        if req.method in ("POST", "PUT", "DELETE") and req.endpoint not in ("auth.logout", "auth.change_password"):
             if req.headers.get("X-Requested-With") == "XMLHttpRequest":
                 return jsonify({"error": f"{label} — this action is disabled."}), 403
             flash(f"{label} — this action is disabled.", "warning")
@@ -198,6 +198,10 @@ def create_app():
         return response
 
     # Error handlers
+    @app.errorhandler(403)
+    def forbidden(e):
+        return render_template("errors/403.html"), 403
+
     @app.errorhandler(404)
     def not_found(e):
         return render_template("errors/404.html"), 404
