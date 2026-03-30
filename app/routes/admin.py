@@ -11,7 +11,7 @@ from flask_login import login_required, current_user
 from sqlalchemy import func
 
 from app import db
-from app.helpers import admin_required, audit
+from app.helpers import admin_required, audit, sanitize_csv_value
 from app.models import User, Customer, Payment, Invoice, Note, RouteStop, ActivityLog, AdminAuditLog, VALID_ROLES
 import logging
 
@@ -373,7 +373,7 @@ def _csv_response(rows, headers, filename):
     writer = csv.writer(output)
     writer.writerow(headers)
     for row in rows:
-        writer.writerow(row)
+        writer.writerow([sanitize_csv_value(cell) for cell in row])
     return Response(
         output.getvalue(),
         mimetype="text/csv",

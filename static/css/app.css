@@ -3,457 +3,445 @@
    ========================================================================== */
 
 /* ==========================================================================
-   Root / Theme Variables
+   Theme Variables
    ========================================================================== */
 
 :root {
-  --bg:             #111827;
-  --bg-panel:       #1a2332;
-  --bg-panel-hover: #243044;
-  --bg-input:       #0f1726;
+    --bg: #111827;
+    --bg-panel: #1a2332;
+    --bg-panel-hover: #243044;
+    --bg-input: #0f1726;
 
-  --border:         #2d3a4d;
+    --border: #2d3a4d;
 
-  --text:           #e5e7eb;
-  --text-muted:     #9ca3af;
-  --text-faint:     #8b95a5; /* #1: bumped from #6b7280 for WCAG AA (4.6:1 on #0b1220) */
+    --text: #e5e7eb;
+    --text-muted: #9ca3af;
+    --text-faint: #8b95a5;
 
-  --accent:         #818cf8;
-  --accent-hover:   #a5b4fc;
-  --accent-bg:      rgba(129, 140, 248, 0.35); /* #3: bumped from 0.15 for visible focus ring */
+    --accent: #818cf8;
+    --accent-hover: #a5b4fc;
+    --accent-bg: rgba(129, 140, 248, 0.35);
 
-  --success:        #10b981;
-  --success-bg:     rgba(16, 185, 129, 0.15);
-  --success-text:   #6ee7b7;
+    --success: #10b981;
+    --success-bg: rgba(16, 185, 129, 0.15);
+    --success-text: #6ee7b7;
 
-  --danger:         #ef4444;
-  --danger-bg:      rgba(239, 68, 68, 0.15);
-  --danger-text:    #fca5a5;
+    --danger: #ef4444;
+    --danger-bg: rgba(239, 68, 68, 0.15);
+    --danger-text: #fca5a5;
 
-  --warning:        #f59e0b;
-  --warning-bg:     rgba(245, 158, 11, 0.15);
-  --warning-text:   #fcd34d;
+    --warning: #f59e0b;
+    --warning-bg: rgba(245, 158, 11, 0.15);
+    --warning-text: #fcd34d;
 
-  --info:           #3b82f6;
-  --info-bg:        rgba(59, 130, 246, 0.15);
-  --info-text:      #93c5fd;
+    --info: #3b82f6;
+    --info-bg: rgba(59, 130, 246, 0.15);
+    --info-text: #93c5fd;
 }
 
 /* ==========================================================================
-   Semantic Utility Classes (complement Tailwind)
+   Semantic Utilities (@utility = proper Tailwind v4 integration,
+   auto-generates hover:, focus:, lg:, etc. variants)
    ========================================================================== */
 
-.bg-app          { background-color: var(--bg); }
-.bg-panel        { background-color: var(--bg-panel); }
-.bg-panel-hover  { background-color: var(--bg-panel-hover); }
+@utility bg-app {
+    background-color: var(--bg);
+}
+@utility bg-panel {
+    background-color: var(--bg-panel);
+}
+@utility bg-panel-hover {
+    background-color: var(--bg-panel-hover);
+}
 
-.text-app        { color: var(--text); }
-.text-muted      { color: var(--text-muted); }
-.text-faint      { color: var(--text-faint); }
-.text-accent     { color: var(--accent); }
-.text-success    { color: var(--success-text); }
-.text-danger     { color: var(--danger-text); }
+@utility text-app {
+    color: var(--text);
+}
+@utility text-muted {
+    color: var(--text-muted);
+}
+@utility text-faint {
+    color: var(--text-faint);
+}
+@utility text-accent {
+    color: var(--accent);
+}
+@utility text-success {
+    color: var(--success-text);
+}
+@utility text-danger {
+    color: var(--danger-text);
+}
 
-.border-app      { border-color: var(--border); }
+@utility border-app {
+    border-color: var(--border);
+}
 
-.hover\:bg-panel-hover:hover { background-color: var(--bg-panel-hover); }
+@utility text-2xs {
+    font-size: 0.6875rem;
+    line-height: 1.3;
+}
+
+@utility safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@utility btn-press {
+    transition: transform 0.1s ease;
+    &:active {
+        transform: scale(0.95);
+    }
+}
+
+@utility card-lift {
+    @media (hover: hover) and (pointer: fine) {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+        &:active {
+            transform: translateY(0);
+        }
+    }
+}
+
+@utility animate-fade-in-up {
+    animation: fade-in-up 0.3s ease-out both;
+}
+@utility animate-pop-in {
+    animation: pop-in 0.3s ease-out both;
+}
+@utility animate-check-bounce {
+    animation: check-bounce 0.4s ease-out both;
+}
+@utility animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+@utility animate-loading-bar {
+    animation: loading-bar 1.2s ease-in-out infinite;
+}
+
+@utility stagger-1 { animation-delay: 0.03s; }
+@utility stagger-2 { animation-delay: 0.06s; }
+@utility stagger-3 { animation-delay: 0.09s; }
+@utility stagger-4 { animation-delay: 0.12s; }
+@utility stagger-5 { animation-delay: 0.15s; }
+@utility stagger-6 { animation-delay: 0.18s; }
+@utility stagger-7 { animation-delay: 0.21s; }
+@utility stagger-8 { animation-delay: 0.24s; }
+@utility stagger-9 { animation-delay: 0.27s; }
+@utility stagger-10 { animation-delay: 0.3s; }
+@utility stagger-11 { animation-delay: 0.33s; }
+@utility stagger-12 { animation-delay: 0.36s; }
+
+@utility custom-scroll {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: #374151 transparent;
+}
+
+@utility avatar-initials {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 9999px;
+    font-weight: 700;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+    text-transform: uppercase;
+}
 
 /* ==========================================================================
    Base
    ========================================================================== */
 
-html, body {
-  margin: 0;
-  height: 100%;
-}
+@layer base {
+    html, body {
+        margin: 0;
+        height: 100%;
+    }
 
-body {
-  background: var(--bg);
-  color: var(--text);
+    body {
+        background: var(--bg);
+        color: var(--text);
+    }
+
+    *:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+        border-radius: 2px;
+    }
 }
 
 /* ==========================================================================
-   Global Form Styling (dark theme baseline)
-   Scoped to .theme-input for inputs; select/textarea get global
-   baseline because they aren't wrapped in .theme-input.
+   Keyframes (referenced by @utility animation classes above)
    ========================================================================== */
 
+@keyframes fade-in-up {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pop-in {
+    0%   { opacity: 0; transform: scale(0.9); }
+    70%  { opacity: 1; transform: scale(1.02); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes check-bounce {
+    0%   { transform: scale(0); }
+    50%  { transform: scale(1.3); }
+    70%  { transform: scale(0.9); }
+    100% { transform: scale(1); }
+}
+
+@keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(129, 140, 248, 0.4); }
+    50%      { box-shadow: 0 0 0 8px rgba(129, 140, 248, 0); }
+}
+
+@keyframes loading-bar {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(400%); }
+}
+
+/* ==========================================================================
+   Components (multi-property, don't need Tailwind variants)
+   ========================================================================== */
+
+/* -- Cards -- */
+.theme-card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+}
+
+/* -- Form inputs -- */
 select.theme-input,
 textarea.theme-input {
-  background-color: var(--bg-input);
-  border-color: var(--border);
-  color: var(--text);
+    background-color: var(--bg-input);
+    border-color: var(--border);
+    color: var(--text);
 }
 
 select.theme-input::placeholder,
 textarea.theme-input::placeholder {
-  color: var(--text-muted);
+    color: var(--text-muted);
 }
-
-/* ==========================================================================
-   Cards
-   ========================================================================== */
-
-.theme-card {
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
-  border-radius: 0.75rem;
-}
-
-/* ==========================================================================
-   Inputs
-   ========================================================================== */
 
 .theme-input {
-  width: 100%;
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.5rem;
-  background: var(--bg-input);
-  border: 1px solid var(--border);
-  color: var(--text);
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    color: var(--text);
 }
 
 .theme-input::placeholder {
-  color: var(--text-muted);
+    color: var(--text-muted);
 }
 
-/* #3: Visible focus ring — use focus-visible to not penalize mouse users */
 .theme-input:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-bg);
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-bg);
 }
 
 .theme-input:focus:not(:focus-visible) {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent-bg);
-  outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-bg);
+    outline: none;
 }
 
-/* #11: Disabled states */
 .theme-input:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
-/* ==========================================================================
-   Buttons
-   ========================================================================== */
-
+/* -- Buttons -- */
 .theme-btn-primary,
 .theme-btn-secondary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 0.75rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  text-decoration: none;
-  cursor: pointer;
-  padding: 0.5rem 1rem;
-  min-height: 44px;
-  transition: background-color 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    min-height: 44px;
+    transition: background-color 0.15s ease;
 }
 
 .theme-btn-primary {
-  background: var(--accent);
-  color: white;
-  border: none;
+    background: var(--accent);
+    color: white;
+    border: none;
 }
 .theme-btn-primary:hover {
-  background: var(--accent-hover);
+    background: var(--accent-hover);
 }
 
 .theme-btn-secondary {
-  background: var(--bg-panel-hover);
-  color: var(--text);
-  border: 1px solid var(--border);
+    background: var(--bg-panel-hover);
+    color: var(--text);
+    border: 1px solid var(--border);
 }
 .theme-btn-secondary:hover {
-  background: var(--border);
+    background: var(--border);
 }
 
-/* #11: Disabled button states */
 .theme-btn-primary:disabled,
 .theme-btn-secondary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  pointer-events: none;
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
 }
 
-/* ==========================================================================
-   Nav
-   ========================================================================== */
-
+/* -- Navigation -- */
 .nav-link {
-  position: relative;
-  transition: color 0.15s ease;
+    position: relative;
+    transition: color 0.15s ease;
 }
 
 .nav-link.active {
-  color: var(--accent);
-  font-weight: 600;
+    color: var(--accent);
+    font-weight: 600;
 }
 
 .nav-link.active::after {
-  content: "";
-  position: absolute;
-  bottom: -2px;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background-color: var(--accent);
-  border-radius: 1px;
+    content: "";
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background-color: var(--accent);
+    border-radius: 1px;
 }
 
-/* ==========================================================================
-   Toast Notifications
-   ========================================================================== */
-
+/* -- Toast notifications -- */
 .toast {
-  pointer-events: auto;
-  min-width: 0;            /* #14: prevent overflow on small screens */
-  max-width: 420px;
-  width: 100%;
-  padding: 0.75rem 1rem;
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-  font-size: 0.875rem;
-  line-height: 1.4;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+    pointer-events: auto;
+    min-width: 0;
+    max-width: 420px;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    font-size: 0.875rem;
+    line-height: 1.4;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 .toast-success {
-  background-color: var(--success-bg);
-  border-left: 4px solid var(--success);
-  color: var(--success-text);
+    background-color: var(--success-bg);
+    border-left: 4px solid var(--success);
+    color: var(--success-text);
 }
 
 .toast-error {
-  background-color: var(--danger-bg);
-  border-left: 4px solid var(--danger);
-  color: var(--danger-text);
+    background-color: var(--danger-bg);
+    border-left: 4px solid var(--danger);
+    color: var(--danger-text);
 }
 
 .toast-warning {
-  background-color: var(--warning-bg);
-  border-left: 4px solid var(--warning);
-  color: var(--warning-text);
+    background-color: var(--warning-bg);
+    border-left: 4px solid var(--warning);
+    color: var(--warning-text);
 }
 
 .toast-info {
-  background-color: var(--info-bg);
-  border-left: 4px solid var(--info);
-  color: var(--info-text);
+    background-color: var(--info-bg);
+    border-left: 4px solid var(--info);
+    color: var(--info-text);
 }
 
-/* ==========================================================================
-   Drag & Drop
-   ========================================================================== */
-
+/* -- Drag & drop -- */
 .drag-handle {
-  cursor: grab;
-  touch-action: none;
-  user-select: none;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
 }
 
-.drag-handle:active { cursor: grabbing; }
-
-/* ==========================================================================
-   Scrollbar (Dark)
-   ========================================================================== */
-
-.custom-scroll {
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
-  scrollbar-color: #374151 transparent;
+.drag-handle:active {
+    cursor: grabbing;
 }
 
-.custom-scroll::-webkit-scrollbar { width: 4px; }
-.custom-scroll::-webkit-scrollbar-track { background: transparent; }
+/* -- Scrollbar (webkit) -- */
+.custom-scroll::-webkit-scrollbar {
+    width: 4px;
+}
+.custom-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
 .custom-scroll::-webkit-scrollbar-thumb {
-  background-color: #374151;
-  border-radius: 4px;
+    background-color: #374151;
+    border-radius: 4px;
 }
 .custom-scroll::-webkit-scrollbar-thumb:hover {
-  background-color: var(--text-faint);
+    background-color: var(--text-faint);
 }
 
-/* ==========================================================================
-   Focus / Accessibility
-   ========================================================================== */
-
-*:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-  border-radius: 2px;
+/* -- HTMX indicators -- */
+.htmx-indicator {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+.htmx-request .htmx-indicator {
+    opacity: 1;
+}
+.htmx-request.htmx-indicator {
+    opacity: 1;
 }
 
-/* ==========================================================================
-   HTMX / Alpine Indicators
-   ========================================================================== */
-
-.htmx-indicator { opacity: 0; transition: opacity 0.2s ease; }
-.htmx-request .htmx-indicator { opacity: 1; }
-.htmx-request.htmx-indicator { opacity: 1; }
-
-/* ==========================================================================
-   Offline Banner
-   ========================================================================== */
-
-.offline-banner {
-  background-color: var(--warning-bg);
-  color: var(--warning-text);
-  text-align: center;
-  padding: 0.375rem 1rem;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  display: none;
-}
-
-.offline-banner.visible { display: block; }
-
-/* ==========================================================================
-   Safe Area (iOS notch / home indicator)
-   ========================================================================== */
-
-.safe-bottom {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-}
-
-/* #2: bumped from 10px/1.0 to 11px/1.3 for readability */
-.text-2xs {
-  font-size: 0.6875rem;
-  line-height: 1.3;
-}
-
-/* ==========================================================================
-   Animations & Micro-interactions
-   ========================================================================== */
-
-@keyframes fade-in-up {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* #8: added explicit opacity: 1 at 70% to prevent flash */
-@keyframes pop-in {
-  0% { opacity: 0; transform: scale(0.9); }
-  70% { opacity: 1; transform: scale(1.02); }
-  100% { opacity: 1; transform: scale(1); }
-}
-
-@keyframes check-bounce {
-  0% { transform: scale(0); }
-  50% { transform: scale(1.3); }
-  70% { transform: scale(0.9); }
-  100% { transform: scale(1); }
-}
-
-@keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(129, 140, 248, 0.4); }
-  50% { box-shadow: 0 0 0 8px rgba(129, 140, 248, 0); }
-}
-
-@keyframes loading-bar {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(400%); }
-}
-
-.animate-fade-in-up {
-  animation: fade-in-up 0.3s ease-out both;
-}
-
-.animate-pop-in {
-  animation: pop-in 0.3s ease-out both;
-}
-
-.animate-check-bounce {
-  animation: check-bounce 0.4s ease-out both;
-}
-
-.animate-pulse-glow {
-  animation: pulse-glow 2s ease-in-out infinite;
-}
-
-.animate-loading-bar {
-  animation: loading-bar 1.2s ease-in-out infinite;
-}
-
-/* Staggered card entry */
-.stagger-1  { animation-delay: 0.03s; }
-.stagger-2  { animation-delay: 0.06s; }
-.stagger-3  { animation-delay: 0.09s; }
-.stagger-4  { animation-delay: 0.12s; }
-.stagger-5  { animation-delay: 0.15s; }
-.stagger-6  { animation-delay: 0.18s; }
-.stagger-7  { animation-delay: 0.21s; }
-.stagger-8  { animation-delay: 0.24s; }
-.stagger-9  { animation-delay: 0.27s; }
-.stagger-10 { animation-delay: 0.30s; }
-.stagger-11 { animation-delay: 0.33s; }
-.stagger-12 { animation-delay: 0.36s; }
-
-/* Respect user motion preferences (WCAG 2.3.3) */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-}
-
-/* Button press effect */
-.btn-press {
-  transition: transform 0.1s ease;
-}
-.btn-press:active {
-  transform: scale(0.95);
-}
-
-/* Card hover lift — desktop only to avoid stuck state on mobile tap */
-@media (hover: hover) and (pointer: fine) {
-  .card-lift {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-  }
-  .card-lift:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-  }
-  .card-lift:active {
-    transform: translateY(0);
-  }
-}
-
-/* Avatar initials circle */
-.avatar-initials {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: 9999px;
-  font-weight: 700;
-  font-size: 0.75rem;
-  flex-shrink: 0;
-  text-transform: uppercase;
-}
-
-/* HTMX swap animation */
 .htmx-swapping {
-  opacity: 0.5;
-  transition: opacity 0.15s ease;
+    opacity: 0.5;
+    transition: opacity 0.15s ease;
 }
 
 .htmx-settling {
-  animation: fade-in-up 0.2s ease-out;
+    animation: fade-in-up 0.2s ease-out;
+}
+
+/* -- Offline banner -- */
+.offline-banner {
+    background-color: var(--warning-bg);
+    color: var(--warning-text);
+    text-align: center;
+    padding: 0.375rem 1rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    display: none;
+}
+
+.offline-banner.visible {
+    display: block;
+}
+
+/* ==========================================================================
+   Reduced motion
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
 }
 
 /* ==========================================================================
@@ -461,95 +449,86 @@ textarea.theme-input::placeholder {
    ========================================================================== */
 
 @media print {
-  /* Hide chrome: nav, bottom bar, toasts, search, offline banner, footer */
-  .app-shell > aside,
-  nav,
-  #toast-container,
-  #offline-banner,
-  #shortcuts-overlay,
-  #mobile-search,
-  #desktop-search,
-  footer,
-  .no-print {
-    display: none !important;
-  }
+    .app-shell > aside,
+    nav,
+    #toast-container,
+    #offline-banner,
+    #shortcuts-overlay,
+    #mobile-search,
+    #desktop-search,
+    footer,
+    .no-print {
+        display: none !important;
+    }
 
-  /* #12: Reset ALL dark backgrounds for print */
-  body,
-  main,
-  .bg-gray-700,
-  .bg-gray-800,
-  .bg-gray-900,
-  .bg-panel,
-  .bg-app,
-  .theme-card,
-  [class*="bg-indigo"],
-  [class*="bg-blue"],
-  [class*="bg-emerald"],
-  [class*="bg-amber"],
-  [class*="bg-purple"],
-  [class*="bg-rose"] {
-    background: #fff !important;
-    color: #000 !important;
-  }
+    body,
+    main,
+    .bg-gray-700,
+    .bg-gray-800,
+    .bg-gray-900,
+    .bg-panel,
+    .bg-app,
+    .theme-card,
+    [class*="bg-indigo"],
+    [class*="bg-blue"],
+    [class*="bg-emerald"],
+    [class*="bg-amber"],
+    [class*="bg-purple"],
+    [class*="bg-rose"] {
+        background: #fff !important;
+        color: #000 !important;
+    }
 
-  /* Remove sidebar spacing */
-  .lg\:pl-64 {
-    padding-left: 0 !important;
-  }
+    .lg\:pl-64 {
+        padding-left: 0 !important;
+    }
 
-  /* Remove animations */
-  * {
-    animation: none !important;
-    transition: none !important;
-  }
+    * {
+        animation: none !important;
+        transition: none !important;
+    }
 
-  /* Clean borders for tables/cards */
-  .border-gray-700,
-  .border-gray-600,
-  .border-app {
-    border-color: #ccc !important;
-  }
+    .border-gray-700,
+    .border-gray-600,
+    .border-app {
+        border-color: #ccc !important;
+    }
 
-  /* Readable text colors */
-  .text-gray-100,
-  .text-gray-200,
-  .text-gray-300 {
-    color: #000 !important;
-  }
+    .text-gray-100,
+    .text-gray-200,
+    .text-gray-300 {
+        color: #000 !important;
+    }
 
-  .text-gray-400,
-  .text-gray-500,
-  .text-muted,
-  .text-faint {
-    color: #555 !important;
-  }
+    .text-gray-400,
+    .text-gray-500,
+    .text-muted,
+    .text-faint {
+        color: #555 !important;
+    }
 
-  /* Colored accents stay visible */
-  .text-green-400,
-  .text-indigo-400,
-  .text-blue-400,
-  .text-amber-400 {
-    print-color-adjust: exact;
-    -webkit-print-color-adjust: exact;
-  }
+    .text-green-400,
+    .text-indigo-400,
+    .text-blue-400,
+    .text-amber-400 {
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+    }
 
-  /* Bottom nav clearance not needed */
-  .pb-24 {
-    padding-bottom: 1.5rem !important;
-  }
+    .pb-24 {
+        padding-bottom: 1.5rem !important;
+    }
 
-  /* #13: Hide interactive elements that don't make sense on paper */
-  button[type="submit"],
-  button[data-confirm],
-  form:not(.no-print-hide),
-  a[href*="format=csv"],
-  a[href*="format=xlsx"],
-  input[type="date"],
-  input[type="search"],
-  [x-data="globalSearch()"],
-  [role="group"][aria-label="Date range presets"],
-  .no-print {
-    display: none !important;
-  }
+    button[type="submit"],
+    button[data-confirm],
+    form:not(.no-print-hide),
+    a[href*="format=csv"],
+    a[href*="format=xlsx"],
+    input[type="date"],
+    input[type="search"],
+    [x-data="globalSearch()"],
+    [role="group"][aria-label="Date range presets"],
+    .no-print {
+        display: none !important;
+    }
 }

@@ -8,7 +8,7 @@ from flask_login import login_required, current_user
 from sqlalchemy import func
 
 from app import db
-from app.helpers import generate_receipt_number
+from app.helpers import generate_receipt_number, safe_redirect
 from app.models import Customer, Payment, ActivityLog
 import logging
 
@@ -24,7 +24,7 @@ def before_request():
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return jsonify({"error": f"{label} — this action is disabled."}), 403
         flash(f"{label} — this action is disabled.", "warning")
-        return redirect(request.referrer or url_for("dashboard.index"))
+        return redirect(safe_redirect(request.referrer))
 
 
 def _compute_aging_buckets(customers):

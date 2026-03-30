@@ -4,10 +4,10 @@
     <meta charset="utf-8" />
     <script>
     // One-time purge of old service worker caches
-    if ('serviceWorker' in navigator && !sessionStorage.getItem('sw-purged-v8')) {
-      sessionStorage.setItem('sw-purged-v8', '1');
+    if ('serviceWorker' in navigator && !sessionStorage.getItem('sw-purged-v9')) {
+      sessionStorage.setItem('sw-purged-v9', '1');
       caches.keys().then(function(names) {
-        names.forEach(function(name) { if (name !== 'candy-route-v8') caches.delete(name); });
+        names.forEach(function(name) { if (name !== 'candy-route-v9') caches.delete(name); });
       });
     }
     </script>
@@ -22,14 +22,14 @@
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='icons/favicon.svg') }}" />
 
     <!-- Tailwind CSS (built) + App theme -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}?v=8" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}?v=9" />
 
     <!-- Prevent Alpine FOUC -->
     <style>[x-cloak] { display: none !important; }</style>
 
     <!-- App JS must load before Alpine so alpine:init listener is registered first -->
-    <script defer src="{{ url_for('static', filename='js/app.js') }}?v=8"></script>
-    <script defer src="{{ url_for('static', filename='js/offline.js') }}?v=8"></script>
+    <script defer src="{{ url_for('static', filename='js/app.js') }}?v=9"></script>
+    <script defer src="{{ url_for('static', filename='js/offline.js') }}?v=9"></script>
 
     <!-- Vendor JS -->
     <script defer src="{{ url_for('static', filename='vendor/alpine.min.js') }}"></script>
@@ -94,7 +94,7 @@
                         <input type="search" placeholder="Search customers or receipts... (/)" x-model="query"
                                @input.debounce.300ms="search()" @focus="open = query.length > 0"
                                @keydown.escape="open = false"
-                               x-ref="searchInput"
+                               x-ref="searchInput" aria-label="Search customers or receipts"
                                class="theme-input text-sm rounded-lg" style="padding-left: 2.5rem;" />
                     </div>
                     <div x-show="open && results.length > 0" @click.outside="open = false" x-transition x-cloak
@@ -133,7 +133,7 @@
                     <input type="search" placeholder="Search customers or receipts..." x-model="query"
                            @input.debounce.300ms="search()" @focus="open = query.length > 0"
                            @keydown.escape="open = false"
-                           x-ref="searchInput"
+                           x-ref="searchInput" aria-label="Search customers or receipts"
                            class="theme-input text-sm rounded-lg min-h-[44px]" style="padding-left: 2.5rem;" />
                 </div>
                 <div x-show="open && results.length > 0" @click.outside="open = false" x-transition x-cloak

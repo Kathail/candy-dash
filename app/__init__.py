@@ -52,6 +52,7 @@ def create_app():
         "pool_recycle": 300,
     }
     app.config["PERMANENT_SESSION_LIFETIME"] = 60 * 60 * 24 * 7  # 7 days
+    app.config["MAX_CONTENT_LENGTH"] = 8 * 1024 * 1024  # 8 MB upload limit
 
     # Secure cookie settings
     app.config["SESSION_COOKIE_HTTPONLY"] = True
@@ -124,8 +125,12 @@ def create_app():
     @app.context_processor
     def nav_badge_context():
         try:
+            from flask import request as _req
             from flask_login import current_user as cu
             if not cu.is_authenticated:
+                return {}
+            # Skip badge queries on HTMX partial requests (no nav rendered)
+            if _req.headers.get("HX-Request"):
                 return {}
             from app.models import RouteStop, Customer
             from datetime import date as _date
@@ -153,6 +158,16 @@ def create_app():
             app.static_folder, "sw.js",
             mimetype="application/javascript",
         )
+
+    # Security headers
+    @app.after_request
+    def set_security_headers(response):
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "SAMEORIGIN"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        if flask_env != "development":
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        return response
 
     # Error handlers
     @app.errorhandler(404)

@@ -3,7 +3,7 @@ services:
     name: candy-dash
     runtime: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn wsgi:app
+    startCommand: gunicorn wsgi:app --workers 2 --threads 2 --timeout 120
     envVars:
       - key: PYTHON_VERSION
         value: "3.12.3"

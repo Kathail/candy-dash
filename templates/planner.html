@@ -266,6 +266,7 @@ function plannerApp() {
     customerSearch: '',
     selectedCity: '',
     adding: false,
+    addingStop: false,
     allStops: {},
     stops: {{ stops_json|tojson }},
     existingIds: new Set({{ existing_ids|list|tojson }}),
@@ -301,6 +302,8 @@ function plannerApp() {
     // ── Actions (no page reload) ──
 
     async addStop(customerId) {
+      if (this.addingStop) return;
+      this.addingStop = true;
       const body = new URLSearchParams({ csrf_token: csrfToken(), customer_id: customerId, route_date: this.selectedDate });
       try {
         const resp = await fetch('{{ url_for("planner.add_stop") }}', {
@@ -313,6 +316,7 @@ function plannerApp() {
         this.updateCalendarDot(1);
         this.toast(stop.customer_name + ' added');
       } catch (e) { this.toast('Failed to add stop', 'error'); }
+      finally { this.addingStop = false; }
     },
 
     async addCity(city) {

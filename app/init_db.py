@@ -159,9 +159,13 @@ def init_database():
         db.session.add(bk)
         db.session.commit()
         if generated_bk:
-            print(f"  Bookkeeper user created (username: miranda, generated password: {bk_password})")
+            creds_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".bookkeeper_password")
+            with open(creds_file, "w") as f:
+                f.write(f"username: miranda\npassword: {bk_password}\n")
+            os.chmod(creds_file, 0o600)
+            print(f"  Bookkeeper user created (username: miranda). Password saved to .bookkeeper_password")
         else:
-            print(f"  Bookkeeper user created (username: miranda) with BOOKKEEPER_PASSWORD from environment.")
+            print("  Bookkeeper user created (username: miranda) with BOOKKEEPER_PASSWORD from environment.")
 
     # Add unique index on invoice_number (partial: non-NULL only)
     try:

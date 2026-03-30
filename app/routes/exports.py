@@ -8,7 +8,7 @@ from flask import Blueprint, Response, request
 from flask_login import login_required
 
 from app import db
-from app.helpers import admin_required
+from app.helpers import admin_required, sanitize_csv_value
 from app.models import Customer, Payment, RouteStop
 
 bp = Blueprint("exports", __name__, url_prefix="/exports")
@@ -26,7 +26,7 @@ def _csv_response(rows, headers, filename):
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(headers)
-    writer.writerows(rows)
+    writer.writerows([[sanitize_csv_value(cell) for cell in row] for row in rows])
     safe_filename = filename.replace('"', "").replace("\r", "").replace("\n", "")
     return Response(
         output.getvalue(),

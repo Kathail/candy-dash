@@ -153,13 +153,13 @@
         <h2 class="text-base font-semibold text-gray-100">Audit Log</h2>
         <!-- Filters -->
         <form method="get" action="{{ url_for('admin.index') }}" class="flex flex-wrap gap-2 items-center">
-          <select name="action" class="text-xs rounded-lg border-gray-600 bg-gray-700 text-gray-300 py-1.5 px-2 focus:border-indigo-500 focus:ring-indigo-500">
+          <select name="action" aria-label="Filter by action" class="text-xs rounded-lg border-gray-600 bg-gray-700 text-gray-300 py-1.5 px-2 focus:border-indigo-500 focus:ring-indigo-500">
             <option value="">All Actions</option>
             {% for at in action_types %}
             <option value="{{ at }}" {{ 'selected' if filter_action == at }}>{{ at|replace('_', ' ')|title }}</option>
             {% endfor %}
           </select>
-          <select name="user" class="text-xs rounded-lg border-gray-600 bg-gray-700 text-gray-300 py-1.5 px-2 focus:border-indigo-500 focus:ring-indigo-500">
+          <select name="user" aria-label="Filter by user" class="text-xs rounded-lg border-gray-600 bg-gray-700 text-gray-300 py-1.5 px-2 focus:border-indigo-500 focus:ring-indigo-500">
             <option value="">All Users</option>
             {% for u in users %}
             <option value="{{ u.username }}" {{ 'selected' if filter_user == u.username }}>{{ u.username }}</option>

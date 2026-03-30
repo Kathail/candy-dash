@@ -19,6 +19,13 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 
 
+def sanitize_csv_value(val):
+    """Prevent CSV formula injection by prefixing dangerous characters."""
+    if isinstance(val, str) and val and val[0] in ("=", "+", "-", "@", "\t", "\r"):
+        return "'" + val
+    return val
+
+
 def admin_required(f):
     """Decorator that requires the current user to be an admin or owner."""
     @wraps(f)

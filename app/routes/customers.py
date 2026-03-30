@@ -11,7 +11,7 @@ from flask_login import login_required, current_user
 
 from app import db
 from app.models import Customer, Payment, Invoice, Note, ActivityLog, RouteStop, VALID_CUSTOMER_STATUSES
-from app.helpers import admin_required, generate_receipt_number, generate_receipt_pdf, audit, safe_redirect
+from app.helpers import admin_required, staff_required, generate_receipt_number, generate_receipt_pdf, audit, safe_redirect
 import logging
 
 bp = Blueprint("customers", __name__, url_prefix="/customers")
@@ -724,6 +724,7 @@ def add_note_entry(id):
 
 @bp.route("/<int:id>/notes/<int:note_id>/delete", methods=["POST"])
 @login_required
+@staff_required
 def delete_note(id, note_id):
     """Delete a note entry."""
     note = Note.query.get_or_404(note_id)

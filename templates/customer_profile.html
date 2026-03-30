@@ -202,7 +202,7 @@
         <form method="POST" action="{{ url_for('customers.delete_note', id=customer.id, note_id=note.id) }}"
               onsubmit="return confirm('Delete this note?')">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <button type="submit" class="p-1 text-gray-600 hover:text-red-400 transition-colors btn-press" aria-label="Delete note">
+          <button type="submit" class="p-2 text-gray-600 hover:text-red-400 transition-colors btn-press min-h-[44px] min-w-[44px] inline-flex items-center justify-center" aria-label="Delete note">
             <svg aria-hidden="true" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
             </svg>
@@ -294,7 +294,7 @@
         {% if current_user.can_write %}
         <div class="flex items-center gap-1">
           {% if inv.status == 'unpaid' %}
-          <button type="button" @click="showPay = !showPay" class="p-1.5 text-green-500/70 hover:text-green-400 hover:bg-green-500/10 rounded-lg transition-colors btn-press" title="Mark paid">
+          <button type="button" @click="showPay = !showPay" class="p-2 text-green-500/70 hover:text-green-400 hover:bg-green-500/10 rounded-lg transition-colors btn-press min-h-[44px] min-w-[44px] inline-flex items-center justify-center" title="Mark paid">
             <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
             </svg>
@@ -303,7 +303,7 @@
           <form method="POST" action="{{ url_for('customers.delete_invoice', id=customer.id, invoice_id=inv.id) }}"
                 onsubmit="return confirm('Delete this invoice? Balance will be adjusted.')">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="p-1.5 text-gray-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors btn-press" title="Delete">
+            <button type="submit" class="p-2 text-gray-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors btn-press min-h-[44px] min-w-[44px] inline-flex items-center justify-center" title="Delete invoice" aria-label="Delete invoice">
               <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
               </svg>
@@ -326,7 +326,7 @@
               </button>
               {% endfor %}
             </div>
-            <button type="submit" class="w-full px-3 py-2 bg-green-600 text-white text-xs font-semibold rounded-xl hover:bg-green-500 transition-colors btn-press min-h-[36px]">
+            <button type="submit" class="w-full px-3 py-2 bg-green-600 text-white text-xs font-semibold rounded-xl hover:bg-green-500 transition-colors btn-press min-h-[44px]">
               Mark Paid
             </button>
           </form>

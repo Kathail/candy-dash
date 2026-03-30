@@ -30,6 +30,7 @@
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
       </svg>
       <input type="search" name="q" value="{{ q }}"
+             aria-label="Search customers"
              placeholder="Search..."
              onchange="this.form.submit()"
              class="w-full py-2.5 rounded-xl border border-app bg-panel text-sm text-gray-200 focus:border-indigo-500 focus:ring-indigo-500 placeholder:text-gray-500 min-h-[44px]" style="padding-left: 2.25rem;">
@@ -54,12 +55,14 @@
     <form method="get" action="{{ url_for('customers.index') }}" class="flex flex-wrap gap-2">
       {% if q %}<input type="hidden" name="q" value="{{ q }}">{% endif %}
       <select name="status" onchange="this.form.submit()"
+              aria-label="Filter by status"
               class="min-h-[44px] rounded-lg border-gray-600 text-sm bg-gray-700 text-gray-200">
         <option value="">All Statuses</option>
         <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
         <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive</option>
       </select>
       <select name="city" onchange="this.form.submit()"
+              aria-label="Filter by city"
               class="min-h-[44px] rounded-lg border-gray-600 text-sm bg-gray-700 text-gray-200">
         <option value="">All Cities</option>
         {% for city in cities %}

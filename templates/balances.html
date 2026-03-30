@@ -91,6 +91,7 @@
       {% endif %}
       <div class="flex flex-wrap gap-3">
         <select name="city" onchange="this.form.submit()"
+                aria-label="Filter by city"
                 class="min-h-[44px] rounded-lg border-gray-600 text-sm bg-gray-700 text-gray-200">
           <option value="">All Cities</option>
           {% for city in cities %}
@@ -98,6 +99,7 @@
           {% endfor %}
         </select>
         <select name="sort" onchange="this.form.submit()"
+                aria-label="Sort order"
                 class="min-h-[44px] rounded-lg border-gray-600 text-sm bg-gray-700 text-gray-200">
           <option value="balance_desc" {% if sort == 'balance_desc' %}selected{% endif %}>Balance High-Low</option>
           <option value="balance_asc" {% if sort == 'balance_asc' %}selected{% endif %}>Balance Low-High</option>
@@ -141,7 +143,7 @@
                           else 'bg-orange-500/20 text-orange-400' if bucket == '61-90'
                           else 'bg-red-500/20 text-red-400' }}">{{ bucket }}d</span>
           <button @click.prevent.stop="showPay = !showPay" aria-label="Record payment"
-                  class="p-2 rounded-lg bg-green-600 text-white hover:bg-green-500 transition-colors btn-press flex-shrink-0 min-w-[40px] min-h-[40px] flex items-center justify-center">
+                  class="p-2 rounded-lg bg-green-600 text-white hover:bg-green-500 transition-colors btn-press flex-shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center">
             <span aria-hidden="true" class="text-sm font-black ">$</span>
           </button>
         </a>

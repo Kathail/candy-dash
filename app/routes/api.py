@@ -200,7 +200,7 @@ def sync():
                 notes=notes,
                 recorded_by=current_user.id,
             )
-            customer.balance = previous_balance - amount
+            customer.balance = max(previous_balance - amount, Decimal("0"))
 
             log = ActivityLog(
                 customer_id=customer.id,
