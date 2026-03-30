@@ -1,14 +1,12 @@
 """CSV export routes for customers, payments, and route history (admin only)."""
 
-import csv
-import io
-from datetime import datetime, timezone, date
+from datetime import datetime, timezone
 
-from flask import Blueprint, Response, request
+from flask import Blueprint, request
 from flask_login import login_required
 
 from app import db
-from app.helpers import admin_required, sanitize_csv_value
+from app.helpers import admin_required, csv_response
 from app.models import Customer, Payment, RouteStop
 
 bp = Blueprint("exports", __name__, url_prefix="/exports")
@@ -21,18 +19,6 @@ def before_request():
     pass
 
 
-def _csv_response(rows, headers, filename):
-    """Build a CSV download response."""
-    output = io.StringIO()
-    writer = csv.writer(output)
-    writer.writerow(headers)
-    writer.writerows([[sanitize_csv_value(cell) for cell in row] for row in rows])
-    safe_filename = filename.replace('"', "").replace("\r", "").replace("\n", "")
-    return Response(
-        output.getvalue(),
-        mimetype="text/csv",
-        headers={"Content-Disposition": f'attachment; filename="{safe_filename}"'},
-    )
 
 
 def _parse_date_range():
@@ -82,7 +68,7 @@ def customers():
         for c in all_customers
     ]
 
-    return _csv_response(rows, headers, "customers_export.csv")
+    return csv_response(rows, headers, "customers_export.csv")
 
 
 @bp.route("/payments")
@@ -130,7 +116,7 @@ def payments():
         filename += f"_to_{end.strftime('%Y%m%d')}"
     filename += ".csv"
 
-    return _csv_response(rows, headers, filename)
+    return csv_response(rows, headers, filename)
 
 
 @bp.route("/route-history")
@@ -179,4 +165,4 @@ def route_history():
         filename += f"_to_{end.strftime('%Y%m%d')}"
     filename += ".csv"
 
-    return _csv_response(rows, headers, filename)
+    return csv_response(rows, headers, filename)

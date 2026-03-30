@@ -1,6 +1,7 @@
 """Database initialization, auto-migration, and seed data."""
 
 import json
+import logging
 import os
 import secrets
 from decimal import Decimal
@@ -10,6 +11,8 @@ from sqlalchemy import text
 
 from app import db
 from app.models import User, Customer
+
+log = logging.getLogger(__name__)
 
 
 def _seed_customers():
@@ -37,16 +40,16 @@ def _seed_customers():
                 lead_source=c.get("lead_source") or None,
             ))
         db.session.commit()
-        print(f"  Seeded {len(customers)} customers/leads from seed_data.json")
+        log.info("Seeded %d customers/leads from seed_data.json", len(customers))
     except Exception as e:
         db.session.rollback()
-        import traceback
-        print(f"  Warning: failed to seed customers: {e}")
-        traceback.print_exc()
+        log.warning("Failed to seed customers: %s", e, exc_info=True)
 
 
 def init_database():
     """Initialize database tables and create default admin user."""
+    db.create_all()
+
     # Widen phone column if Postgres has old 20-char limit
     try:
         db.session.execute(db.text(
@@ -55,8 +58,6 @@ def init_database():
         db.session.commit()
     except Exception:
         db.session.rollback()
-
-    db.create_all()
 
     # Add payment_type column to invoices if missing
     try:
@@ -116,18 +117,13 @@ def init_database():
         db.session.commit()
 
         if generated:
-            import logging
-            logging.getLogger(__name__).warning(
-                "Default admin user created with auto-generated password. "
-                "Set ADMIN_PASSWORD env var and restart, or change via /change-password. "
-                "Auto-generated password written to: instance/admin_password.txt"
+            log.warning(
+                "Default admin user created with auto-generated password: %s  "
+                "Set ADMIN_PASSWORD env var and restart, or change via /change-password.",
+                admin_password,
             )
-            pw_file = Path(__file__).parent.parent / "instance" / "admin_password.txt"
-            pw_file.parent.mkdir(exist_ok=True)
-            pw_file.write_text(admin_password)
-            pw_file.chmod(0o600)
         else:
-            print("  Default admin user created with ADMIN_PASSWORD from environment.")
+            log.info("Default admin user created with ADMIN_PASSWORD from environment.")
 
     # Create demo user only if DEMO_ENABLED=true (opt-in)
     if os.environ.get("DEMO_ENABLED", "").lower() in ("true", "1", "yes"):
@@ -141,14 +137,14 @@ def init_database():
             demo.set_password("demo")
             db.session.add(demo)
             db.session.commit()
-            print("  Demo user created (username: demo, password: demo)")
+            log.info("Demo user created (username: demo, password: demo)")
     else:
         # Deactivate demo user if it exists and DEMO_ENABLED is not set
         demo_user = User.query.filter_by(username="demo", role="demo").first()
         if demo_user and demo_user.is_active:
             demo_user.is_active = False
             db.session.commit()
-            print("  Demo user deactivated (set DEMO_ENABLED=true to re-enable)")
+            log.info("Demo user deactivated (set DEMO_ENABLED=true to re-enable)")
 
     # Add unique index on invoice_number (partial: non-NULL only)
     try:

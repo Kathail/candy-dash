@@ -159,15 +159,6 @@ def create_app():
         except Exception:
             return {}
 
-    # Serve service worker from root so its scope covers the whole app
-    @app.route("/sw.js")
-    def service_worker():
-        from flask import send_from_directory
-        return send_from_directory(
-            app.static_folder, "sw.js",
-            mimetype="application/javascript",
-        )
-
     # Health check endpoint
     @app.route("/health")
     def health_check():

@@ -1,6 +1,5 @@
 """Reporting routes with CSV and Excel export support."""
 
-import csv
 import io
 from datetime import datetime, timezone, date, timedelta
 from decimal import Decimal
@@ -10,7 +9,7 @@ from flask_login import login_required
 from sqlalchemy import func
 
 from app import db
-from app.helpers import format_currency, format_date, staff_required
+from app.helpers import format_currency, format_date, staff_required, csv_response
 from app.models import Customer, Payment, User
 
 bp = Blueprint("reports", __name__, url_prefix="/reports")
@@ -66,18 +65,6 @@ def _parse_date_range():
     return start, end
 
 
-def _csv_response(rows, headers, filename):
-    """Build a CSV download response."""
-    output = io.StringIO()
-    writer = csv.writer(output)
-    writer.writerow(headers)
-    writer.writerows(rows)
-    safe_filename = filename.replace('"', "").replace("\r", "").replace("\n", "")
-    return Response(
-        output.getvalue(),
-        mimetype="text/csv",
-        headers={"Content-Disposition": f'attachment; filename="{safe_filename}"'},
-    )
 
 
 def _xlsx_response(rows, headers, filename):
@@ -164,7 +151,7 @@ def financial():
         ]
         filename = f"financial_report_{start.strftime('%Y%m%d')}_{end.strftime('%Y%m%d')}"
         if fmt == "csv":
-            return _csv_response(rows, headers, f"{filename}.csv")
+            return csv_response(rows, headers, f"{filename}.csv")
         return _xlsx_response(rows, headers, f"{filename}.xlsx")
 
     return render_template(
@@ -211,7 +198,7 @@ def tax():
         ]
         filename = f"tax_report_{start.strftime('%Y%m%d')}_{end.strftime('%Y%m%d')}"
         if fmt == "csv":
-            return _csv_response(export_rows, headers, f"{filename}.csv")
+            return csv_response(export_rows, headers, f"{filename}.csv")
         return _xlsx_response(export_rows, headers, f"{filename}.xlsx")
 
     return render_template(
@@ -248,7 +235,7 @@ def collections():
         export_rows = [(r.username, r.count, str(r.total)) for r in rows]
         filename = f"collections_report_{start.strftime('%Y%m%d')}_{end.strftime('%Y%m%d')}"
         if fmt == "csv":
-            return _csv_response(export_rows, headers, f"{filename}.csv")
+            return csv_response(export_rows, headers, f"{filename}.csv")
         return _xlsx_response(export_rows, headers, f"{filename}.xlsx")
 
     return render_template(

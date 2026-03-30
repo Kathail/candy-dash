@@ -1,15 +1,13 @@
-"""JSON API routes for search, offline caching, and sync."""
+"""JSON API routes for search and route data."""
 
-from datetime import date, datetime, timezone
-from decimal import Decimal, InvalidOperation
+from datetime import date
 
 from flask import Blueprint, jsonify, request
-from flask_login import login_required, current_user
+from flask_login import login_required
 
 from app import db
-from app.helpers import generate_receipt_number, audit, staff_required
-from app.models import Customer, Payment, RouteStop, ActivityLog
-import logging
+from app.helpers import staff_required
+from app.models import Customer, RouteStop
 
 bp = Blueprint("api", __name__, url_prefix="/api")
 
@@ -26,7 +24,7 @@ def before_request():
 def customer_search():
     """Search customers by name and payments by receipt number."""
     q = request.args.get("q", "").strip()
-    if not q:
+    if not q or len(q) < 2:
         return jsonify([])
 
     results = []
@@ -35,6 +33,7 @@ def customer_search():
     if q.upper().startswith("RCP") or q.isdigit():
         from sqlalchemy.orm import joinedload
         from app.helpers import format_date
+        from app.models import Payment
         payments = (
             Payment.query
             .options(joinedload(Payment.customer))
@@ -76,7 +75,7 @@ def customer_search():
 
 @bp.route("/route/today")
 def route_today():
-    """Full route data for today as JSON, suitable for offline caching."""
+    """Full route data for today as JSON."""
     today = date.today()
 
     stops = (
@@ -110,129 +109,3 @@ def route_today():
         "total_stops": len(data),
         "stops": data,
     })
-
-
-@bp.route("/sync", methods=["POST"])
-def sync():
-    """Process offline payment queue.
-
-    Expects a JSON array of payment objects:
-        [{"customer_id": 1, "amount": "50.00", "notes": "...", "offline_id": "abc"}, ...]
-
-    Returns results with current balances.
-    """
-    raw = request.get_json(silent=True)
-    if not raw:
-        return jsonify({"error": "Expected JSON payload."}), 400
-
-    # Accept either a raw array or {"payments": [...]}
-    if isinstance(raw, list):
-        payments_data = raw
-    elif isinstance(raw, dict) and "payments" in raw:
-        payments_data = raw["payments"]
-    else:
-        return jsonify({"error": "Expected a JSON array of payments."}), 400
-
-    if not isinstance(payments_data, list):
-        return jsonify({"error": "Expected a JSON array of payments."}), 400
-
-    results = []
-
-    try:
-        for entry in payments_data:
-            offline_id = entry.get("offline_id", "")
-            customer_id = entry.get("customer_id")
-            result = {"offline_id": offline_id, "customer_id": customer_id}
-
-            if not customer_id:
-                result["status"] = "error"
-                result["message"] = "Missing customer_id."
-                results.append(result)
-                continue
-
-            try:
-                amount = Decimal(str(entry.get("amount", "0")))
-            except (InvalidOperation, TypeError, ValueError):
-                result["status"] = "error"
-                result["message"] = "Invalid amount."
-                results.append(result)
-                continue
-
-            if amount <= 0:
-                result["status"] = "error"
-                result["message"] = "Amount must be greater than zero."
-                results.append(result)
-                continue
-
-            # Idempotency: skip if this offline_id was already processed
-            if offline_id:
-                existing = Payment.query.filter(
-                    Payment.notes.contains(f"[offline:{offline_id}]")
-                ).first()
-                if existing:
-                    result["status"] = "ok"
-                    result["receipt_number"] = existing.receipt_number
-                    result["message"] = "Already processed."
-                    result["new_balance"] = float(
-                        Customer.query.get(customer_id).balance if Customer.query.get(customer_id) else 0
-                    )
-                    results.append(result)
-                    continue
-
-            customer = db.session.query(Customer).filter_by(id=customer_id).with_for_update().first()
-            if customer is None:
-                result["status"] = "error"
-                result["message"] = "Customer not found."
-                results.append(result)
-                continue
-
-            previous_balance = customer.balance
-            receipt_number = generate_receipt_number()
-            notes = entry.get("notes", "")
-            if offline_id:
-                notes = f"{notes} [offline:{offline_id}]".strip()
-
-            payment = Payment(
-                customer_id=customer.id,
-                amount=amount,
-                receipt_number=receipt_number,
-                previous_balance=previous_balance,
-                notes=notes,
-                recorded_by=current_user.id,
-            )
-            customer.balance = max(previous_balance - amount, Decimal("0"))
-
-            log = ActivityLog(
-                customer_id=customer.id,
-                user_id=current_user.id,
-                action="payment_recorded",
-                description=f"Synced offline payment of ${amount:,.2f}. Receipt: {receipt_number}",
-            )
-
-            db.session.add(payment)
-            db.session.add(log)
-            audit("offline_sync", f"Synced offline payment ${amount:,.2f} for customer #{customer_id} '{customer.name}'. Receipt #{receipt_number}")
-
-            result["status"] = "ok"
-            result["receipt_number"] = receipt_number
-            result["previous_balance"] = float(previous_balance)
-            result["new_balance"] = float(customer.balance)
-            results.append(result)
-
-        db.session.commit()
-
-    except Exception:
-        logging.exception("Operation failed")
-        db.session.rollback()
-        # Mark any pending results as errors and add a final error result
-        for result in results:
-            if result.get("status") == "ok" and "message" not in result:
-                result["status"] = "error"
-                result["message"] = "Rolled back due to a later failure in the batch."
-        results.append({
-            "offline_id": "",
-            "status": "error",
-            "message": "An internal error occurred. All payments in this batch were rolled back.",
-        })
-
-    return jsonify({"results": results})

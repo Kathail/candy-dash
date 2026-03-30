@@ -11,7 +11,7 @@ from flask_login import login_required, current_user
 from sqlalchemy import func
 
 from app import db
-from app.helpers import admin_required, audit, sanitize_csv_value
+from app.helpers import admin_required, audit, sanitize_csv_value, csv_response
 from app.models import User, Customer, Payment, Invoice, Note, RouteStop, ActivityLog, AdminAuditLog, VALID_ROLES
 import logging
 
@@ -20,8 +20,9 @@ bp = Blueprint("admin", __name__, url_prefix="/admin")
 
 @bp.before_request
 @login_required
+@admin_required
 def before_request():
-    """Require login for all admin routes."""
+    """Require login and admin role for all admin routes."""
     pass
 
 
@@ -367,18 +368,6 @@ def backups():
     )
 
 
-def _csv_response(rows, headers, filename):
-    """Build a CSV download response."""
-    output = io.StringIO()
-    writer = csv.writer(output)
-    writer.writerow(headers)
-    for row in rows:
-        writer.writerow([sanitize_csv_value(cell) for cell in row])
-    return Response(
-        output.getvalue(),
-        mimetype="text/csv",
-        headers={"Content-Disposition": f"attachment; filename={filename}"},
-    )
 
 
 @bp.route("/backups/customers.csv")
@@ -392,7 +381,7 @@ def backup_customers():
          c.created_at, c.updated_at]
         for c in customers
     ]
-    return _csv_response(
+    return csv_response(
         rows,
         ["id", "name", "address", "city", "phone", "balance", "status", "tax_exempt", "lead_source", "created_at", "updated_at"],
         f"customers_{date.today().isoformat()}.csv",
@@ -412,7 +401,7 @@ def backup_payments():
          p.recorder.username if p.recorder else ""]
         for p in payments
     ]
-    return _csv_response(
+    return csv_response(
         rows,
         ["id", "customer", "city", "amount_paid", "amount_sold", "date", "receipt", "previous_balance", "notes", "recorded_by"],
         f"payments_{date.today().isoformat()}.csv",
@@ -428,7 +417,7 @@ def backup_balances():
         [c.name, c.city or "", c.phone or "", str(c.balance), c.tax_exempt]
         for c in customers
     ]
-    return _csv_response(
+    return csv_response(
         rows,
         ["name", "city", "phone", "balance", "tax_exempt"],
         f"balances_{date.today().isoformat()}.csv",
@@ -445,7 +434,7 @@ def backup_routes():
          s.sequence, s.completed, s.completed_at, s.notes or ""]
         for s in stops
     ]
-    return _csv_response(
+    return csv_response(
         rows,
         ["date", "customer", "city", "sequence", "completed", "completed_at", "notes"],
         f"routes_{date.today().isoformat()}.csv",
@@ -462,31 +451,31 @@ def backup_full():
     writer.writerow(["=== CUSTOMERS ==="])
     writer.writerow(["id", "name", "address", "city", "phone", "balance", "status", "tax_exempt"])
     for c in Customer.query.order_by(Customer.name).all():
-        writer.writerow([c.id, c.name, c.address or "", c.city or "", c.phone or "", str(c.balance), c.status, c.tax_exempt])
+        writer.writerow([c.id, sanitize_csv_value(c.name), sanitize_csv_value(c.address or ""), sanitize_csv_value(c.city or ""), sanitize_csv_value(c.phone or ""), str(c.balance), c.status, c.tax_exempt])
 
     writer.writerow([])
     writer.writerow(["=== PAYMENTS ==="])
     writer.writerow(["id", "customer", "city", "amount_paid", "amount_sold", "date", "receipt", "previous_balance", "notes"])
     for p in Payment.query.join(Customer).order_by(Payment.payment_date.desc()).all():
-        writer.writerow([p.id, p.customer.name, p.customer.city or "", str(p.amount), str(p.amount_sold or 0), p.payment_date, p.receipt_number, str(p.previous_balance), p.notes or ""])
+        writer.writerow([p.id, sanitize_csv_value(p.customer.name), sanitize_csv_value(p.customer.city or ""), str(p.amount), str(p.amount_sold or 0), p.payment_date, p.receipt_number, str(p.previous_balance), sanitize_csv_value(p.notes or "")])
 
     writer.writerow([])
     writer.writerow(["=== ROUTE HISTORY ==="])
     writer.writerow(["date", "customer", "city", "completed", "completed_at"])
     for s in RouteStop.query.join(Customer).order_by(RouteStop.route_date.desc()).all():
-        writer.writerow([s.route_date, s.customer.name, s.customer.city or "", s.completed, s.completed_at])
+        writer.writerow([s.route_date, sanitize_csv_value(s.customer.name), sanitize_csv_value(s.customer.city or ""), s.completed, s.completed_at])
 
     writer.writerow([])
     writer.writerow(["=== INVOICES ==="])
     writer.writerow(["id", "customer", "city", "amount", "invoice_number", "date", "description", "status"])
     for inv in Invoice.query.join(Customer).order_by(Invoice.invoice_date.desc()).all():
-        writer.writerow([inv.id, inv.customer.name, inv.customer.city or "", str(inv.amount), inv.invoice_number or "", inv.invoice_date, inv.description or "", inv.status])
+        writer.writerow([inv.id, sanitize_csv_value(inv.customer.name), sanitize_csv_value(inv.customer.city or ""), str(inv.amount), sanitize_csv_value(inv.invoice_number or ""), inv.invoice_date, sanitize_csv_value(inv.description or ""), inv.status])
 
     writer.writerow([])
     writer.writerow(["=== NOTES ==="])
     writer.writerow(["customer", "note", "author", "date"])
     for n in Note.query.join(Customer).order_by(Note.created_at.desc()).all():
-        writer.writerow([n.customer.name, n.text, n.user.username if n.user else "", n.created_at])
+        writer.writerow([sanitize_csv_value(n.customer.name), sanitize_csv_value(n.text), sanitize_csv_value(n.user.username if n.user else ""), n.created_at])
 
     return Response(
         output.getvalue(),
@@ -506,7 +495,7 @@ def backup_invoices():
          inv.invoice_date, inv.description or "", inv.status]
         for inv in invoices
     ]
-    return _csv_response(
+    return csv_response(
         rows,
         ["id", "customer", "city", "amount", "invoice_number", "date", "description", "status"],
         f"invoices_{date.today().isoformat()}.csv",
@@ -522,7 +511,7 @@ def backup_notes():
         [n.customer.name, n.text, n.user.username if n.user else "", n.created_at]
         for n in notes
     ]
-    return _csv_response(
+    return csv_response(
         rows,
         ["customer", "note", "author", "date"],
         f"notes_{date.today().isoformat()}.csv",

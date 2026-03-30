@@ -10,4 +10,4 @@ gunicorn>=22.0
 reportlab>=4.2
 openpyxl>=3.1
 psycopg2>=2.9
-sentry-sdk[flask]>=2.0
+# Optional: install sentry-sdk[flask]>=2.0 and set SENTRY_DSN env var to enable error tracking

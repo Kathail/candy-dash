@@ -89,6 +89,16 @@
         Pay {{ stop.customer.balance|currency }}
       </button>
       {% endif %}
+      <form method="POST" action="{{ url_for('planner.remove_stop', id=stop.id) }}"
+            onsubmit="return confirm('Remove this stop?')">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" aria-label="Remove stop" title="Remove stop"
+                class="inline-flex items-center justify-center p-2.5 bg-gray-700 text-red-400 rounded-xl hover:bg-red-500/10 hover:text-red-300 transition-colors min-h-[44px] min-w-[44px] btn-press">
+          <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+          </svg>
+        </button>
+      </form>
       {% else %}
       <button hx-post="{{ url_for('route.uncomplete_stop', id=stop.id) }}"
               hx-target="#stop-{{ stop.id }}" hx-swap="outerHTML"
@@ -107,10 +117,24 @@
             class="flex flex-col gap-2">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="flex gap-2">
-          <input type="number" name="amount" step="0.01" min="0.01" required
-                 placeholder="Amount" value="{{ '%.2f'|format(stop.customer.balance|float) }}"
-                 aria-label="Payment amount"
+          <input type="number" name="amount_sold" step="0.01" min="0"
+                 aria-label="Amount sold" placeholder="Sold"
                  class="flex-1 theme-input rounded-xl text-sm min-h-[44px]">
+          <input type="number" name="amount" step="0.01" min="0"
+                 placeholder="Paid" value="{{ '%.2f'|format(stop.customer.balance|float) }}"
+                 aria-label="Amount paid"
+                 class="flex-1 theme-input rounded-xl text-sm min-h-[44px]">
+        </div>
+        <div class="flex gap-2">
+          <select name="payment_type" aria-label="Payment type"
+                  class="flex-1 theme-input rounded-xl text-sm min-h-[44px]">
+            <option value="cash">Cash</option>
+            <option value="cheque">Cheque</option>
+            <option value="debit">Debit</option>
+            <option value="credit">Credit</option>
+            <option value="etransfer">E-Transfer</option>
+            <option value="other">Other</option>
+          </select>
           <input type="text" name="payment_notes" placeholder="Notes"
                  aria-label="Payment notes"
                  class="flex-1 theme-input rounded-xl text-sm min-h-[44px]">

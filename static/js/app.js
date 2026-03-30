@@ -13,9 +13,6 @@
     return el ? el.getAttribute("content") : "";
   }
 
-  // Expose CSRF helper for offline.js
-  window.CandyDash = { csrfToken };
-
   // ── Alpine components ─────────────────────────────────────────────────
   document.addEventListener("alpine:init", () => {
 
@@ -28,7 +25,7 @@
       _controller: null,
 
       async search() {
-        if (this.query.length < 1) {
+        if (this.query.length < 2) {
           this.results = [];
           this.open = false;
           return;
@@ -108,6 +105,7 @@
       custDropdown: false,
       amountSold: "",
       amountPaid: "",
+      paymentType: "cash",
       notes: "",
       submitting: false,
       _controller: null,
@@ -134,11 +132,12 @@
         this.custResults = [];
         this.amountSold = "";
         this.amountPaid = "";
+        this.paymentType = "cash";
         this.notes = "";
       },
 
       async searchCustomers() {
-        if (this.customerQuery.length < 1) {
+        if (this.customerQuery.length < 2) {
           this.custResults = [];
           this.custDropdown = false;
           return;
@@ -180,6 +179,7 @@
             body: new URLSearchParams({
               amount_sold: this.amountSold || "0",
               amount_paid: this.amountPaid || "0",
+              payment_type: this.paymentType,
               notes: this.notes,
             }),
           });
@@ -266,27 +266,13 @@
         if (searchEl) searchEl.focus();
       }
 
-      // "?" shows keyboard shortcuts overlay
-      if (e.key === "?" && !e.ctrlKey && !e.metaKey) {
-        e.preventDefault();
-        document.dispatchEvent(new CustomEvent("open-shortcuts"));
-      }
     });
 
-    // Offline banner
-    const banner = document.getElementById("offline-banner");
-    if (banner) {
-      const updateBanner = () => banner.classList.toggle("visible", !navigator.onLine);
-      window.addEventListener("online", updateBanner);
-      window.addEventListener("offline", updateBanner);
-      updateBanner();
-    }
-
-    // Service worker (served from root for full-app scope)
+    // Unregister any leftover service workers
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js")
-        .then((reg) => console.log("SW registered:", reg.scope))
-        .catch((err) => console.warn("SW failed:", err));
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for (var reg of registrations) { reg.unregister(); }
+      });
     }
   });
 

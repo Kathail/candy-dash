@@ -7,9 +7,12 @@ from decimal import Decimal, InvalidOperation
 
 from flask import (
     Blueprint, render_template, request, redirect, url_for, flash, send_file, jsonify,
+    make_response,
 )
 from flask_login import login_required, current_user
 from sqlalchemy import func
+
+from sqlalchemy.orm import joinedload
 
 from app import db
 from app.models import Customer, RouteStop, Payment, ActivityLog
@@ -132,39 +135,60 @@ def complete_stop(id):
 
     # Check for inline payment
     amount_str = request.form.get("amount", "").strip()
+    amount_sold_str = request.form.get("amount_sold", "").strip()
+    payment_type = request.form.get("payment_type", "cash").strip() or "cash"
     receipt_number = None
-    if amount_str:
+
+    try:
+        amount_paid = Decimal(amount_str) if amount_str else Decimal("0")
+    except (InvalidOperation, ValueError):
+        amount_paid = Decimal("0")
+
+    try:
+        amount_sold = Decimal(amount_sold_str) if amount_sold_str else Decimal("0")
+    except (InvalidOperation, ValueError):
+        amount_sold = Decimal("0")
+
+    if amount_paid > 0 or amount_sold > 0:
         try:
-            amount = Decimal(amount_str)
-            if amount > 0:
-                # Lock the customer row for safe balance update
-                customer = db.session.query(Customer).filter_by(id=stop.customer_id).with_for_update().one()
-                previous_balance = customer.balance
-                receipt_number = generate_receipt_number()
+            # Lock the customer row for safe balance update
+            customer = db.session.query(Customer).filter_by(id=stop.customer_id).with_for_update().one()
+            previous_balance = customer.balance
+            receipt_number = generate_receipt_number()
 
-                payment = Payment(
-                    customer_id=customer.id,
-                    amount=amount,
-                    payment_date=datetime.now(timezone.utc),
-                    receipt_number=receipt_number,
-                    previous_balance=previous_balance,
-                    notes=request.form.get("payment_notes", "").strip() or None,
-                    recorded_by=current_user.id,
-                )
-                db.session.add(payment)
-                new_balance = previous_balance - amount
-                new_balance = max(new_balance, Decimal("0"))
-                customer.balance = new_balance
+            new_balance = previous_balance + amount_sold - amount_paid
+            new_balance = max(new_balance, Decimal("0"))
+            customer.balance = new_balance
 
-                db.session.add(ActivityLog(
-                    customer_id=customer.id,
-                    user_id=current_user.id,
-                    action="payment_recorded",
-                    description=f"Payment of {amount} recorded. Receipt: {receipt_number}",
-                ))
-                audit("payment_recorded", f"Route payment ${amount:,.2f} for '{customer.name}'. Receipt #{receipt_number}")
-        except (InvalidOperation, ValueError):
-            pass  # ignore invalid amount, still complete the stop
+            payment = Payment(
+                customer_id=customer.id,
+                amount=amount_paid,
+                amount_sold=amount_sold,
+                payment_type=payment_type,
+                payment_date=datetime.now(timezone.utc),
+                receipt_number=receipt_number,
+                previous_balance=previous_balance,
+                notes=request.form.get("payment_notes", "").strip() or None,
+                recorded_by=current_user.id,
+            )
+            db.session.add(payment)
+
+            parts = []
+            if amount_sold > 0:
+                parts.append(f"Sold ${amount_sold:,.2f}")
+            if amount_paid > 0:
+                parts.append(f"Paid ${amount_paid:,.2f}")
+            desc = ". ".join(parts) + f". Receipt: {receipt_number}"
+
+            db.session.add(ActivityLog(
+                customer_id=customer.id,
+                user_id=current_user.id,
+                action="payment_recorded",
+                description=desc,
+            ))
+            audit("payment_recorded", f"Route payment: {desc} for '{customer.name}'")
+        except Exception:
+            pass  # ignore payment errors, still complete the stop
 
     audit("stop_completed", f"Completed route stop for customer #{stop.customer_id} on {stop.route_date}")
 
@@ -175,9 +199,11 @@ def complete_stop(id):
         flash("Failed to save payment. Please try again.", "error")
         return redirect(url_for("route.index"))
 
-    # For HTMX, return the updated stop card
+    # For HTMX, return the updated stop card with trigger to refresh totals
     if request.headers.get("HX-Request"):
-        return render_template("partials/stop_card.html", stop=stop, receipt_number=receipt_number)
+        response = make_response(render_template("partials/stop_card.html", stop=stop, receipt_number=receipt_number))
+        response.headers["HX-Trigger"] = "stopCompleted"
+        return response
 
     flash("Stop completed.", "success")
     return redirect(url_for("route.index", date=stop.route_date.isoformat()))
@@ -193,7 +219,9 @@ def uncomplete_stop(id):
     db.session.commit()
 
     if request.headers.get("HX-Request"):
-        return render_template("partials/stop_card.html", stop=stop)
+        response = make_response(render_template("partials/stop_card.html", stop=stop))
+        response.headers["HX-Trigger"] = "stopCompleted"
+        return response
 
     return redirect(url_for("route.index", date=stop.route_date.isoformat()))
 
@@ -301,6 +329,7 @@ def receipts_zip(date_str):
 
     payments = (
         Payment.query
+        .options(joinedload(Payment.customer))
         .filter(Payment.payment_date >= day_start, Payment.payment_date <= day_end)
         .all()
     )
@@ -312,7 +341,7 @@ def receipts_zip(date_str):
     zip_buffer = io.BytesIO()
     with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
         for payment in payments:
-            customer = Customer.query.get(payment.customer_id)
+            customer = payment.customer
             pdf_bytes = generate_receipt_pdf(payment, customer)
             filename = f"{payment.receipt_number}.pdf"
             zf.writestr(filename, pdf_bytes)

@@ -103,6 +103,23 @@ def format_date(value, fmt="%b %d, %Y"):
     return value.strftime(fmt)
 
 
+def csv_response(rows, headers, filename):
+    """Build a CSV download response with formula-injection protection."""
+    import csv
+    from flask import Response
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(headers)
+    for row in rows:
+        writer.writerow([sanitize_csv_value(cell) for cell in row])
+    safe_filename = filename.replace('"', "").replace("\r", "").replace("\n", "")
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{safe_filename}"'},
+    )
+
+
 def generate_receipt_number(payment_date=None, max_retries=5):
     """Generate a unique invoice number in format INV-YYYYMMDD-XXXX.
 

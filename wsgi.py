@@ -11,7 +11,7 @@ if env_file.exists():
         line = line.strip()
         if line and not line.startswith("#") and "=" in line:
             key, _, value = line.partition("=")
-            os.environ.setdefault(key.strip(), value.strip())
+            os.environ.setdefault(key.strip(), value.strip().strip("'\""))
 
 from app import create_app
 

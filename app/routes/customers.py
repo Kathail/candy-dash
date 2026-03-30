@@ -9,7 +9,7 @@ from flask import (
 )
 from flask_login import login_required, current_user
 
-from app import db
+from app import db, limiter
 from app.models import Customer, Payment, Invoice, Note, ActivityLog, RouteStop, VALID_CUSTOMER_STATUSES
 from app.helpers import admin_required, staff_required, generate_receipt_number, generate_receipt_pdf, audit, safe_redirect
 import logging
@@ -320,6 +320,7 @@ def edit(id):
 
 @bp.route("/<int:id>/payment", methods=["POST"])
 @login_required
+@limiter.limit("30/minute")
 def record_payment(id):
     """Record a sale and/or payment for a customer – fully atomic.
 

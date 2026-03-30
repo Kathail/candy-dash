@@ -222,10 +222,24 @@
                   class="flex flex-col gap-2">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <div class="flex gap-2">
-                <input type="number" name="amount" step="0.01" min="0.01" required
-                       aria-label="Payment amount"
-                       placeholder="Amount" value="{{ '%.2f'|format(stop.customer.balance|float) }}"
+                <input type="number" name="amount_sold" step="0.01" min="0"
+                       aria-label="Amount sold" placeholder="Sold"
                        class="flex-1 theme-input rounded-xl text-sm min-h-[44px]">
+                <input type="number" name="amount" step="0.01" min="0"
+                       aria-label="Amount paid"
+                       placeholder="Paid" value="{{ '%.2f'|format(stop.customer.balance|float) }}"
+                       class="flex-1 theme-input rounded-xl text-sm min-h-[44px]">
+              </div>
+              <div class="flex gap-2">
+                <select name="payment_type" aria-label="Payment type"
+                        class="flex-1 theme-input rounded-xl text-sm min-h-[44px]">
+                  <option value="cash">Cash</option>
+                  <option value="cheque">Cheque</option>
+                  <option value="debit">Debit</option>
+                  <option value="credit">Credit</option>
+                  <option value="etransfer">E-Transfer</option>
+                  <option value="other">Other</option>
+                </select>
                 <input type="text" name="payment_notes" placeholder="Notes"
                        aria-label="Payment notes"
                        class="flex-1 theme-input rounded-xl text-sm min-h-[44px]">
@@ -299,6 +313,10 @@ document.addEventListener('DOMContentLoaded', function() {
       next.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 400);
   }
+});
+// Refresh page when a stop is completed/uncompleted to update collection totals
+document.body.addEventListener('stopCompleted', function() {
+  setTimeout(function() { window.location.reload(); }, 500);
 });
 </script>
 {% endblock %}

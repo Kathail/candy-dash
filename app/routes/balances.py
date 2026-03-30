@@ -7,8 +7,8 @@ from flask import Blueprint, flash, jsonify, redirect, render_template, request,
 from flask_login import login_required, current_user
 from sqlalchemy import func
 
-from app import db
-from app.helpers import generate_receipt_number, safe_redirect
+from app import db, limiter
+from app.helpers import generate_receipt_number
 from app.models import Customer, Payment, ActivityLog
 import logging
 
@@ -18,13 +18,8 @@ bp = Blueprint("balances", __name__, url_prefix="/balances")
 @bp.before_request
 @login_required
 def before_request():
-    """Require login for all balance routes; block writes for demo/bookkeeper."""
-    if current_user.role in ("demo", "bookkeeper") and request.method in ("POST", "PUT", "DELETE"):
-        label = "Demo mode" if current_user.is_demo else "View-only mode"
-        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-            return jsonify({"error": f"{label} — this action is disabled."}), 403
-        flash(f"{label} — this action is disabled.", "warning")
-        return redirect(safe_redirect(request.referrer))
+    """Require login for all balance routes."""
+    pass
 
 
 def _compute_aging_buckets(customers):
@@ -143,6 +138,7 @@ def index():
 
 
 @bp.route("/<int:id>/payment", methods=["POST"])
+@limiter.limit("30/minute")
 def quick_payment(id):
     """Record a quick payment from the balances page (atomic)."""
     customer = db.session.get(Customer, id)
@@ -165,11 +161,6 @@ def quick_payment(id):
     try:
         # Lock the customer row to prevent concurrent balance updates
         customer = db.session.query(Customer).filter_by(id=id).with_for_update().one()
-        # Re-validate against locked balance
-        if amount > customer.balance:
-            db.session.rollback()
-            flash("Payment amount cannot exceed the outstanding balance.", "error")
-            return redirect(url_for("balances.index"))
         previous_balance = customer.balance
         receipt_number = generate_receipt_number()
 
@@ -181,7 +172,7 @@ def quick_payment(id):
             notes=notes,
             recorded_by=current_user.id,
         )
-        customer.balance = previous_balance - amount
+        customer.balance = max(previous_balance - amount, Decimal("0"))
 
         log = ActivityLog(
             customer_id=customer.id,

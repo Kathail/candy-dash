@@ -198,7 +198,7 @@
           <div class="w-7 h-7 rounded-full bg-green-500/20 flex items-center justify-center">
             <svg aria-hidden="true" class="w-3.5 h-3.5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
           </div>
-          {% elif entry.action in ('payment_recorded', 'offline_sync') %}
+          {% elif entry.action in ('payment_recorded',) %}
           <div class="w-7 h-7 rounded-full bg-emerald-500/20 flex items-center justify-center">
             <span aria-hidden="true" class="text-xs font-black text-emerald-400">$</span>
           </div>
@@ -244,7 +244,7 @@
           <div class="flex items-center gap-2 flex-wrap">
             <span class="inline-flex px-1.5 py-0.5 text-2xs font-medium rounded
                          {% if entry.action in ('login_failed', 'payment_deleted') %}bg-red-500/20 text-red-400
-                         {% elif entry.action in ('login', 'payment_recorded', 'offline_sync') %}bg-green-500/20 text-green-400
+                         {% elif entry.action in ('login', 'payment_recorded') %}bg-green-500/20 text-green-400
                          {% elif entry.action in ('customer_created', 'customer_edited', 'csv_import') %}bg-blue-500/20 text-blue-400
                          {% elif entry.action == 'stop_completed' %}bg-teal-500/20 text-teal-400
                          {% elif entry.action in ('password_reset', 'password_changed') %}bg-orange-500/20 text-orange-400
