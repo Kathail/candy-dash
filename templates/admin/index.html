@@ -53,6 +53,10 @@
             <td class="px-5 py-3 whitespace-nowrap">
               {% if user.role == 'admin' %}
               <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-500/20 text-red-400">Admin</span>
+              {% elif user.role == 'bookkeeper' %}
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-500/20 text-amber-400">Bookkeeper</span>
+              {% elif user.role == 'demo' %}
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-500/20 text-purple-400">Demo</span>
               {% else %}
               <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-500/20 text-indigo-400">Owner</span>
               {% endif %}
@@ -104,6 +108,10 @@
           <div class="flex items-center gap-2">
             {% if user.role == 'admin' %}
             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-500/20 text-red-400">Admin</span>
+            {% elif user.role == 'bookkeeper' %}
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-500/20 text-amber-400">Bookkeeper</span>
+            {% elif user.role == 'demo' %}
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-500/20 text-purple-400">Demo</span>
             {% else %}
             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-500/20 text-indigo-400">Owner</span>
             {% endif %}
