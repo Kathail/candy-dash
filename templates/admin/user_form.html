@@ -56,6 +56,7 @@
                 class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm min-h-[44px]">
           <option value="owner" {% if editing and user and user.role == 'owner' %}selected{% endif %}>Owner</option>
           <option value="admin" {% if editing and user and user.role == 'admin' %}selected{% endif %}>Admin</option>
+          <option value="bookkeeper" {% if editing and user and user.role == 'bookkeeper' %}selected{% endif %}>Bookkeeper</option>
         </select>
       </div>
 

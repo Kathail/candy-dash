@@ -14,6 +14,7 @@ def register_blueprints(app: Flask):
     from app.routes.reports import bp as reports_bp
     from app.routes.api import bp as api_bp
     from app.routes.exports import bp as exports_bp
+    from app.routes.bookkeeper import bp as bookkeeper_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(admin_bp)
@@ -27,3 +28,4 @@ def register_blueprints(app: Flask):
     app.register_blueprint(reports_bp)
     app.register_blueprint(api_bp)
     app.register_blueprint(exports_bp)
+    app.register_blueprint(bookkeeper_bp)

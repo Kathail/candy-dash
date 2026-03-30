@@ -59,13 +59,17 @@ def audit(action, details="", user_id=None):
 
 def safe_redirect(target):
     """Validate redirect URL to prevent open redirect attacks."""
+    default = url_for("dashboard.index")
+    # Bookkeepers go to /books by default
+    if current_user.is_authenticated and current_user.role == "bookkeeper":
+        default = url_for("bookkeeper.index")
     if not target:
-        return url_for("dashboard.index")
+        return default
     ref_url = urlparse(request.host_url)
     test_url = urlparse(urljoin(request.host_url, target))
     if test_url.scheme in ("http", "https") and ref_url.netloc == test_url.netloc:
         return target
-    return url_for("dashboard.index")
+    return default
 
 
 def format_currency(value):

@@ -6,7 +6,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from app import db
 
 VALID_CUSTOMER_STATUSES = ("active", "inactive", "lead")
-VALID_ROLES = ("owner", "admin", "demo")
+VALID_ROLES = ("owner", "admin", "bookkeeper", "demo")
 
 
 class User(UserMixin, db.Model):
@@ -36,6 +36,15 @@ class User(UserMixin, db.Model):
     @property
     def is_demo(self):
         return self.role == "demo"
+
+    @property
+    def is_bookkeeper(self):
+        return self.role == "bookkeeper"
+
+    @property
+    def can_write(self):
+        """Returns True if user can create/edit/delete data."""
+        return self.role in ("owner", "admin")
 
     def __repr__(self):
         return f"<User {self.username}>"

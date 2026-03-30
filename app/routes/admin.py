@@ -3,12 +3,16 @@
 import csv
 import io
 
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from datetime import date, datetime, timedelta, timezone
+from decimal import Decimal
+
+from flask import Blueprint, flash, redirect, render_template, request, url_for, Response
 from flask_login import login_required, current_user
+from sqlalchemy import func
 
 from app import db
 from app.helpers import admin_required, audit
-from app.models import User, AdminAuditLog, VALID_ROLES
+from app.models import User, Customer, Payment, RouteStop, ActivityLog, AdminAuditLog, VALID_ROLES
 import logging
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
@@ -331,3 +335,140 @@ def import_csv():
         flash("Import failed. Please check the CSV format and try again.", "error")
 
     return redirect(url_for("admin.import_csv"))
+
+
+# ---------------------------------------------------------------------------
+# Backups
+# ---------------------------------------------------------------------------
+
+@bp.route("/backups")
+@admin_required
+def backups():
+    """Backup download page."""
+    today = date.today()
+    customer_count = Customer.query.count()
+    payment_count = Payment.query.count()
+    stop_count = RouteStop.query.count()
+    return render_template(
+        "admin/backups.html",
+        today=today,
+        customer_count=customer_count,
+        payment_count=payment_count,
+        stop_count=stop_count,
+    )
+
+
+def _csv_response(rows, headers, filename):
+    """Build a CSV download response."""
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(headers)
+    for row in rows:
+        writer.writerow(row)
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
+
+
+@bp.route("/backups/customers.csv")
+@admin_required
+def backup_customers():
+    """Download all customers as CSV."""
+    customers = Customer.query.order_by(Customer.name).all()
+    rows = [
+        [c.id, c.name, c.address or "", c.city or "", c.phone or "",
+         float(c.balance), c.status, c.tax_exempt, c.lead_source or "",
+         c.created_at, c.updated_at]
+        for c in customers
+    ]
+    return _csv_response(
+        rows,
+        ["id", "name", "address", "city", "phone", "balance", "status", "tax_exempt", "lead_source", "created_at", "updated_at"],
+        f"customers_{date.today().isoformat()}.csv",
+    )
+
+
+@bp.route("/backups/payments.csv")
+@admin_required
+def backup_payments():
+    """Download all payments as CSV."""
+    payments = Payment.query.join(Customer).order_by(Payment.payment_date.desc()).all()
+    rows = [
+        [p.id, p.customer.name, p.customer.city or "",
+         float(p.amount), float(p.amount_sold or 0),
+         p.payment_date, p.receipt_number,
+         float(p.previous_balance), p.notes or "",
+         p.recorder.username if p.recorder else ""]
+        for p in payments
+    ]
+    return _csv_response(
+        rows,
+        ["id", "customer", "city", "amount_paid", "amount_sold", "date", "receipt", "previous_balance", "notes", "recorded_by"],
+        f"payments_{date.today().isoformat()}.csv",
+    )
+
+
+@bp.route("/backups/balances.csv")
+@admin_required
+def backup_balances():
+    """Download outstanding balances as CSV."""
+    customers = Customer.query.filter(Customer.balance > 0).order_by(Customer.balance.desc()).all()
+    rows = [
+        [c.name, c.city or "", c.phone or "", float(c.balance), c.tax_exempt]
+        for c in customers
+    ]
+    return _csv_response(
+        rows,
+        ["name", "city", "phone", "balance", "tax_exempt"],
+        f"balances_{date.today().isoformat()}.csv",
+    )
+
+
+@bp.route("/backups/routes.csv")
+@admin_required
+def backup_routes():
+    """Download route history as CSV."""
+    stops = RouteStop.query.join(Customer).order_by(RouteStop.route_date.desc()).all()
+    rows = [
+        [s.route_date, s.customer.name, s.customer.city or "",
+         s.sequence, s.completed, s.completed_at, s.notes or ""]
+        for s in stops
+    ]
+    return _csv_response(
+        rows,
+        ["date", "customer", "city", "sequence", "completed", "completed_at", "notes"],
+        f"routes_{date.today().isoformat()}.csv",
+    )
+
+
+@bp.route("/backups/full.csv")
+@admin_required
+def backup_full():
+    """Download everything in one combined CSV."""
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    writer.writerow(["=== CUSTOMERS ==="])
+    writer.writerow(["id", "name", "address", "city", "phone", "balance", "status", "tax_exempt"])
+    for c in Customer.query.order_by(Customer.name).all():
+        writer.writerow([c.id, c.name, c.address or "", c.city or "", c.phone or "", float(c.balance), c.status, c.tax_exempt])
+
+    writer.writerow([])
+    writer.writerow(["=== PAYMENTS ==="])
+    writer.writerow(["id", "customer", "city", "amount_paid", "amount_sold", "date", "receipt", "previous_balance", "notes"])
+    for p in Payment.query.join(Customer).order_by(Payment.payment_date.desc()).all():
+        writer.writerow([p.id, p.customer.name, p.customer.city or "", float(p.amount), float(p.amount_sold or 0), p.payment_date, p.receipt_number, float(p.previous_balance), p.notes or ""])
+
+    writer.writerow([])
+    writer.writerow(["=== ROUTE HISTORY ==="])
+    writer.writerow(["date", "customer", "city", "completed", "completed_at"])
+    for s in RouteStop.query.join(Customer).order_by(RouteStop.route_date.desc()).all():
+        writer.writerow([s.route_date, s.customer.name, s.customer.city or "", s.completed, s.completed_at])
+
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=candy_dash_backup_{date.today().isoformat()}.csv"},
+    )

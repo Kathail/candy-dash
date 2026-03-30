@@ -119,5 +119,19 @@ def init_database():
         db.session.commit()
         print("  Demo user created (username: demo, password: demo)")
 
+    # Create bookkeeper user if it doesn't exist
+    if not User.query.filter_by(username="miranda").first():
+        bk = User(
+            username="miranda",
+            email="miranda@candyroute.local",
+            role="bookkeeper",
+            is_active=True,
+        )
+        bk_password = os.environ.get("BOOKKEEPER_PASSWORD", "miranda123")
+        bk.set_password(bk_password)
+        db.session.add(bk)
+        db.session.commit()
+        print(f"  Bookkeeper user created (username: miranda)")
+
     # Seed customers/leads from seed_data.json if table is empty
     _seed_customers()
