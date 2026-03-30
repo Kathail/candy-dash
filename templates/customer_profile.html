@@ -239,9 +239,7 @@
            items: [{ item_number: '', description: '', quantity: '1', weight: '', unit_price: '' }],
            addItem() { this.items.push({ item_number: '', description: '', quantity: '1', weight: '', unit_price: '' }) },
            removeItem(i) { if (this.items.length > 1) this.items.splice(i, 1) },
-           get subtotal() { return this.items.reduce((s, it) => s + (parseFloat(it.quantity || 0) * parseFloat(it.unit_price || 0)), 0) },
-           get hst() { return this.subtotal * 0.13 },
-           get total() { return this.subtotal + this.hst }
+           get subtotal() { return this.items.reduce((s, it) => s + (parseFloat(it.quantity || 0) * parseFloat(it.unit_price || 0)), 0) }
          }">
       <form method="POST" action="{{ url_for('customers.add_invoice', id=customer.id) }}" class="bg-panel rounded-xl border border-app p-4 space-y-3">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -309,11 +307,9 @@
 
         {# Totals #}
         <div class="text-right text-sm space-y-1 border-t border-gray-700 pt-2">
-          <p class="text-gray-400">Subtotal: <span class="text-gray-200 font-medium" x-text="'$' + subtotal.toFixed(2)"></span></p>
-          <p class="text-gray-400">HST (13%): <span class="text-gray-200 font-medium" x-text="'$' + hst.toFixed(2)"></span></p>
-          <p class="text-gray-200 font-bold">Total: <span x-text="'$' + total.toFixed(2)"></span></p>
+          <p class="text-gray-200 font-bold">Total: <span x-text="'$' + subtotal.toFixed(2)"></span></p>
         </div>
-        <input type="hidden" name="amount" :value="total.toFixed(2)">
+        <input type="hidden" name="amount" :value="subtotal.toFixed(2)">
 
         <div>
           <label class="block text-2xs font-semibold text-gray-500 uppercase mb-1">Payment Type</label>
