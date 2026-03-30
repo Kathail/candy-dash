@@ -71,7 +71,7 @@
                 </a>
             </li>
             {% endif %}
-            {% if current_user.is_authenticated and current_user.is_admin %}
+            {% if current_user.is_authenticated and (current_user.is_admin or current_user.role == 'owner') %}
             <li>
                 <a href="{{ url_for('admin.index') }}"
                    class="nav-link flex items-center gap-3 min-h-[44px]

@@ -116,7 +116,7 @@
             </a>
             {% endfor %}
 
-            {% if current_user.is_authenticated and current_user.is_admin %}
+            {% if current_user.is_authenticated and (current_user.is_admin or current_user.role == 'owner') %}
             <p class="text-2xs font-semibold text-gray-500 uppercase tracking-wider px-3 pt-2 mt-1">Admin</p>
             <a href="{{ url_for('admin.index') }}" @click="moreOpen = false"
                class="flex items-center gap-3 px-3 min-h-[48px] rounded-xl
