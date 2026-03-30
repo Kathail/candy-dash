@@ -1,7 +1,7 @@
 """App factory for Candy Route Planner."""
 
 import os
-from flask import Flask, render_template
+from flask import Flask, render_template, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
@@ -66,6 +66,15 @@ def create_app():
     csrf.init_app(app)
     limiter.init_app(app)
     login_manager.init_app(app)
+
+    # Sentry error monitoring (set SENTRY_DSN env var to enable)
+    sentry_dsn = os.environ.get("SENTRY_DSN")
+    if sentry_dsn:
+        try:
+            import sentry_sdk
+            sentry_sdk.init(dsn=sentry_dsn, traces_sample_rate=0.1)
+        except ImportError:
+            app.logger.warning("SENTRY_DSN set but sentry-sdk not installed")
 
     # User loader
     from app.models import User
@@ -159,12 +168,31 @@ def create_app():
             mimetype="application/javascript",
         )
 
+    # Health check endpoint
+    @app.route("/health")
+    def health_check():
+        try:
+            db.session.execute(db.text("SELECT 1"))
+            return jsonify({"status": "ok", "db": "connected"}), 200
+        except Exception as e:
+            return jsonify({"status": "error", "db": str(e)}), 503
+
     # Security headers
     @app.after_request
     def set_security_headers(response):
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "SAMEORIGIN"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        # CSP: allow inline scripts (Alpine.js, Chart.js config), HTMX, and self-hosted assets
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+            "style-src 'self' 'unsafe-inline'; "
+            "img-src 'self' data:; "
+            "font-src 'self'; "
+            "connect-src 'self'; "
+            "frame-ancestors 'none'"
+        )
         if flask_env != "development":
             response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         return response

@@ -44,6 +44,7 @@ def login():
 
 
 @bp.route("/demo")
+@limiter.limit("5 per minute")
 def demo():
     """Log in as the read-only demo user."""
     if current_user.is_authenticated:

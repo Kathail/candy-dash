@@ -129,18 +129,26 @@ def init_database():
         else:
             print("  Default admin user created with ADMIN_PASSWORD from environment.")
 
-    # Create demo user if it doesn't exist
-    if not User.query.filter_by(username="demo").first():
-        demo = User(
-            username="demo",
-            email="demo@candyroute.local",
-            role="demo",
-            is_active=True,
-        )
-        demo.set_password("demo")
-        db.session.add(demo)
-        db.session.commit()
-        print("  Demo user created (username: demo, password: demo)")
+    # Create demo user only if DEMO_ENABLED=true (opt-in)
+    if os.environ.get("DEMO_ENABLED", "").lower() in ("true", "1", "yes"):
+        if not User.query.filter_by(username="demo").first():
+            demo = User(
+                username="demo",
+                email="demo@candyroute.local",
+                role="demo",
+                is_active=True,
+            )
+            demo.set_password("demo")
+            db.session.add(demo)
+            db.session.commit()
+            print("  Demo user created (username: demo, password: demo)")
+    else:
+        # Deactivate demo user if it exists and DEMO_ENABLED is not set
+        demo_user = User.query.filter_by(username="demo", role="demo").first()
+        if demo_user and demo_user.is_active:
+            demo_user.is_active = False
+            db.session.commit()
+            print("  Demo user deactivated (set DEMO_ENABLED=true to re-enable)")
 
     # Add unique index on invoice_number (partial: non-NULL only)
     try:
