@@ -120,9 +120,11 @@ def csv_response(rows, headers, filename):
 def generate_receipt_number(payment_date=None, max_retries=5):
     """Generate a unique invoice number in format INV-YYYYMMDD-XXXX.
 
-    Uses SELECT ... FOR UPDATE (Postgres) to prevent race conditions.
+    Uses SELECT ... FOR UPDATE SKIP LOCKED (Postgres) to prevent race
+    conditions without deadlocking concurrent transactions.
     Falls back to UUID suffix if sequence collides after retries.
     """
+    import logging
     import uuid
     from app.models import Payment
     from app import db
@@ -135,12 +137,11 @@ def generate_receipt_number(payment_date=None, max_retries=5):
 
     for attempt in range(max_retries):
         try:
-            # Use FOR UPDATE to lock the row and prevent concurrent duplicates
             last = (
                 Payment.query
                 .filter(Payment.receipt_number.like(f"{prefix}%"))
                 .order_by(Payment.receipt_number.desc())
-                .with_for_update()
+                .with_for_update(skip_locked=True)
                 .first()
             )
 
@@ -164,9 +165,9 @@ def generate_receipt_number(payment_date=None, max_retries=5):
 
             return f"{prefix}{seq:04d}"
         except Exception:
+            logging.exception("Receipt number generation failed (attempt %d/%d)", attempt + 1, max_retries)
             db.session.rollback()
             if attempt == max_retries - 1:
-                # Final fallback: use UUID to guarantee uniqueness
                 short_uuid = uuid.uuid4().hex[:6].upper()
                 return f"{prefix}{short_uuid}"
 

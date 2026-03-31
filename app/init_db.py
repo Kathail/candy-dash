@@ -56,8 +56,9 @@ def init_database():
             "ALTER TABLE customers ALTER COLUMN phone TYPE VARCHAR(30)"
         ))
         db.session.commit()
-    except Exception:
+    except Exception as e:
         db.session.rollback()
+        log.debug("phone column migration skipped: %s", e)
 
     # Add payment_type column to invoices if missing
     try:
@@ -65,8 +66,9 @@ def init_database():
             "ALTER TABLE invoices ADD COLUMN payment_type VARCHAR(20)"
         ))
         db.session.commit()
-    except Exception:
+    except Exception as e:
         db.session.rollback()
+        log.debug("invoices.payment_type migration skipped: %s", e)
 
     # Add payment_type column to payments if missing
     try:
@@ -74,8 +76,9 @@ def init_database():
             "ALTER TABLE payments ADD COLUMN payment_type VARCHAR(20) DEFAULT 'cash'"
         ))
         db.session.commit()
-    except Exception:
+    except Exception as e:
         db.session.rollback()
+        log.debug("payments.payment_type migration skipped: %s", e)
 
     # Add amount_sold column to payments if missing
     try:
@@ -83,8 +86,9 @@ def init_database():
             "ALTER TABLE payments ADD COLUMN amount_sold NUMERIC(10,2) DEFAULT 0"
         ))
         db.session.commit()
-    except Exception:
+    except Exception as e:
         db.session.rollback()
+        log.debug("payments.amount_sold migration skipped: %s", e)
 
     # Create invoices, invoice_items, and notes tables if missing
     db.create_all()
@@ -95,8 +99,9 @@ def init_database():
             "UPDATE users SET role = 'owner' WHERE role IN ('sales', 'manager')"
         ))
         db.session.commit()
-    except Exception:
+    except Exception as e:
         db.session.rollback()
+        log.debug("Role migration skipped: %s", e)
 
     # Create default admin if no users exist
     if User.query.count() == 0:
@@ -151,8 +156,8 @@ def init_database():
         with db.engine.connect() as conn:
             conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_invoices_invoice_number ON invoices (invoice_number) WHERE invoice_number IS NOT NULL"))
             conn.commit()
-    except Exception:
-        pass
+    except Exception as e:
+        log.debug("Invoice number index creation skipped: %s", e)
 
     # Seed customers/leads from seed_data.json if table is empty
     _seed_customers()

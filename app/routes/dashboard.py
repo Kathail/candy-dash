@@ -31,22 +31,17 @@ def index():
         RouteStop.route_date == today, RouteStop.completed.is_(True)
     ).count()
 
-    # Payment KPIs (today)
+    # Payment KPIs (today) — count, sum, and max in a single query
     payment_stats = db.session.query(
         func.count(Payment.id),
         func.coalesce(func.sum(Payment.amount), Decimal("0")),
+        func.coalesce(func.max(Payment.amount), Decimal("0")),
     ).filter(
         Payment.payment_date >= day_start, Payment.payment_date <= day_end
     ).first()
     payment_count = payment_stats[0]
     payment_sum = payment_stats[1] or Decimal("0")
-
-    # Today's highest single payment
-    highest_today = db.session.query(
-        func.max(Payment.amount),
-    ).filter(
-        Payment.payment_date >= day_start, Payment.payment_date <= day_end
-    ).scalar() or Decimal("0")
+    highest_today = payment_stats[2] or Decimal("0")
 
     # Today's avg order value
     avg_order_today = round(float(payment_sum) / payment_count, 2) if payment_count else 0

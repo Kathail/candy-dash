@@ -683,17 +683,21 @@ def delete_invoice(id, invoice_id):
 
     try:
         customer = db.session.query(Customer).filter_by(id=id).with_for_update().one()
-        customer.balance = max(customer.balance - invoice.amount, Decimal("0"))
+
+        # Only reverse balance if invoice is unpaid (paid invoices were already
+        # settled via a payment record that reduced the balance separately).
+        if invoice.status != "paid":
+            customer.balance = max(customer.balance - invoice.amount, Decimal("0"))
 
         db.session.add(ActivityLog(
             customer_id=customer.id,
             user_id=current_user.id,
             action="invoice_deleted",
-            description=f"Invoice #{invoice.invoice_number or invoice.id} (${invoice.amount:,.2f}) deleted. Balance: ${customer.balance:,.2f}.",
+            description=f"Invoice #{invoice.invoice_number or invoice.id} (${invoice.amount:,.2f}, {invoice.status}) deleted. Balance: ${customer.balance:,.2f}.",
         ))
 
         db.session.delete(invoice)
-        audit("invoice_deleted", f"Deleted invoice ${invoice.amount:,.2f} for '{customer.name}'")
+        audit("invoice_deleted", f"Deleted invoice ${invoice.amount:,.2f} ({invoice.status}) for '{customer.name}'")
         db.session.commit()
     except Exception:
         logging.exception("Invoice deletion failed")

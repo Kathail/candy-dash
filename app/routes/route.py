@@ -188,15 +188,24 @@ def complete_stop(id):
             ))
             audit("payment_recorded", f"Route payment: {desc} for '{customer.name}'")
         except Exception:
-            pass  # ignore payment errors, still complete the stop
+            logging.exception("Inline payment failed for stop #%s", id)
+            db.session.rollback()
+            flash("Stop completed but payment failed. Please record the payment manually.", "error")
+            # Re-fetch the stop after rollback and just mark it complete
+            stop = RouteStop.query.get(id)
+            stop.completed = True
+            stop.completed_at = datetime.now(timezone.utc)
+            db.session.commit()
+            return redirect(url_for("route.index", date=stop.route_date.isoformat()))
 
     audit("stop_completed", f"Completed route stop for customer #{stop.customer_id} on {stop.route_date}")
 
     try:
         db.session.commit()
     except Exception:
+        logging.exception("Failed to commit stop completion for stop #%s", id)
         db.session.rollback()
-        flash("Failed to save payment. Please try again.", "error")
+        flash("Failed to save. Please try again.", "error")
         return redirect(url_for("route.index"))
 
     # For HTMX, return the updated stop card with trigger to refresh totals
