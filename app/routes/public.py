@@ -1,0 +1,14 @@
+"""Public-facing routes — landing page, no auth required."""
+
+from flask import Blueprint, redirect, render_template, url_for
+from flask_login import current_user
+
+bp = Blueprint("public", __name__, url_prefix="")
+
+
+@bp.route("/")
+def index():
+    """Landing page for anonymous users, redirect to dashboard if logged in."""
+    if current_user.is_authenticated:
+        return redirect(url_for("dashboard.index"))
+    return render_template("public/index.html")

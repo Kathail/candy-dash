@@ -15,7 +15,7 @@ from app.models import Customer, RouteStop, Payment
 bp = Blueprint("dashboard", __name__, url_prefix="")
 
 
-@bp.route("/")
+@bp.route("/dashboard")
 @login_required
 def index():
     """Landing page with today's KPIs and quick actions."""
