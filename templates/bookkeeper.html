@@ -148,7 +148,7 @@
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
       </svg>
     </div>
-    <h2 class="text-xs font-bold text-green-400 uppercase tracking-wider">Recent Payments</h2>
+    <h2 class="text-xs font-bold text-green-400 uppercase tracking-wider">Recent Transactions</h2>
     <div class="flex-1 h-px bg-gray-700"></div>
   </div>
   <div class="bg-panel rounded-xl border border-app overflow-hidden divide-y divide-gray-700/60 animate-fade-in-up">
@@ -163,12 +163,32 @@
         <p class="text-2xs text-faint">{{ payment.receipt_number }}{% if payment.payment_type %} &middot; {{ payment.payment_type }}{% endif %}</p>
       </div>
       {% if payment.amount_sold and payment.amount_sold > 0 %}
-      <span class="text-xs font-semibold text-amber-400">+{{ payment.amount_sold|currency }}</span>
+      <div class="text-right">
+        <span class="text-sm font-bold text-amber-400">{{ payment.amount_sold|currency }}</span>
+        <p class="text-2xs text-faint">sold</p>
+      </div>
+      {% else %}
+      <div class="text-right">
+        <span class="text-sm font-bold text-green-400">{{ payment.amount|currency }}</span>
+        <p class="text-2xs text-faint">paid</p>
+      </div>
       {% endif %}
-      <span class="text-sm font-bold text-green-400">{{ payment.amount|currency }}</span>
     </a>
     {% endfor %}
   </div>
+  {% if payments_pagination.pages > 1 %}
+  <div class="flex items-center justify-center gap-2 pt-1">
+    {% if payments_pagination.has_prev %}
+    <a href="{{ url_for('bookkeeper.index', period=period, page=payments_pagination.prev_num) }}"
+       class="px-3 py-1.5 text-xs font-medium text-indigo-400 hover:text-indigo-300 bg-panel border border-app rounded-lg btn-press">&larr; Prev</a>
+    {% endif %}
+    <span class="text-2xs text-faint">Page {{ payments_pagination.page }} of {{ payments_pagination.pages }}</span>
+    {% if payments_pagination.has_next %}
+    <a href="{{ url_for('bookkeeper.index', period=period, page=payments_pagination.next_num) }}"
+       class="px-3 py-1.5 text-xs font-medium text-indigo-400 hover:text-indigo-300 bg-panel border border-app rounded-lg btn-press">Next &rarr;</a>
+    {% endif %}
+  </div>
+  {% endif %}
   {% endif %}
 
   {# -- Activity Log -- #}
@@ -192,7 +212,19 @@
         <p class="text-sm text-gray-300">
           <span class="font-medium text-gray-100">{{ entry.customer.name }}</span>
           <span class="text-faint">&middot;</span>
-          <span class="text-2xs">{{ entry.action|replace('_', ' ')|capitalize }}</span>
+          {% if entry.action == 'payment_recorded' and entry.description %}
+            {% if 'Sold $' in entry.description %}
+            <span class="text-2xs">Sold {{ entry.description.split('Sold ')[1].split('. ')[0] }}</span>
+            {% elif 'Paid $' in entry.description %}
+            <span class="text-2xs">Paid {{ entry.description.split('Paid ')[1].split('. ')[0] }}</span>
+            {% else %}
+            <span class="text-2xs">Payment recorded</span>
+            {% endif %}
+          {% elif entry.action == 'payment_deleted' %}
+            <span class="text-2xs">Payment deleted</span>
+          {% else %}
+            <span class="text-2xs">{{ entry.action|replace('_', ' ')|capitalize }}</span>
+          {% endif %}
         </p>
         <p class="text-2xs text-faint mt-0.5">{{ entry.created_at|dateformat('%b %d, %I:%M %p') }}</p>
       </div>

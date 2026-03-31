@@ -81,14 +81,15 @@ def index():
     today_count = today_payments.count or 0
     today_total = today_payments.total or Decimal("0")
 
-    # --- Recent payments (last 20) ---
-    recent_payments = (
+    # --- Paginated transactions ---
+    page = request.args.get("page", 1, type=int)
+    per_page = 10
+    payments_paginated = (
         Payment.query
         .options(joinedload(Payment.customer))
         .join(Customer)
         .order_by(Payment.payment_date.desc())
-        .limit(20)
-        .all()
+        .paginate(page=page, per_page=per_page, error_out=False)
     )
 
     # --- Top balances (all with balance > 0) ---
@@ -144,7 +145,8 @@ def index():
         active_customers=active_customers,
         today_count=today_count,
         today_total=today_total,
-        recent_payments=recent_payments,
+        recent_payments=payments_paginated.items,
+        payments_pagination=payments_paginated,
         top_balances=top_balances,
         city_collections=city_collections,
         recent_activity=recent_activity,

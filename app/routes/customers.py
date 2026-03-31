@@ -203,14 +203,22 @@ def profile(id):
     standalone_invoices = [inv for inv in invoices if inv.invoice_number not in payment_receipt_numbers]
 
     # Merge into a single list sorted by date descending
+    # Compute running balance backwards from current balance (ground truth)
+    sorted_payments = sorted(payments, key=lambda p: p.payment_date, reverse=True)
+    running_bal = customer.balance
+    payment_balances = {}
+    for p in sorted_payments:
+        payment_balances[p.id] = running_bal
+        # Undo this transaction to get the balance before it
+        running_bal = running_bal - (p.amount_sold or 0) + p.amount
+
     transactions = []
     for p in payments:
-        bal_after = p.previous_balance + (p.amount_sold or 0) - p.amount
         transactions.append({
             'type': 'payment',
             'date': p.payment_date,
             'payment': p,
-            'balance_after': bal_after,
+            'balance_after': payment_balances[p.id],
         })
     for inv in standalone_invoices:
         if isinstance(inv.invoice_date, datetime):

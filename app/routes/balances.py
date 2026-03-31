@@ -1,16 +1,14 @@
 """Outstanding balances management routes."""
 
 from datetime import date, datetime, timezone
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal
 
-from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
-from flask_login import login_required, current_user
+from flask import Blueprint, render_template, request
+from flask_login import login_required
 from sqlalchemy import func
 
-from app import db, limiter
-from app.helpers import generate_receipt_number
-from app.models import Customer, Payment, ActivityLog
-import logging
+from app import db
+from app.models import Customer, Payment
 
 bp = Blueprint("balances", __name__, url_prefix="/balances")
 
@@ -106,9 +104,11 @@ def index():
         item["customer"].balance for item in customers_with_aging
     )
     bucket_totals = {}
+    bucket_counts = {}
     for item in customers_with_aging:
         b = item["bucket"]
         bucket_totals[b] = bucket_totals.get(b, Decimal("0")) + item["customer"].balance
+        bucket_counts[b] = bucket_counts.get(b, 0) + 1
 
     # Available cities for the filter dropdown
     cities = (
@@ -130,6 +130,7 @@ def index():
         customers=customers_with_aging,
         total_outstanding=total_outstanding,
         bucket_totals=bucket_totals,
+        customers_with_aging_counts=bucket_counts,
         cities=cities,
         city_filter=city_filter,
         bucket_filter=bucket_filter,
@@ -137,64 +138,3 @@ def index():
     )
 
 
-@bp.route("/<int:id>/payment", methods=["POST"])
-@limiter.limit("30/minute")
-def quick_payment(id):
-    """Record a quick payment from the balances page (atomic)."""
-    customer = db.session.get(Customer, id)
-    if customer is None:
-        flash("Customer not found.", "error")
-        return redirect(url_for("balances.index"))
-
-    try:
-        amount = Decimal(request.form.get("amount", "0"))
-    except (InvalidOperation, TypeError, ValueError):
-        flash("Invalid payment amount.", "error")
-        return redirect(url_for("balances.index"))
-
-    if amount <= 0:
-        flash("Payment amount must be greater than zero.", "error")
-        return redirect(url_for("balances.index"))
-
-    notes = request.form.get("notes", "").strip()
-    payment_type = request.form.get("payment_type", "cash").strip() or "cash"
-
-    try:
-        # Lock the customer row to prevent concurrent balance updates
-        customer = db.session.query(Customer).filter_by(id=id).with_for_update().one()
-        previous_balance = customer.balance
-        receipt_number = generate_receipt_number()
-
-        payment = Payment(
-            customer_id=customer.id,
-            amount=amount,
-            payment_type=payment_type,
-            receipt_number=receipt_number,
-            previous_balance=previous_balance,
-            notes=notes,
-            recorded_by=current_user.id,
-        )
-        customer.balance = max(previous_balance - amount, Decimal("0"))
-
-        log = ActivityLog(
-            customer_id=customer.id,
-            user_id=current_user.id,
-            action="payment",
-            description=f"Payment of ${amount:,.2f} recorded. Receipt: {receipt_number}",
-        )
-
-        db.session.add(payment)
-        db.session.add(log)
-        db.session.commit()
-
-        flash(
-            f"Payment of ${amount:,.2f} recorded for {customer.name}. "
-            f"Receipt: {receipt_number}",
-            "success",
-        )
-    except Exception:
-        logging.exception("Operation failed")
-        db.session.rollback()
-        flash("An error occurred while processing the payment.", "error")
-
-    return redirect(url_for("balances.index"))

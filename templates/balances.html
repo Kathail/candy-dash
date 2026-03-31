@@ -52,11 +52,12 @@
   <div class="grid grid-cols-4 gap-2 animate-fade-in-up stagger-1">
     {% set buckets = [('0-30', 'green', '0-30d'), ('31-60', 'yellow', '31-60d'), ('61-90', 'orange', '61-90d'), ('90+', 'red', '90+d')] %}
     {% for key, color, label in buckets %}
+    {% set bucket_count = customers_with_aging_counts.get(key, 0) if customers_with_aging_counts is defined else 0 %}
     <a href="{{ url_for('balances.index', bucket=key, city=city_filter, sort=sort) }}"
        class="bg-panel rounded-xl border p-3 text-center btn-press transition-all
               {{ bucket_styles[color].active if bucket_filter == key else bucket_styles[color].inactive }}">
       <p class="text-lg font-bold {{ bucket_styles[color].text }}">{{ (bucket_totals.get(key, 0)) | currency }}</p>
-      <p class="text-2xs text-gray-500 mt-0.5">{{ label }}</p>
+      <p class="text-2xs text-gray-500 mt-0.5">{{ label }} · {{ bucket_count }}</p>
     </a>
     {% endfor %}
   </div>
@@ -110,6 +111,15 @@
     </form>
   </div>
 
+  {# -- Search -- #}
+  <div x-data="{ q: '' }" class="animate-fade-in-up stagger-2">
+    <input type="text" x-model="q" placeholder="Search customers..."
+           @input="document.querySelectorAll('[data-customer-name]').forEach(el => {
+             el.style.display = el.dataset.customerName.toLowerCase().includes(q.toLowerCase()) ? '' : 'none'
+           })"
+           class="w-full theme-input rounded-xl text-sm min-h-[44px] px-4">
+  </div>
+
   {# -- Section Header -- #}
   {% if customers %}
   <div class="flex items-center gap-2 pt-1 animate-fade-in-up">
@@ -129,7 +139,7 @@
       {% for item in customers %}
       {% set customer = item.customer %}
       {% set bucket = item.bucket %}
-      <div class="bg-panel rounded-xl border border-app overflow-hidden animate-fade-in-up stagger-{{ loop.index0 % 8 + 1 }}" x-data="{ showPay: false }">
+      <div data-customer-name="{{ customer.name }}" class="bg-panel rounded-xl border border-app overflow-hidden animate-fade-in-up stagger-{{ loop.index0 % 8 + 1 }}" x-data="{ showPay: false }">
         <a href="{{ url_for('customers.profile', id=customer.id) }}"
            class="flex items-center gap-3 px-4 py-3 hover:bg-gray-700/30 transition-colors btn-press">
           <div class="flex-1 min-w-0">
@@ -159,6 +169,15 @@
                      class="flex-1 theme-input rounded-xl text-sm min-h-[44px]">
               <input type="number" name="amount_paid" step="0.01" min="0" placeholder="Paid $" value="{{ '%.2f'|format(customer.balance|float) }}"
                      class="flex-1 theme-input rounded-xl text-sm min-h-[44px]">
+              <select name="payment_type" aria-label="Payment type"
+                      class="theme-input rounded-xl text-sm min-h-[44px]">
+                <option value="cash">Cash</option>
+                <option value="cheque">Cheque</option>
+                <option value="etransfer">E-Transfer</option>
+                <option value="debit">Debit</option>
+                <option value="credit">Credit</option>
+                <option value="other">Other</option>
+              </select>
             </div>
             <button type="submit"
                     class="w-full inline-flex items-center justify-center gap-2 px-3 py-2.5 bg-green-600 text-white text-sm font-semibold rounded-xl hover:bg-green-500 transition-colors min-h-[44px] btn-press">

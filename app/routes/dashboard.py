@@ -54,19 +54,26 @@ def index():
         Payment.payment_date >= yest_start, Payment.payment_date <= yest_end
     ).scalar() or Decimal("0")
 
-    # Outstanding balance
+    # Outstanding balance — only customers on today's route
     total_outstanding = db.session.query(
         func.coalesce(func.sum(Customer.balance), Decimal("0")),
-    ).filter(Customer.status == "active").scalar() or Decimal("0")
+    ).join(RouteStop, RouteStop.customer_id == Customer.id).filter(
+        Customer.status == "active",
+        Customer.balance > 0,
+        RouteStop.route_date == today,
+    ).scalar() or Decimal("0")
 
     # Customer counts
     active_customers = Customer.query.filter(Customer.status == "active").count()
     lead_count = Customer.query.filter(Customer.status == "lead").count()
 
-    # Overdue customers (balance > 0)
-    overdue_count = db.session.query(func.count(Customer.id)).filter(
+    # Overdue customers on today's route (balance > 0)
+    overdue_count = db.session.query(func.count(Customer.id)).join(
+        RouteStop, RouteStop.customer_id == Customer.id
+    ).filter(
         Customer.status == "active",
         Customer.balance > 0,
+        RouteStop.route_date == today,
     ).scalar() or 0
 
     # Today's route stops with customer info
