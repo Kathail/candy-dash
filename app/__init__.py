@@ -98,10 +98,9 @@ def create_app():
         from app.helpers import safe_redirect
         if not cu.is_authenticated:
             return
-        if cu.role not in ("demo", "bookkeeper"):
+        if cu.role not in ("demo",):
             return
-        is_demo = cu.is_demo
-        label = "Demo mode" if is_demo else "View-only mode"
+        label = "Demo mode"
 
         # Block all writes except logout
         if req.method in ("POST", "PUT", "DELETE") and req.endpoint not in ("auth.logout", "auth.change_password"):
@@ -109,15 +108,14 @@ def create_app():
                 return jsonify({"error": f"{label} — this action is disabled."}), 403
             flash(f"{label} — this action is disabled.", "warning")
             return redirect(safe_redirect(req.referrer))
-        # Demo-only: block report exports and API access
-        if is_demo:
-            blocked_prefixes = ("reports.", "api.")
-            if req.endpoint and any(req.endpoint.startswith(p) for p in blocked_prefixes):
-                if req.args.get("format") in ("csv", "xlsx"):
-                    flash("Demo mode — exports are disabled.", "warning")
-                    return redirect(safe_redirect(req.referrer))
-                if req.endpoint.startswith("api."):
-                    return jsonify({"error": "Demo mode — API disabled."}), 403
+        # Block report exports and API access
+        blocked_prefixes = ("reports.", "api.")
+        if req.endpoint and any(req.endpoint.startswith(p) for p in blocked_prefixes):
+            if req.args.get("format") in ("csv", "xlsx"):
+                flash("Demo mode — exports are disabled.", "warning")
+                return redirect(safe_redirect(req.referrer))
+            if req.endpoint.startswith("api."):
+                return jsonify({"error": "Demo mode — API disabled."}), 403
 
     # Template filters
     from app.helpers import format_currency, format_date

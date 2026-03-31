@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit Purchase' if purchase else 'Add Purchase' }} - Candy Dash{% endblock %}
+{% block page_title %}{{ 'Edit Purchase' if purchase else 'Add Purchase' }}{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto animate-fade-in-up">
+
+  <nav class="flex items-center gap-1.5 text-sm mb-4" aria-label="Breadcrumb">
+    <a href="{{ url_for('purchases.index') }}" class="text-indigo-400 hover:text-indigo-300">Purchases</a>
+    <svg class="w-3.5 h-3.5 text-gray-600" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+    </svg>
+    <span class="text-muted">{{ 'Edit' if purchase else 'New' }}</span>
+  </nav>
+
+  <div class="bg-panel rounded-xl border border-app p-5">
+    <form method="POST" class="space-y-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div>
+        <label for="supplier" class="block text-sm font-medium text-gray-300 mb-1">Supplier *</label>
+        <input type="text" id="supplier" name="supplier" required
+               value="{{ purchase.supplier if purchase else '' }}"
+               list="supplier-list"
+               class="theme-input w-full text-sm rounded-lg min-h-[44px]"
+               placeholder="Supplier name">
+        {% if suppliers %}
+        <datalist id="supplier-list">
+          {% for s in suppliers %}
+          <option value="{{ s }}">
+          {% endfor %}
+        </datalist>
+        {% endif %}
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label for="amount" class="block text-sm font-medium text-gray-300 mb-1">Amount *</label>
+          <input type="number" id="amount" name="amount" required step="0.01" min="0.01"
+                 value="{{ purchase.amount if purchase else '' }}"
+                 class="theme-input w-full text-sm rounded-lg min-h-[44px]"
+                 placeholder="0.00">
+        </div>
+        <div>
+          <label for="purchase_date" class="block text-sm font-medium text-gray-300 mb-1">Date *</label>
+          <input type="date" id="purchase_date" name="purchase_date" required
+                 value="{{ purchase.purchase_date.isoformat() if purchase else '' }}"
+                 class="theme-input w-full text-sm rounded-lg min-h-[44px]">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label for="invoice_number" class="block text-sm font-medium text-gray-300 mb-1">Invoice #</label>
+          <input type="text" id="invoice_number" name="invoice_number"
+                 value="{{ purchase.invoice_number or '' if purchase else '' }}"
+                 class="theme-input w-full text-sm rounded-lg min-h-[44px]"
+                 placeholder="Optional">
+        </div>
+        <div>
+          <label for="payment_type" class="block text-sm font-medium text-gray-300 mb-1">Payment Type</label>
+          <select id="payment_type" name="payment_type"
+                  class="theme-input w-full text-sm rounded-lg min-h-[44px]">
+            {% set pt = purchase.payment_type if purchase else 'cash' %}
+            <option value="cash" {{ 'selected' if pt == 'cash' }}>Cash</option>
+            <option value="cheque" {{ 'selected' if pt == 'cheque' }}>Cheque</option>
+            <option value="credit" {{ 'selected' if pt == 'credit' }}>Credit</option>
+            <option value="debit" {{ 'selected' if pt == 'debit' }}>Debit</option>
+            <option value="etransfer" {{ 'selected' if pt == 'etransfer' }}>E-Transfer</option>
+            <option value="other" {{ 'selected' if pt == 'other' }}>Other</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label for="description" class="block text-sm font-medium text-gray-300 mb-1">Description</label>
+        <textarea id="description" name="description" rows="2"
+                  class="theme-input w-full text-sm rounded-lg"
+                  placeholder="What was purchased?">{{ purchase.description or '' if purchase else '' }}</textarea>
+      </div>
+
+      <div class="flex items-center gap-3 pt-2">
+        <button type="submit"
+                class="btn-press inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-500 transition-colors min-h-[44px]">
+          {{ 'Update' if purchase else 'Add Purchase' }}
+        </button>
+        <a href="{{ url_for('purchases.index') }}"
+           class="text-sm text-gray-500 hover:text-gray-300 transition-colors">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -44,7 +44,7 @@ class User(UserMixin, db.Model):
     @property
     def can_write(self):
         """Returns True if user can create/edit/delete data."""
-        return self.role in ("owner", "admin")
+        return self.role in ("owner", "admin", "bookkeeper")
 
     def __repr__(self):
         return f"<User {self.username}>"
@@ -224,6 +224,25 @@ class RecurringSkip(db.Model):
 
     def __repr__(self):
         return f"<RecurringSkip recurring={self.recurring_stop_id} date={self.skip_date}>"
+
+
+class Purchase(db.Model):
+    __tablename__ = "purchases"
+
+    id = db.Column(db.Integer, primary_key=True)
+    supplier = db.Column(db.String(200), nullable=False, index=True)
+    amount = db.Column(db.Numeric(10, 2), nullable=False)
+    purchase_date = db.Column(db.Date, nullable=False, index=True)
+    invoice_number = db.Column(db.String(100), nullable=True)
+    description = db.Column(db.Text, nullable=True)
+    payment_type = db.Column(db.String(20), nullable=True, default="cash")
+    created_by = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    creator = db.relationship("User", foreign_keys=[created_by])
+
+    def __repr__(self):
+        return f"<Purchase {self.supplier} ${self.amount}>"
 
 
 class ActivityLog(db.Model):

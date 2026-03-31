@@ -71,7 +71,7 @@ def _compute_aging_buckets(customers):
 @bp.route("/")
 def index():
     """Show customers with outstanding balances, with aging and filters."""
-    query = Customer.query.filter(Customer.balance > 0)
+    query = Customer.query.filter(Customer.balance > 0, Customer.status != "deleted")
 
     # Filter by city
     city_filter = request.args.get("city", "").strip()

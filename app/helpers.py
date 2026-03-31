@@ -67,9 +67,6 @@ def audit(action, details="", user_id=None):
 def safe_redirect(target):
     """Validate redirect URL to prevent open redirect attacks."""
     default = url_for("dashboard.index")
-    # Bookkeepers go to /books by default
-    if current_user.is_authenticated and current_user.role == "bookkeeper":
-        default = url_for("bookkeeper.index")
     if not target:
         return default
     ref_url = urlparse(request.host_url)

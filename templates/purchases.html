@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}Purchases - Candy Dash{% endblock %}
+{% block page_title %}Purchases{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-3" x-data="{ showFilters: false }">
+
+  {# -- Header -- #}
+  <div class="flex items-center justify-between animate-fade-in-up">
+    <div>
+      <h1 class="text-xl font-bold text-gray-100">Purchases</h1>
+      {% if purchases %}
+      <p class="text-xs text-gray-500 mt-0.5">{{ purchases|length }} purchase{{ 's' if purchases|length != 1 else '' }}{% if supplier_filter %} from {{ supplier_filter }}{% endif %}</p>
+      {% endif %}
+    </div>
+    <a href="{{ url_for('purchases.add') }}"
+       class="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-500 transition-colors btn-press min-h-[44px]">
+      <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+      </svg>
+      Add
+    </a>
+  </div>
+
+  {# -- Filter toggle -- #}
+  <div class="flex gap-2 animate-fade-in-up stagger-1">
+    <button @click="showFilters = !showFilters" aria-label="Toggle filters"
+            :class="showFilters ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-gray-800 text-gray-400 border-gray-700'"
+            class="flex items-center gap-1.5 px-3 min-h-[44px] rounded-xl border text-sm font-medium transition-colors btn-press">
+      <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+      </svg>
+      Filter
+      {% if supplier_filter or month_filter %}
+      <span class="w-2 h-2 rounded-full bg-indigo-400"></span>
+      {% endif %}
+    </button>
+    {% if purchases %}
+    <div class="flex-1 flex items-center justify-end">
+      <span class="text-sm font-bold text-amber-400">Total: {{ total|currency }}</span>
+    </div>
+    {% endif %}
+  </div>
+
+  {# -- Filters -- #}
+  <div x-show="showFilters" x-transition x-cloak
+       class="bg-panel rounded-xl border border-app p-4 animate-fade-in-up">
+    <form method="get" action="{{ url_for('purchases.index') }}" class="flex flex-wrap gap-2">
+      <select name="supplier" onchange="this.form.submit()"
+              aria-label="Filter by supplier"
+              class="min-h-[44px] rounded-lg border-gray-600 text-sm bg-gray-700 text-gray-200">
+        <option value="">All Suppliers</option>
+        {% for s in suppliers %}
+        <option value="{{ s }}" {% if s == supplier_filter %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+      <select name="month" onchange="this.form.submit()"
+              aria-label="Filter by month"
+              class="min-h-[44px] rounded-lg border-gray-600 text-sm bg-gray-700 text-gray-200">
+        <option value="">All Months</option>
+        {% for m in month_options %}
+        <option value="{{ m }}" {% if m == month_filter %}selected{% endif %}>{{ m }}</option>
+        {% endfor %}
+      </select>
+      {% if supplier_filter or month_filter %}
+      <a href="{{ url_for('purchases.index') }}" class="inline-flex items-center px-3 min-h-[44px] text-sm text-gray-500 hover:text-gray-300 transition-colors btn-press">Clear</a>
+      {% endif %}
+    </form>
+  </div>
+
+  {# -- Purchase List -- #}
+  {% if purchases %}
+  {% for purchase in purchases %}
+  <div class="bg-panel rounded-xl border border-app overflow-hidden animate-fade-in-up stagger-{{ loop.index0 % 8 + 1 }}">
+    <div class="flex items-center gap-3 px-4 py-3">
+      <div class="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center text-xs font-bold text-purple-400 flex-shrink-0">
+        {{ purchase.supplier[:2]|upper }}
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-semibold text-gray-100 truncate">{{ purchase.supplier }}</p>
+        <div class="flex items-center gap-2 text-2xs text-gray-500">
+          <span>{{ purchase.purchase_date.strftime('%b %d, %Y') }}</span>
+          {% if purchase.invoice_number %}
+          <span class="text-gray-600">·</span>
+          <span class="font-mono">{{ purchase.invoice_number }}</span>
+          {% endif %}
+          {% if purchase.payment_type %}
+          <span class="text-gray-600">·</span>
+          <span>{{ purchase.payment_type|capitalize }}</span>
+          {% endif %}
+        </div>
+        {% if purchase.description %}
+        <p class="text-2xs text-gray-500 truncate mt-0.5">{{ purchase.description }}</p>
+        {% endif %}
+      </div>
+      <span class="text-sm font-bold text-amber-400 flex-shrink-0">{{ purchase.amount|currency }}</span>
+      <div class="flex items-center gap-1 flex-shrink-0">
+        <a href="{{ url_for('purchases.edit', id=purchase.id) }}" aria-label="Edit" title="Edit"
+           class="p-2 rounded-lg text-gray-500 hover:text-gray-300 hover:bg-gray-700/50 transition-colors btn-press">
+          <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+          </svg>
+        </a>
+        {% if current_user.can_write %}
+        <form method="POST" action="{{ url_for('purchases.delete', id=purchase.id) }}"
+              onsubmit="return confirm('Delete this purchase?')">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" aria-label="Delete" title="Delete"
+                  class="p-2 rounded-lg text-red-500/70 hover:text-red-400 hover:bg-red-500/10 transition-colors btn-press">
+            <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+            </svg>
+          </button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+
+  {% else %}
+  <div class="bg-panel rounded-xl border border-app p-10 text-center animate-fade-in-up">
+    <img src="{{ url_for('static', filename='img/logo.png') }}" alt="" class="w-12 h-12 mx-auto mb-3 rounded-lg object-contain opacity-50">
+    <p class="text-sm text-gray-500 mb-3">
+      {% if supplier_filter or month_filter %}No purchases match.{% else %}No purchases recorded yet.{% endif %}
+    </p>
+    {% if not (supplier_filter or month_filter) %}
+    <a href="{{ url_for('purchases.add') }}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-500 btn-press transition-colors">Add Purchase</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <div class="h-4"></div>
+</div>
+{% endblock %}

@@ -40,7 +40,7 @@ def index():
     else:
         sort = sort_param
 
-    # Only show customers (active/inactive), not leads — leads have their own page
+    # Only show customers (active/inactive), not leads or deleted — leads have their own page
     query = Customer.query.filter(Customer.status.in_(("active", "inactive")))
 
     if q:
@@ -539,6 +539,29 @@ def toggle_status(id):
 
     flash(f"Customer status changed to {customer.status}.", "success")
     return redirect(url_for("customers.profile", id=customer.id))
+
+
+@bp.route("/<int:id>/delete", methods=["POST"])
+@login_required
+@staff_required
+def delete_customer(id):
+    """Soft-delete a customer by setting status to 'deleted'."""
+    customer = Customer.query.get_or_404(id)
+    old_status = customer.status
+
+    customer.status = "deleted"
+
+    db.session.add(ActivityLog(
+        customer_id=customer.id,
+        user_id=current_user.id,
+        action="status_changed",
+        description=f"Customer deleted (was {old_status}).",
+    ))
+    audit("customer_deleted", f"Deleted customer '{customer.name}' (was {old_status})")
+    db.session.commit()
+
+    flash(f"Customer '{customer.name}' deleted.", "success")
+    return redirect(url_for("customers.index"))
 
 
 # ---------------------------------------------------------------------------
