@@ -3,248 +3,327 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Northern Sweet Supply — Candy & Beverage Distribution</title>
+    <title>Northern Sweet Supply — Candy, Snack & Beverage Distribution</title>
+    <meta name="description" content="Candy, snack, and beverage distribution for Northern Ontario retailers. Weekly delivery to Sudbury, Sault Ste. Marie, Timmins, and surrounding communities.">
     <link rel="icon" href="{{ url_for('static', filename='icons/favicon.svg') }}" type="image/svg+xml">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}?v=11">
-    <style>
-        :root {
-            --navy: #0f172a;
-            --navy-light: #1e293b;
-            --navy-lighter: #334155;
-            --blue: #2563eb;
-            --blue-light: #3b82f6;
-            --blue-dark: #1d4ed8;
-            --gold: #f59e0b;
-            --gold-light: #fbbf24;
-            --white: #f8fafc;
-            --gray: #94a3b8;
-            --gray-light: #cbd5e1;
-        }
-        body { background: var(--navy); color: var(--white); }
-        .btn-primary {
-            background: var(--blue);
-            color: white;
-            padding: 0.75rem 2rem;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            font-size: 0.9375rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: background 0.2s, transform 0.1s;
-        }
-        .btn-primary:hover { background: var(--blue-dark); }
-        .btn-primary:active { transform: scale(0.97); }
-        .btn-outline {
-            border: 1px solid var(--navy-lighter);
-            color: var(--gray-light);
-            padding: 0.625rem 1.5rem;
-            border-radius: 0.5rem;
-            font-weight: 500;
-            font-size: 0.875rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: border-color 0.2s, color 0.2s;
-        }
-        .btn-outline:hover { border-color: var(--blue-light); color: white; }
-        .card {
-            background: var(--navy-light);
-            border: 1px solid var(--navy-lighter);
-            border-radius: 0.75rem;
-            padding: 1.75rem;
-        }
-        .section-label {
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: var(--blue-light);
-        }
-        .gold-accent { color: var(--gold); }
-        .divider { height: 1px; background: var(--navy-lighter); }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}?v=1">
 </head>
-<body class="antialiased">
+<body class="landing">
 
-    {# ── Navigation ── #}
-    <nav class="sticky top-0 z-50 backdrop-blur-md bg-[var(--navy)]/90 border-b border-[var(--navy-lighter)]">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Northern Sweet Supply" class="w-8 h-8 rounded-lg object-contain">
-                <span class="text-lg font-bold tracking-tight">Northern Sweet Supply</span>
+    {# ══════════════════════════════════════════
+       Navigation
+       ══════════════════════════════════════════ #}
+    <nav class="landing-nav">
+        <div class="container">
+            <a href="/" class="nav-brand">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="">
+                <span>Northern Sweet Supply</span>
+            </a>
+            <div class="nav-links nav-links-desktop">
+                <a href="#products" class="nav-link">Products</a>
+                <a href="#programs" class="nav-link">Programs</a>
+                <a href="#coverage" class="nav-link">Coverage</a>
+                <a href="#contact" class="nav-link">Contact</a>
+                <a href="{{ url_for('auth.login') }}" class="nav-link nav-link--login">Employee Login</a>
             </div>
-            <div class="flex items-center gap-3">
-                <a href="#products" class="hidden sm:inline text-sm text-[var(--gray)] hover:text-white transition-colors">Products</a>
-                <a href="#coverage" class="hidden sm:inline text-sm text-[var(--gray)] hover:text-white transition-colors">Coverage</a>
-                <a href="#why-us" class="hidden sm:inline text-sm text-[var(--gray)] hover:text-white transition-colors">Why Us</a>
-                <a href="{{ url_for('auth.login') }}" class="btn-outline">Employee Login</a>
-            </div>
+            <a href="{{ url_for('auth.login') }}" class="nav-link nav-link--login" style="display:none" id="mobile-login">Login</a>
         </div>
     </nav>
 
-    {# ── Hero ── #}
-    <section class="relative overflow-hidden">
-        <div class="absolute inset-0 bg-gradient-to-br from-[var(--blue-dark)]/20 via-transparent to-[var(--gold)]/5"></div>
-        <div class="relative max-w-6xl mx-auto px-4 sm:px-6 py-20 sm:py-32">
-            <div class="max-w-2xl">
-                <p class="section-label mb-4">Northern Ontario's Trusted Distributor</p>
-                <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.1]">
-                    Candy, snacks & beverages
-                    <span class="gold-accent">delivered to your door.</span>
+    {# ══════════════════════════════════════════
+       Hero
+       ══════════════════════════════════════════ #}
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <p class="section-eyebrow">Northern Ontario's Distributor</p>
+                <h1 class="hero-title">
+                    Your shelves, stocked.<br>
+                    <span class="gold">Every&nbsp;week.</span>
                 </h1>
-                <p class="mt-6 text-lg text-[var(--gray)] leading-relaxed max-w-xl">
-                    We supply convenience stores, gas stations, and retailers across Sudbury, Sault Ste. Marie, Timmins, and surrounding communities with reliable weekly delivery.
+                <p class="hero-text">
+                    We deliver candy, snacks, and beverages to convenience stores, gas stations, and variety shops across Sudbury, Sault Ste. Marie, Timmins, and the Highway 11 corridor.
                 </p>
-                <div class="mt-8 flex flex-wrap gap-3">
-                    <a href="#contact" class="btn-primary">
-                        Get in Touch
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
-                        </svg>
-                    </a>
-                    <a href="#products" class="btn-outline">View Products</a>
+                <div class="hero-actions">
+                    <a href="#contact" class="btn btn-gold">Become a Customer</a>
+                    <a href="#products" class="btn btn-outline">View Products</a>
                 </div>
-            </div>
-        </div>
-    </section>
-
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 divider"></div>
-
-    {# ── What We Carry ── #}
-    <section id="products" class="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
-        <p class="section-label mb-2">What We Carry</p>
-        <h2 class="text-2xl sm:text-3xl font-bold tracking-tight">Everything your shelves need.</h2>
-        <p class="mt-3 text-[var(--gray)] max-w-xl">From top-selling chocolate bars to seasonal specialties, we carry the brands your customers are looking for.</p>
-
-        <div class="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {% set categories = [
-                ("Chocolate & Candy Bars", "Cadbury, Mars, Nestl&eacute;, Hershey's, and all the top sellers. Singles, king-size, and multi-packs.", "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"),
-                ("Gummy & Sour Candy", "Maynards, Haribo, Sour Patch Kids, Swedish Fish, and more in bags and peg formats.", "14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"),
-                ("Chips & Salty Snacks", "Lay's, Doritos, Pringles, Old Dutch — full range of single-serve and family sizes.", "19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"),
-                ("Beverages", "Pop, juice, water, energy drinks, and iced tea. Coca-Cola, Pepsi, Red Bull, and regional favourites.", "19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"),
-                ("Seasonal & Specialty", "Halloween, Christmas, Easter, Valentine's — we stock seasonal favourites months ahead so you're always ready.", "11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"),
-                ("Novelty & Impulse", "Lollipops, gum, mints, candy bags, and checkout counter displays designed to drive impulse sales.", "3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"),
-            ] %}
-            {% for title, desc, icon in categories %}
-            <div class="card">
-                <div class="w-10 h-10 rounded-lg bg-[var(--blue)]/10 flex items-center justify-center mb-4">
-                    <svg class="w-5 h-5 text-[var(--blue-light)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="{{ icon }}"/>
-                    </svg>
-                </div>
-                <h3 class="text-base font-semibold mb-1.5">{{ title }}</h3>
-                <p class="text-sm text-[var(--gray)] leading-relaxed">{{ desc }}</p>
-            </div>
-            {% endfor %}
-        </div>
-    </section>
-
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 divider"></div>
-
-    {# ── Coverage Area ── #}
-    <section id="coverage" class="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
-        <p class="section-label mb-2">Our Coverage Area</p>
-        <h2 class="text-2xl sm:text-3xl font-bold tracking-tight">Serving Northern Ontario, weekly.</h2>
-        <p class="mt-3 text-[var(--gray)] max-w-xl">We run scheduled routes across the region so your deliveries are predictable and on time.</p>
-
-        <div class="mt-10 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {% set regions = [
-                ("Sudbury & Area", "Greater Sudbury, Espanola, Manitoulin Island, Elliot Lake"),
-                ("Sault Ste. Marie & Area", "Sault Ste. Marie, Blind River, Thessalon, Wawa"),
-                ("Timmins & Area", "Timmins, Kapuskasing, Cochrane, Hearst"),
-                ("Highway 11 Corridor", "North Bay, Temiskaming Shores, Kirkland Lake, Englehart"),
-            ] %}
-            {% for city, towns in regions %}
-            <div class="card flex items-start gap-4">
-                <div class="w-10 h-10 rounded-lg bg-[var(--gold)]/10 flex items-center justify-center flex-shrink-0">
-                    <svg class="w-5 h-5 text-[var(--gold)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-                    </svg>
-                </div>
-                <div>
-                    <h3 class="text-base font-semibold">{{ city }}</h3>
-                    <p class="text-sm text-[var(--gray)] mt-1">{{ towns }}</p>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-    </section>
-
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 divider"></div>
-
-    {# ── Why Choose Us ── #}
-    <section id="why-us" class="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
-        <p class="section-label mb-2">Why Choose Us</p>
-        <h2 class="text-2xl sm:text-3xl font-bold tracking-tight">Built for Northern Ontario retail.</h2>
-
-        <div class="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {% set props = [
-                ("Reliable Delivery", "Scheduled weekly routes across the region. You'll know exactly when we're coming — no guesswork, no missed stops.", "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"),
-                ("Local Expertise", "We know the Northern Ontario market. We know which products sell, which seasons matter, and how to keep your shelves stocked.", "M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"),
-                ("Competitive Pricing", "Direct distributor pricing with no middlemen. Volume discounts available. Flexible payment terms for established accounts.", "12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"),
-            ] %}
-            {% for title, desc, icon in props %}
-            <div class="card">
-                <div class="w-10 h-10 rounded-lg bg-[var(--blue)]/10 flex items-center justify-center mb-4">
-                    <svg class="w-5 h-5 text-[var(--blue-light)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="{{ icon }}"/>
-                    </svg>
-                </div>
-                <h3 class="text-base font-semibold mb-1.5">{{ title }}</h3>
-                <p class="text-sm text-[var(--gray)] leading-relaxed">{{ desc }}</p>
-            </div>
-            {% endfor %}
-        </div>
-    </section>
-
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 divider"></div>
-
-    {# ── Contact / CTA ── #}
-    <section id="contact" class="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-24 text-center">
-        <p class="section-label mb-2">Get Started</p>
-        <h2 class="text-2xl sm:text-3xl font-bold tracking-tight">Ready to stock your shelves?</h2>
-        <p class="mt-3 text-[var(--gray)] max-w-lg mx-auto">Reach out and we'll set up your account. Most new customers are on a route within the week.</p>
-        <div class="mt-8 flex flex-wrap justify-center gap-3">
-            <a href="tel:+17055555555" class="btn-primary">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-                </svg>
-                Call Us
-            </a>
-            <a href="mailto:info@northernsweetsupply.ca" class="btn-outline">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                </svg>
-                Email Us
-            </a>
-        </div>
-    </section>
-
-    {# ── Footer ── #}
-    <footer class="border-t border-[var(--navy-lighter)]">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 py-10">
-            <div class="flex flex-col sm:flex-row items-center justify-between gap-6">
-                <div class="flex items-center gap-3">
-                    <img src="{{ url_for('static', filename='img/logo.png') }}" alt="" class="w-7 h-7 rounded-lg object-contain opacity-70">
+                <div class="hero-stats">
                     <div>
-                        <p class="text-sm font-semibold">Northern Sweet Supply</p>
-                        <p class="text-xs text-[var(--gray)]">Candy & Beverage Distribution — Northern Ontario</p>
+                        <div class="hero-stat-value">200+</div>
+                        <div class="hero-stat-label">Retail partners</div>
+                    </div>
+                    <div>
+                        <div class="hero-stat-value">4</div>
+                        <div class="hero-stat-label">Regions served</div>
+                    </div>
+                    <div>
+                        <div class="hero-stat-value">Weekly</div>
+                        <div class="hero-stat-label">Scheduled routes</div>
                     </div>
                 </div>
-                <div class="flex items-center gap-6 text-sm text-[var(--gray)]">
-                    <a href="#products" class="hover:text-white transition-colors">Products</a>
-                    <a href="#coverage" class="hover:text-white transition-colors">Coverage</a>
-                    <a href="#why-us" class="hover:text-white transition-colors">Why Us</a>
-                    <a href="{{ url_for('auth.login') }}" class="hover:text-white transition-colors">Employee Login</a>
+            </div>
+        </div>
+    </section>
+
+    <div class="container"><div class="divider"></div></div>
+
+    {# ══════════════════════════════════════════
+       Product Catalog
+       ══════════════════════════════════════════ #}
+    <section id="products" class="section--lg">
+        <div class="container">
+            <div class="reveal">
+                <p class="section-eyebrow">What We Carry</p>
+                <h2 class="section-title">Everything your customers want.</h2>
+                <p class="section-subtitle">From checkout counter impulse buys to full snack aisles — we carry the brands that move.</p>
+            </div>
+
+            <div class="grid-3 reveal-stagger" style="margin-top: 2.5rem;">
+                {% set products = [
+                    ("🍫", "gold", "Candy & Chocolate",
+                     "Chocolate bars, gummies, sour candy, licorice, novelty items, and more.",
+                     ["Cadbury", "Mars", "Hershey's", "Nestl&eacute;", "Haribo"]),
+                    ("🥤", "blue", "Beverages",
+                     "Pop, juice, water, energy drinks, iced tea. Singles and multi-packs.",
+                     ["Coca-Cola", "Pepsi", "Red Bull", "Monster", "Nestea"]),
+                    ("🥔", "gold", "Chips & Salty Snacks",
+                     "Chips, nuts, trail mixes, jerky, pretzels. Single-serve and family size.",
+                     ["Lay's", "Doritos", "Old Dutch", "Pringles", "Cheetos"]),
+                    ("🎃", "blue", "Seasonal & Holiday",
+                     "Easter, Halloween, Christmas, Valentine's. We stock months ahead so you're ready.",
+                     ["Easter Eggs", "Halloween Bags", "Advent Calendars", "Hearts"]),
+                    ("📦", "gold", "Bulk & Value Packs",
+                     "Case quantities, variety packs, and multi-buy formats for high-traffic stores.",
+                     ["Variety Boxes", "Counter Displays", "Case Deals"]),
+                    ("🍬", "blue", "Impulse & Checkout",
+                     "Gum, mints, lollipops, small bags, and clip-strip items for counter placement.",
+                     ["Maynards", "Sour Patch", "Trident", "Tic Tac"]),
+                ] %}
+                {% for emoji, color, title, desc, brands in products %}
+                <div class="card">
+                    <div class="card-icon card-icon--{{ color }}">{{ emoji }}</div>
+                    <h3 class="card-title">{{ title }}</h3>
+                    <p class="card-text">{{ desc }}</p>
+                    <div class="card-brands">
+                        {% for brand in brands %}
+                        <span class="card-brand-tag">{{ brand }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <p class="reveal" style="margin-top: 2rem; text-align: center; font-size: 0.875rem; color: var(--gray-400);">
+                Can't find what you're looking for? We source from multiple suppliers —
+                <a href="#contact" style="color: var(--gold); font-weight: 600;">ask us about special orders</a>.
+            </p>
+        </div>
+    </section>
+
+    {# ── Brands Bar ── #}
+    <div class="container"><div class="divider"></div></div>
+    <section class="section" style="padding-top: 3rem; padding-bottom: 3rem;">
+        <div class="container" style="text-align: center;">
+            <p style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--gray-500); margin-bottom: 1.25rem;">Brands We Carry</p>
+            <div class="brands-bar reveal-stagger">
+                {% for brand in ["Cottage Country", "Cadbury", "Mars", "Nestl&eacute;", "Hershey's",
+                                  "Lay's", "Old Dutch", "Coca-Cola", "Pepsi", "Red Bull",
+                                  "Haribo", "Maynards", "Pringles", "Doritos", "Sour Patch Kids"] %}
+                <span class="brand-badge">{{ brand }}</span>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    <div class="container"><div class="divider"></div></div>
+
+    {# ══════════════════════════════════════════
+       Retail Programs
+       ══════════════════════════════════════════ #}
+    <section id="programs" class="section--lg">
+        <div class="container">
+            <div class="reveal">
+                <p class="section-eyebrow">Retail Programs</p>
+                <h2 class="section-title">What you get as a customer.</h2>
+                <p class="section-subtitle">We make it easy to keep your shelves full and your customers happy.</p>
+            </div>
+
+            <div class="grid-2 reveal-stagger" style="margin-top: 2.5rem;">
+                {% set programs = [
+                    ("🚛", "Weekly Scheduled Delivery",
+                     "Your store is on a set route. Same day, every week. No guesswork, no missed deliveries."),
+                    ("🏪", "In-Store Display Options",
+                     "Spinners, counter displays, clip strips, and seasonal endcaps to maximize your impulse sales."),
+                    ("📅", "Seasonal Planning",
+                     "We stock Easter, Halloween, Christmas, and Valentine's months ahead so you're never caught short."),
+                    ("📝", "Flexible Ordering",
+                     "Adjust your order week to week. Add items, scale back, try new products — no commitments."),
+                    ("💰", "No Minimum Orders",
+                     "Start small. Order what makes sense for your store. We'll grow with you."),
+                    ("📊", "Account Management",
+                     "Your own rep who knows your store, your customers, and your sales patterns."),
+                ] %}
+                {% for emoji, title, desc in programs %}
+                <div class="program-item">
+                    <div class="program-icon">{{ emoji }}</div>
+                    <div>
+                        <h3 class="program-title">{{ title }}</h3>
+                        <p class="program-text">{{ desc }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <div class="container"><div class="divider"></div></div>
+
+    {# ══════════════════════════════════════════
+       Coverage Area
+       ══════════════════════════════════════════ #}
+    <section id="coverage" class="section--lg">
+        <div class="container">
+            <div class="reveal">
+                <p class="section-eyebrow">Our Coverage Area</p>
+                <h2 class="section-title">Serving Northern Ontario, weekly.</h2>
+                <p class="section-subtitle">Scheduled routes across the region. Predictable delivery you can count on.</p>
+            </div>
+
+            <div class="grid-2 reveal-stagger" style="margin-top: 2.5rem;">
+                {% set regions = [
+                    ("Sudbury & Area", "Greater Sudbury, Espanola, Manitoulin Island, Elliot Lake, Massey, Nairn Centre"),
+                    ("Sault Ste. Marie & Area", "Sault Ste. Marie, Blind River, Thessalon, Wawa, Iron Bridge, Bruce Mines"),
+                    ("Timmins & Area", "Timmins, Kapuskasing, Cochrane, Hearst, Smooth Rock Falls, Iroquois Falls"),
+                    ("Highway 11 Corridor", "North Bay, Temiskaming Shores, Kirkland Lake, Englehart, Cobalt, Latchford"),
+                ] %}
+                {% for city, towns in regions %}
+                <div class="coverage-card">
+                    <div class="coverage-dot"></div>
+                    <div>
+                        <h3 class="coverage-city">{{ city }}</h3>
+                        <p class="coverage-towns">{{ towns }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <div class="container"><div class="divider"></div></div>
+
+    {# ══════════════════════════════════════════
+       Contact / Become a Customer
+       ══════════════════════════════════════════ #}
+    <section id="contact" class="section--lg">
+        <div class="container">
+            <div class="contact-section reveal">
+                <div class="contact-grid">
+                    <div>
+                        <p class="section-eyebrow">Get Started</p>
+                        <h2 class="section-title">Ready to stock your shelves?</h2>
+                        <p class="section-subtitle" style="margin-top: 0.75rem;">
+                            Fill out the form and we'll get you set up. Most new customers are on a route within the week.
+                        </p>
+
+                        <div style="margin-top: 2rem; display: flex; flex-direction: column; gap: 1rem;">
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <div class="program-icon" style="width: 2.25rem; height: 2.25rem; font-size: 1rem;">📞</div>
+                                <div>
+                                    <div style="font-size: 0.8125rem; color: var(--gray-400);">Phone</div>
+                                    <a href="tel:+17055555555" style="font-size: 0.9375rem; font-weight: 600; color: var(--white);">705-555-5555</a>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <div class="program-icon" style="width: 2.25rem; height: 2.25rem; font-size: 1rem;">✉️</div>
+                                <div>
+                                    <div style="font-size: 0.8125rem; color: var(--gray-400);">Email</div>
+                                    <a href="mailto:info@northernsweetsupply.ca" style="font-size: 0.9375rem; font-weight: 600; color: var(--white);">info@northernsweetsupply.ca</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form action="#" method="POST" onsubmit="return false;">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="store_name">Store Name</label>
+                                <input class="form-input" type="text" id="store_name" name="store_name" placeholder="e.g. Mike's Variety">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="location">City / Town</label>
+                                <input class="form-input" type="text" id="location" name="location" placeholder="e.g. Sudbury">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="contact_name">Contact Name</label>
+                            <input class="form-input" type="text" id="contact_name" name="contact_name" placeholder="Your name">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="phone">Phone</label>
+                                <input class="form-input" type="tel" id="phone" name="phone" placeholder="705-555-1234" inputmode="tel">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="email">Email</label>
+                                <input class="form-input" type="email" id="email" name="email" placeholder="you@store.com" inputmode="email">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="message">Anything else?</label>
+                            <textarea class="form-input" id="message" name="message" rows="3" placeholder="Tell us about your store, what products you're looking for, etc."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-gold" style="width: 100%; margin-top: 0.5rem;">
+                            Request an Account
+                        </button>
+                    </form>
                 </div>
             </div>
-            <div class="mt-8 pt-6 border-t border-[var(--navy-lighter)] text-center">
-                <p class="text-xs text-[var(--gray)]">&copy; {{ now().year if now is defined else 2026 }} Northern Sweet Supply. All rights reserved.</p>
+        </div>
+    </section>
+
+    {# ══════════════════════════════════════════
+       Footer
+       ══════════════════════════════════════════ #}
+    <footer class="landing-footer">
+        <div class="container">
+            <div class="footer-top">
+                <div class="footer-brand">
+                    <img src="{{ url_for('static', filename='img/logo.png') }}" alt="">
+                    <span class="footer-brand-name">Northern Sweet Supply</span>
+                </div>
+                <div class="footer-links">
+                    <a href="#products" class="footer-link">Products</a>
+                    <a href="#programs" class="footer-link">Programs</a>
+                    <a href="#coverage" class="footer-link">Coverage</a>
+                    <a href="#contact" class="footer-link">Contact</a>
+                    <a href="{{ url_for('auth.login') }}" class="footer-link">Employee Login</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p class="footer-copy">Proudly serving Northern Ontario &middot; &copy; 2026 Northern Sweet Supply. All rights reserved.</p>
             </div>
         </div>
     </footer>
+
+    {# ── Scroll reveal (CSS-driven via IntersectionObserver) ── #}
+    <script>
+    (function() {
+        var els = document.querySelectorAll('.reveal, .reveal-stagger');
+        if (!('IntersectionObserver' in window)) {
+            els.forEach(function(el) { el.classList.add('visible'); });
+            return;
+        }
+        var observer = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+        els.forEach(function(el) { observer.observe(el); });
+    })();
+    </script>
 
 </body>
 </html>
