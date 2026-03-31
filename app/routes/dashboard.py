@@ -6,6 +6,7 @@ from decimal import Decimal
 from flask import Blueprint, render_template
 from flask_login import login_required, current_user
 from sqlalchemy import func
+from sqlalchemy.orm import joinedload
 
 from app import db
 from app.helpers import TZ_DISPLAY
@@ -71,6 +72,7 @@ def index():
     # Today's route stops with customer info
     todays_stops = (
         RouteStop.query
+        .options(joinedload(RouteStop.customer))
         .join(Customer)
         .filter(RouteStop.route_date == today)
         .order_by(RouteStop.sequence)

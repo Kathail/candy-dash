@@ -1,12 +1,10 @@
-"""CSV export routes for customers, payments, and route history (admin only)."""
-
-from datetime import datetime, timezone
+"""Export routes for customers, payments, and route history (admin only)."""
 
 from flask import Blueprint, request
 from flask_login import login_required
 
 from app import db
-from app.helpers import admin_required, csv_response
+from app.helpers import admin_required, export_response, parse_date_range_optional
 from app.models import Customer, Payment, RouteStop
 
 bp = Blueprint("exports", __name__, url_prefix="/exports")
@@ -19,32 +17,11 @@ def before_request():
     pass
 
 
-
-
-def _parse_date_range():
-    """Parse optional start_date and end_date from query params."""
-    start_str = request.args.get("start_date", "")
-    end_str = request.args.get("end_date", "")
-
-    try:
-        start = datetime.strptime(start_str, "%Y-%m-%d").replace(tzinfo=timezone.utc)
-    except (ValueError, TypeError):
-        start = None
-
-    try:
-        end = datetime.strptime(end_str, "%Y-%m-%d").replace(
-            hour=23, minute=59, second=59, microsecond=999999, tzinfo=timezone.utc
-        )
-    except (ValueError, TypeError):
-        end = None
-
-    return start, end
-
-
 @bp.route("/customers")
 @admin_required
 def customers():
-    """CSV export of all customers."""
+    """Export all customers."""
+    fmt = request.args.get("format", "csv").lower()
     all_customers = Customer.query.order_by(Customer.name).all()
 
     headers = [
@@ -68,14 +45,15 @@ def customers():
         for c in all_customers
     ]
 
-    return csv_response(rows, headers, "customers_export.csv")
+    return export_response(rows, headers, "customers_export", fmt, title="Customers")
 
 
 @bp.route("/payments")
 @admin_required
 def payments():
-    """CSV export of payments, optionally filtered by date range."""
-    start, end = _parse_date_range()
+    """Export payments, optionally filtered by date range."""
+    fmt = request.args.get("format", "csv").lower()
+    start, end = parse_date_range_optional()
 
     query = (
         Payment.query
@@ -114,16 +92,16 @@ def payments():
         filename += f"_from_{start.strftime('%Y%m%d')}"
     if end:
         filename += f"_to_{end.strftime('%Y%m%d')}"
-    filename += ".csv"
 
-    return csv_response(rows, headers, filename)
+    return export_response(rows, headers, filename, fmt, title="Payments")
 
 
 @bp.route("/route-history")
 @admin_required
 def route_history():
-    """CSV export of route stops, optionally filtered by date range."""
-    start, end = _parse_date_range()
+    """Export route stops, optionally filtered by date range."""
+    fmt = request.args.get("format", "csv").lower()
+    start, end = parse_date_range_optional()
 
     query = (
         RouteStop.query
@@ -163,6 +141,5 @@ def route_history():
         filename += f"_from_{start.strftime('%Y%m%d')}"
     if end:
         filename += f"_to_{end.strftime('%Y%m%d')}"
-    filename += ".csv"
 
-    return csv_response(rows, headers, filename)
+    return export_response(rows, headers, filename, fmt, title="Route History")

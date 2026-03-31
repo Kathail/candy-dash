@@ -87,7 +87,7 @@
       </svg>
       {% if completed_stops == total_stops %}View Summary{% else %}Continue Route{% endif %}
     </a>
-    <button @click="$dispatch('open-payment-modal', {})"
+    <button onclick="window.dispatchEvent(new CustomEvent('open-payment-modal', { detail: {} }))"
             class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white text-sm font-semibold rounded-xl hover:bg-green-500 transition-colors min-h-[48px] btn-press">
       <span aria-hidden="true" class="text-sm font-black ">$</span>
       Record Payment
@@ -109,7 +109,7 @@
          class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-500 transition-colors min-h-[44px] btn-press">
         Plan Route
       </a>
-      <button @click="$dispatch('open-payment-modal', {})"
+      <button onclick="window.dispatchEvent(new CustomEvent('open-payment-modal', { detail: {} }))"
               class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-xl text-sm font-semibold hover:bg-green-500 transition-colors min-h-[44px] btn-press">
         Record Payment
       </button>

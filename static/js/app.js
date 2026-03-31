@@ -117,6 +117,24 @@
         return bal + sold - paid;
       },
 
+      trapFocus(e) {
+        const modal = this.$el.querySelector(".theme-card");
+        if (!modal) return;
+        const focusable = modal.querySelectorAll(
+          'input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (!focusable.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      },
+
       openModal(detail) {
         this.isOpen = true;
         if (detail && detail.customerId && detail.customerName) {
@@ -196,7 +214,13 @@
               detail: { message: "Transaction recorded. Invoice #" + data.receipt_number, category: "success" },
             }));
             this.close();
-            window.location.reload();
+            // Trigger HTMX to refresh dynamic content, fall back to reload
+            const main = document.querySelector("[hx-get], main");
+            if (main && main.getAttribute("hx-get")) {
+              htmx.trigger(main, "paymentRecorded");
+            } else {
+              window.location.reload();
+            }
           } else {
             document.dispatchEvent(new CustomEvent("show-toast", {
               detail: { message: data.error || "Failed to record transaction.", category: "error" },
@@ -233,30 +257,10 @@
       }
     });
 
-    // Confirm dialogs for [data-confirm] elements
-    document.body.addEventListener("click", (e) => {
-      const btn = e.target.closest("[data-confirm]");
-      if (!btn) return;
-      if (!confirm(btn.getAttribute("data-confirm") || "Are you sure?")) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-    });
-
     // Keyboard shortcuts
     document.addEventListener("keydown", (e) => {
-      // Ignore when typing in inputs
       const tag = (e.target.tagName || "").toLowerCase();
       const isInput = tag === "input" || tag === "textarea" || tag === "select" || e.target.isContentEditable;
-
-      // Escape always works (closes modals)
-      if (e.key === "Escape") {
-        document.querySelectorAll('.modal:not(.hidden), [role="dialog"]:not(.hidden)').forEach((m) => {
-          m.classList.add("hidden");
-        });
-        return;
-      }
-
       if (isInput) return;
 
       // "/" focuses global search
@@ -265,7 +269,6 @@
         const searchEl = document.querySelector("#desktop-search input[type=search], #mobile-search input[type=search]");
         if (searchEl) searchEl.focus();
       }
-
     });
 
     // Unregister any leftover service workers

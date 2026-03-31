@@ -2,6 +2,7 @@
 
 import csv
 import io
+from collections import OrderedDict
 
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import login_required, current_user
@@ -68,7 +69,6 @@ def index():
                 last_notes[r.customer_id] = r.description
 
     # Group by city
-    from collections import OrderedDict
     grouped = OrderedDict()
     for lead in leads:
         city = lead.city or "No City"

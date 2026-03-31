@@ -5,9 +5,11 @@ from datetime import date
 from flask import Blueprint, jsonify, request
 from flask_login import login_required
 
+from sqlalchemy.orm import joinedload
+
 from app import db
-from app.helpers import staff_required
-from app.models import Customer, RouteStop
+from app.helpers import staff_required, format_date
+from app.models import Customer, Payment, RouteStop
 
 bp = Blueprint("api", __name__, url_prefix="/api")
 
@@ -31,9 +33,6 @@ def customer_search():
 
     # Search receipts if query looks like a receipt number
     if q.upper().startswith("RCP") or q.isdigit():
-        from sqlalchemy.orm import joinedload
-        from app.helpers import format_date
-        from app.models import Payment
         payments = (
             Payment.query
             .options(joinedload(Payment.customer))
@@ -80,6 +79,7 @@ def route_today():
 
     stops = (
         RouteStop.query
+        .options(joinedload(RouteStop.customer))
         .filter(RouteStop.route_date == today)
         .order_by(RouteStop.sequence)
         .all()

@@ -232,194 +232,6 @@
     {% endif %}
   </div>
 
-  {# -- Invoices Section -- #}
-  <div class="animate-fade-in-up" x-data="{ showInvoiceForm: false }">
-    <div class="flex items-center gap-2 mb-2">
-      <div class="w-5 h-5 rounded-md bg-amber-500/15 flex items-center justify-center">
-        <svg aria-hidden="true" class="w-3 h-3 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-        </svg>
-      </div>
-      <h2 class="text-xs font-bold text-amber-400 uppercase tracking-wider">Invoices</h2>
-      <div class="flex-1 h-px bg-gray-700"></div>
-      {% if current_user.can_write %}
-      <button @click="showInvoiceForm = !showInvoiceForm" class="text-2xs text-indigo-400 hover:text-indigo-300 font-medium btn-press">
-        <span x-text="showInvoiceForm ? 'Cancel' : '+ Add'"></span>
-      </button>
-      {% endif %}
-    </div>
-    <div x-show="showInvoiceForm" x-transition x-cloak class="mb-2"
-         x-data="{
-           invPt: 'cash',
-           items: [{ item_number: '', description: '', quantity: '1', weight: '', unit_price: '' }],
-           addItem() { this.items.push({ item_number: '', description: '', quantity: '1', weight: '', unit_price: '' }) },
-           removeItem(i) { if (this.items.length > 1) this.items.splice(i, 1) },
-           get subtotal() { return this.items.reduce((s, it) => s + (parseFloat(it.quantity || 0) * parseFloat(it.unit_price || 0)), 0) }
-         }">
-      <form method="POST" action="{{ url_for('customers.add_invoice', id=customer.id) }}" class="bg-panel rounded-xl border border-app p-4 space-y-3">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label for="invoice-number" class="block text-2xs font-semibold text-gray-500 uppercase mb-1">Invoice # (optional)</label>
-            <input type="text" name="invoice_number" id="invoice-number" placeholder="INV-001"
-                   class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 text-sm min-h-[44px]">
-          </div>
-          <div>
-            <label for="invoice-date" class="block text-2xs font-semibold text-gray-500 uppercase mb-1">Date</label>
-            <input type="date" name="invoice_date" id="invoice-date" value="{{ today if today is defined else '' }}"
-                   class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 text-sm min-h-[44px]">
-          </div>
-        </div>
-        <div>
-          <label for="invoice-description" class="block text-2xs font-semibold text-gray-500 uppercase mb-1">Description (optional)</label>
-          <input type="text" name="description" id="invoice-description" placeholder="Optional"
-                 class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 text-sm min-h-[44px]">
-        </div>
-
-        {# Line items #}
-        <div>
-          <div class="flex items-center justify-between mb-2">
-            <label class="block text-2xs font-semibold text-gray-500 uppercase">Line Items</label>
-            <button type="button" @click="addItem()" class="text-2xs text-indigo-400 hover:text-indigo-300 font-medium btn-press">+ Add Item</button>
-          </div>
-          <template x-for="(item, idx) in items" :key="idx">
-            <div class="grid grid-cols-12 gap-2 mb-2 items-end">
-              <div class="col-span-2">
-                <label x-show="idx === 0" class="block text-2xs text-gray-600 mb-0.5">Item #</label>
-                <input type="text" :name="'item_number_' + idx" x-model="item.item_number" placeholder="#"
-                       class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 text-xs min-h-[40px] px-2">
-              </div>
-              <div class="col-span-3">
-                <label x-show="idx === 0" class="block text-2xs text-gray-600 mb-0.5">Desc</label>
-                <input type="text" :name="'item_desc_' + idx" x-model="item.description" placeholder="Item"
-                       class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 text-xs min-h-[40px] px-2">
-              </div>
-              <div class="col-span-1">
-                <label x-show="idx === 0" class="block text-2xs text-gray-600 mb-0.5">Qty</label>
-                <input type="number" :name="'item_qty_' + idx" x-model="item.quantity" step="0.01" min="0" placeholder="1"
-                       class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 text-xs min-h-[40px] px-2">
-              </div>
-              <div class="col-span-2">
-                <label x-show="idx === 0" class="block text-2xs text-gray-600 mb-0.5">Weight</label>
-                <input type="text" :name="'item_weight_' + idx" x-model="item.weight" placeholder="e.g. 5kg"
-                       class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 text-xs min-h-[40px] px-2">
-              </div>
-              <div class="col-span-2">
-                <label x-show="idx === 0" class="block text-2xs text-gray-600 mb-0.5">Price</label>
-                <input type="number" :name="'item_price_' + idx" x-model="item.unit_price" step="0.01" min="0" placeholder="$0.00"
-                       class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 text-xs min-h-[40px] px-2">
-              </div>
-              <div class="col-span-2 flex items-center gap-1">
-                <span class="text-xs text-gray-400" x-text="'$' + (parseFloat(item.quantity || 0) * parseFloat(item.unit_price || 0)).toFixed(2)"></span>
-                <button type="button" x-show="items.length > 1" @click="removeItem(idx)" class="text-red-400 hover:text-red-300 p-1">
-                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                </button>
-              </div>
-            </div>
-          </template>
-          <input type="hidden" name="item_count" :value="items.length">
-        </div>
-
-        {# Totals #}
-        <div class="text-right text-sm space-y-1 border-t border-gray-700 pt-2">
-          <p class="text-gray-200 font-bold">Total: <span x-text="'$' + subtotal.toFixed(2)"></span></p>
-        </div>
-        <input type="hidden" name="amount" :value="subtotal.toFixed(2)">
-
-        <div>
-          <label class="block text-2xs font-semibold text-gray-500 uppercase mb-1">Payment Type</label>
-          <div class="flex flex-wrap gap-1.5">
-            <input type="hidden" name="payment_type" :value="invPt">
-            {% for val, label in [('cash', 'Cash'), ('cheque', 'Cheque'), ('credit', 'Credit'), ('debit', 'Debit'), ('etransfer', 'E-Transfer'), ('other', 'Other')] %}
-            <button type="button" @click="invPt = '{{ val }}'"
-                    :class="invPt === '{{ val }}' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-gray-700 text-gray-400 border-gray-600 hover:bg-gray-600'"
-                    class="px-2.5 py-1 text-2xs font-semibold rounded-lg border transition-colors btn-press">
-              {{ label }}
-            </button>
-            {% endfor %}
-          </div>
-        </div>
-        <button type="submit" class="w-full px-4 py-2.5 bg-amber-600 text-white text-sm font-semibold rounded-xl hover:bg-amber-500 transition-colors btn-press min-h-[44px]">
-          Add Invoice
-        </button>
-      </form>
-    </div>
-    {% if invoices %}
-    <div class="bg-panel rounded-xl border border-app overflow-hidden divide-y divide-gray-700/60">
-      {% for inv in invoices %}
-      <div x-data="{ showPay: false, payType: 'cash' }">
-      <div class="flex items-center gap-3 px-4 py-3">
-        <a href="{{ url_for('customers.invoice_pdf', id=customer.id, invoice_id=inv.id) }}" target="_blank" class="p-1.5 text-blue-500/70 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors btn-press flex-shrink-0" title="View PDF">
-          <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-          </svg>
-        </a>
-        <div class="flex-1 min-w-0">
-          <div class="flex items-center gap-2">
-            <p class="text-sm font-medium text-gray-200">${{ '{:,.2f}'.format(inv.amount) }}</p>
-            {% if inv.invoice_number %}
-            <span class="text-2xs text-gray-500">#{{ inv.invoice_number }}</span>
-            {% endif %}
-            <span class="px-1.5 py-0.5 text-2xs font-semibold rounded-full
-                         {{ 'bg-green-500/20 text-green-400' if inv.status == 'paid' else 'bg-amber-500/20 text-amber-400' }}">
-              {{ inv.status }}
-            </span>
-            {% if inv.payment_type %}
-            <span class="px-1.5 py-0.5 text-2xs font-semibold rounded-full bg-gray-700 text-muted">{{ inv.payment_type }}</span>
-            {% endif %}
-          </div>
-          <p class="text-2xs text-gray-500 mt-0.5">{{ inv.invoice_date|dateformat }}{% if inv.description %} · {{ inv.description }}{% endif %}</p>
-        </div>
-        {% if current_user.can_write %}
-        <div class="flex items-center gap-1">
-          {% if inv.status == 'unpaid' %}
-          <button type="button" @click="showPay = !showPay" class="p-2 text-green-500/70 hover:text-green-400 hover:bg-green-500/10 rounded-lg transition-colors btn-press min-h-[44px] min-w-[44px] inline-flex items-center justify-center" title="Mark paid">
-            <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-            </svg>
-          </button>
-          {% endif %}
-          <form method="POST" action="{{ url_for('customers.delete_invoice', id=customer.id, invoice_id=inv.id) }}"
-                onsubmit="return confirm('Delete this invoice? Balance will be adjusted.')">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="p-2 text-gray-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors btn-press min-h-[44px] min-w-[44px] inline-flex items-center justify-center" title="Delete invoice" aria-label="Delete invoice">
-              <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-              </svg>
-            </button>
-          </form>
-        </div>
-        {% endif %}
-        {# Payment type pills (shown when checkmark clicked) #}
-        {% if inv.status == 'unpaid' and current_user.can_write %}
-        <div x-show="showPay" x-transition x-cloak class="px-4 pb-3 border-t border-gray-700/50 mt-1 pt-2">
-          <form method="POST" action="{{ url_for('customers.mark_invoice_paid', id=customer.id, invoice_id=inv.id) }}">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <input type="hidden" name="payment_type" :value="payType">
-            <div class="flex flex-wrap gap-1.5 mb-2">
-              {% for val, label in [('cash', 'Cash'), ('cheque', 'Cheque'), ('credit', 'Credit'), ('debit', 'Debit'), ('etransfer', 'E-Transfer'), ('other', 'Other')] %}
-              <button type="button" @click="payType = '{{ val }}'"
-                      :class="payType === '{{ val }}' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-gray-700 text-gray-400 border-gray-600 hover:bg-gray-600'"
-                      class="px-2.5 py-1 text-2xs font-semibold rounded-lg border transition-colors btn-press">
-                {{ label }}
-              </button>
-              {% endfor %}
-            </div>
-            <button type="submit" class="w-full px-3 py-2 bg-green-600 text-white text-xs font-semibold rounded-xl hover:bg-green-500 transition-colors btn-press min-h-[44px]">
-              Mark Paid
-            </button>
-          </form>
-        </div>
-        {% endif %}
-      </div>
-      </div>
-      {% endfor %}
-    </div>
-    {% else %}
-    <p class="text-sm text-gray-600 px-1">No invoices yet.</p>
-    {% endif %}
-  </div>
-
   <!-- Tabs -->
   <div x-data="{ tab: 'payments' }" class="animate-fade-in-up">
     <!-- Tab Headers -->
@@ -430,8 +242,8 @@
                 aria-controls="panel-payments" id="tab-payments"
                 :class="tab === 'payments' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-300 hover:border-gray-600'"
                 class="btn-press whitespace-nowrap pb-3 px-1 border-b-2 text-sm font-medium transition-colors">
-          Payments
-          <span class="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-gray-700 text-muted">{{ payments|length }}</span>
+          Transactions
+          <span class="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-gray-700 text-muted">{{ transactions|length }}</span>
         </button>
         <button @click="tab = 'activity'" role="tab"
                 :aria-selected="(tab === 'activity').toString()"
@@ -452,84 +264,113 @@
       </div>
     </div>
 
-    <!-- Payment History Tab -->
+    <!-- Transactions Tab (payments + standalone invoices, unified) -->
     <div x-show="tab === 'payments'" id="panel-payments" role="tabpanel" aria-labelledby="tab-payments" class="mt-4">
-      {% if payments %}
-      <div class="bg-panel rounded-xl shadow-sm border border-app overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="w-full">
-            <thead>
-              <tr class="border-b border-app bg-app">
-                <th class="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Date</th>
-                <th class="text-right px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Sold / Paid</th>
-                <th class="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Invoice #</th>
-                <th class="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Type</th>
-                <th class="text-right px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider hidden sm:table-cell">Previous Bal.</th>
-                <th class="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider hidden md:table-cell">Recorded By</th>
-                <th class="text-right px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-700">
-              {% for payment in payments %}
-              <tr class="hover:bg-gray-700">
-                <td class="px-4 py-3 text-sm text-gray-100">
-                  {{ payment.payment_date|dateformat }}<br>
-                  <span class="text-2xs text-gray-500">{{ payment.payment_date|dateformat('%I:%M %p') }}</span>
-                </td>
-                <td class="px-4 py-3 text-sm font-semibold text-right">
-                  {% if payment.amount_sold and payment.amount_sold > 0 %}
-                  <span class="text-amber-400">{{ payment.amount_sold|currency }}</span>
-                  {% endif %}
-                  {% if payment.amount > 0 %}
-                  {% if payment.amount_sold and payment.amount_sold > 0 %}<br>{% endif %}
-                  <span class="text-green-400">{{ payment.amount|currency }}</span>
-                  {% endif %}
-                  {% if (not payment.amount or payment.amount == 0) and (not payment.amount_sold or payment.amount_sold == 0) %}
-                  <span class="text-gray-500">$0.00</span>
-                  {% endif %}
-                </td>
-                <td class="px-4 py-3 text-sm font-mono">
-                  <a href="{{ url_for('customers.payment_receipt_pdf', id=customer.id, payment_id=payment.id) }}"
-                     target="_blank"
-                     class="text-indigo-400 hover:text-indigo-300 hover:underline transition-colors">{{ payment.receipt_number }}</a>
-                </td>
-                <td class="px-4 py-3">
-                  {% if payment.payment_type %}
-                  <span class="px-1.5 py-0.5 text-2xs font-semibold rounded-full bg-gray-700 text-muted">{{ payment.payment_type }}</span>
-                  {% endif %}
-                </td>
-                <td class="px-4 py-3 text-sm text-gray-500 text-right hidden sm:table-cell">{{ payment.previous_balance|currency }}</td>
-                <td class="px-4 py-3 text-sm text-gray-500 hidden md:table-cell">{{ payment.recorder.username if payment.recorder else '-' }}</td>
-                <td class="px-4 py-3 text-right">
-                  <div class="flex items-center justify-end gap-2">
-                    <a href="{{ url_for('route.receipts_zip', date_str=payment.payment_date.strftime('%Y-%m-%d')) }}"
-                       class="text-indigo-400 hover:text-indigo-300 btn-press transition-colors" title="Download receipt">
-                      <svg class="w-4 h-4" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-                      </svg>
-                    </a>
-                    {% if current_user.is_admin or current_user.role == 'owner' %}
-                    <form method="POST" action="{{ url_for('customers.delete_payment', id=customer.id, payment_id=payment.id) }}">
-                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                      <button type="submit" class="text-red-400 hover:text-red-300 btn-press transition-colors" aria-label="Delete payment" title="Delete payment"
-                              onclick="return confirm({{ ('Delete payment ' ~ payment.receipt_number ~ '? This will restore ' ~ (payment.amount|currency) ~ ' to the customer balance.')|tojson }})">
-                        <svg class="w-4 h-4" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                        </svg>
-                      </button>
-                    </form>
-                    {% endif %}
-                  </div>
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+      {% if transactions %}
+      <div class="bg-panel rounded-xl shadow-sm border border-app overflow-hidden divide-y divide-gray-700/60">
+        {% for txn in transactions %}
+
+        {% if txn.type == 'payment' %}
+        {% set payment = txn.payment %}
+        <div class="flex items-center gap-3 px-4 py-3 hover:bg-gray-700/30 transition-colors">
+          <div class="flex-shrink-0 w-16 text-center">
+            <p class="text-xs font-bold text-gray-300">{{ payment.payment_date|dateformat('%b %d') }}</p>
+            <p class="text-2xs text-gray-500">{{ payment.payment_date|dateformat('%I:%M %p') }}</p>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+              {% if payment.amount_sold and payment.amount_sold > 0 %}
+              <span class="text-sm font-semibold text-amber-400">Sold {{ payment.amount_sold|currency }}</span>
+              {% endif %}
+              {% if payment.amount and payment.amount > 0 %}
+              <span class="text-sm font-semibold text-green-400">Paid {{ payment.amount|currency }}</span>
+              {% endif %}
+              {% if payment.payment_type %}
+              <span class="px-1.5 py-0.5 text-2xs font-semibold rounded-full bg-gray-700 text-muted">{{ payment.payment_type }}</span>
+              {% endif %}
+            </div>
+            <p class="text-2xs text-gray-500 mt-0.5">Balance: <span class="{{ 'text-amber-400' if txn.balance_after > 0 else 'text-green-400' }}">{{ txn.balance_after|currency }}</span>{% if payment.notes %} &middot; {{ payment.notes }}{% endif %}</p>
+          </div>
+          <div class="flex items-center gap-1.5 flex-shrink-0">
+            <a href="{{ url_for('customers.payment_receipt_pdf', id=customer.id, payment_id=payment.id) }}" target="_blank"
+               class="p-2 text-indigo-400/70 hover:text-indigo-300 hover:bg-indigo-500/10 rounded-lg transition-colors btn-press" title="Receipt PDF">
+              <svg class="w-4 h-4" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+              </svg>
+            </a>
+            {% if current_user.is_admin or current_user.role == 'owner' %}
+            <form method="POST" action="{{ url_for('customers.delete_payment', id=customer.id, payment_id=payment.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="p-2 text-gray-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors btn-press" aria-label="Delete payment"
+                      onclick="return confirm({{ ('Delete payment ' ~ payment.receipt_number ~ '? Balance will be restored.')|tojson }})">
+                <svg class="w-4 h-4" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+              </button>
+            </form>
+            {% endif %}
+          </div>
         </div>
+
+        {% elif txn.type == 'invoice' %}
+        {% set inv = txn.invoice %}
+        <div class="flex items-center gap-3 px-4 py-3 hover:bg-gray-700/30 transition-colors" x-data="{ showPay: false, payType: 'cash' }">
+          <div class="flex-shrink-0 w-16 text-center">
+            <p class="text-xs font-bold text-gray-300">{{ inv.invoice_date|dateformat('%b %d') }}</p>
+            <p class="text-2xs text-amber-400">invoice</p>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-sm font-semibold text-amber-400">{{ inv.amount|currency }}</span>
+              <span class="px-1.5 py-0.5 text-2xs font-semibold rounded-full {{ 'bg-green-500/20 text-green-400' if inv.status == 'paid' else 'bg-amber-500/20 text-amber-400' }}">{{ inv.status }}</span>
+              {% if inv.invoice_number %}<span class="text-2xs text-gray-500">#{{ inv.invoice_number }}</span>{% endif %}
+            </div>
+            <p class="text-2xs text-gray-500 mt-0.5">{% if inv.description %}{{ inv.description }}{% else %}Invoice{% endif %}</p>
+          </div>
+          <div class="flex items-center gap-1.5 flex-shrink-0">
+            <a href="{{ url_for('customers.invoice_pdf', id=customer.id, invoice_id=inv.id) }}" target="_blank"
+               class="p-2 text-indigo-400/70 hover:text-indigo-300 hover:bg-indigo-500/10 rounded-lg transition-colors btn-press" title="Invoice PDF">
+              <svg class="w-4 h-4" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+              </svg>
+            </a>
+            {% if inv.status == 'unpaid' and current_user.can_write %}
+            <button type="button" @click="showPay = !showPay" class="p-2 text-green-500/70 hover:text-green-400 hover:bg-green-500/10 rounded-lg transition-colors btn-press" title="Mark paid">
+              <svg class="w-4 h-4" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            </button>
+            {% endif %}
+            {% if current_user.is_admin or current_user.role == 'owner' %}
+            <form method="POST" action="{{ url_for('customers.delete_invoice', id=customer.id, invoice_id=inv.id) }}" onsubmit="return confirm('Delete this invoice? Balance will be adjusted.')">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="p-2 text-gray-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors btn-press" aria-label="Delete invoice">
+                <svg class="w-4 h-4" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              </button>
+            </form>
+            {% endif %}
+          </div>
+          {# Inline mark-paid form #}
+          {% if inv.status == 'unpaid' and current_user.can_write %}
+          <div x-show="showPay" x-transition x-cloak class="w-full px-4 pb-3 border-t border-gray-700/50 pt-2 mt-1">
+            <form method="POST" action="{{ url_for('customers.mark_invoice_paid', id=customer.id, invoice_id=inv.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="payment_type" :value="payType">
+              <div class="flex flex-wrap gap-1.5 mb-2">
+                {% for val, label in [('cash', 'Cash'), ('cheque', 'Cheque'), ('credit', 'Credit'), ('debit', 'Debit'), ('etransfer', 'E-Transfer')] %}
+                <button type="button" @click="payType = '{{ val }}'" :class="payType === '{{ val }}' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-gray-700 text-gray-400 border-gray-600'" class="px-2.5 py-1 text-2xs font-semibold rounded-lg border transition-colors btn-press">{{ label }}</button>
+                {% endfor %}
+              </div>
+              <button type="submit" class="w-full px-3 py-2 bg-green-600 text-white text-xs font-semibold rounded-xl hover:bg-green-500 transition-colors btn-press min-h-[44px]">Mark Paid</button>
+            </form>
+          </div>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        {% endfor %}
       </div>
       {% else %}
       <div class="bg-panel rounded-xl shadow-sm border border-app p-8 text-center">
-        <p class="text-sm text-gray-500">No payments recorded yet.</p>
+        <p class="text-sm text-gray-500">No transactions yet.</p>
       </div>
       {% endif %}
     </div>

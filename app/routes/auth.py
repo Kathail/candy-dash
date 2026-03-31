@@ -1,11 +1,14 @@
 """Authentication routes: login, logout, change password."""
 
+from datetime import datetime, timezone
+
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required, login_user, logout_user
+from sqlalchemy import func
 
 from app import db, limiter
 from app.helpers import safe_redirect, audit
-from app.models import User
+from app.models import User, Payment, RouteStop
 
 bp = Blueprint("auth", __name__, url_prefix="")
 
@@ -73,10 +76,6 @@ def logout():
 @login_required
 def profile():
     """User's own profile page."""
-    from app.models import Payment, RouteStop, ActivityLog
-    from sqlalchemy import func
-    from datetime import datetime, timezone
-
     # Stats for this user
     payments_recorded = Payment.query.filter_by(recorded_by=current_user.id).count()
     stops_completed = RouteStop.query.filter_by(created_by=current_user.id, completed=True).count()

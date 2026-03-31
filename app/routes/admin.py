@@ -221,6 +221,15 @@ def import_csv():
         flash("Uploaded file must be a .csv file.", "error")
         return redirect(url_for("admin.import_csv"))
 
+    # Limit CSV file size to 2 MB to prevent DoS
+    MAX_CSV_BYTES = 2 * 1024 * 1024
+    csv_file.seek(0, 2)
+    file_size = csv_file.tell()
+    csv_file.seek(0)
+    if file_size > MAX_CSV_BYTES:
+        flash("CSV file is too large (max 2 MB).", "error")
+        return redirect(url_for("admin.import_csv"))
+
     import_as = request.form.get("import_as", "customer")
     mode = request.form.get("mode", "skip")
 

@@ -117,6 +117,147 @@ def csv_response(rows, headers, filename):
     )
 
 
+def parse_date_range(max_days=366):
+    """Parse start_date and end_date from query params with validation.
+
+    Enforces start <= end, caps range at max_days, and prevents future end dates.
+    Returns (start, end) as timezone-aware datetimes.
+    """
+    from datetime import timedelta
+
+    start_str = request.args.get("start_date", "")
+    end_str = request.args.get("end_date", "")
+
+    try:
+        start = datetime.strptime(start_str, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+    except (ValueError, TypeError):
+        today = date.today()
+        start = datetime(today.year, today.month, 1, tzinfo=timezone.utc)
+
+    try:
+        end = datetime.strptime(end_str, "%Y-%m-%d").replace(
+            hour=23, minute=59, second=59, microsecond=999999, tzinfo=timezone.utc
+        )
+    except (ValueError, TypeError):
+        end = datetime.now(timezone.utc)
+
+    now = datetime.now(timezone.utc)
+    if end > now:
+        end = now
+
+    if start > end:
+        start, end = end.replace(hour=0, minute=0, second=0, microsecond=0), \
+                     start.replace(hour=23, minute=59, second=59, microsecond=999999)
+
+    max_start = end - timedelta(days=max_days)
+    if start < max_start:
+        start = max_start.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    return start, end
+
+
+def parse_date_range_optional():
+    """Parse optional start_date and end_date from query params.
+
+    Returns (start, end) where either may be None if not provided.
+    """
+    start_str = request.args.get("start_date", "")
+    end_str = request.args.get("end_date", "")
+
+    try:
+        start = datetime.strptime(start_str, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+    except (ValueError, TypeError):
+        start = None
+
+    try:
+        end = datetime.strptime(end_str, "%Y-%m-%d").replace(
+            hour=23, minute=59, second=59, microsecond=999999, tzinfo=timezone.utc
+        )
+    except (ValueError, TypeError):
+        end = None
+
+    return start, end
+
+
+def xlsx_response(rows, headers, filename):
+    """Build an Excel download response using openpyxl."""
+    try:
+        from openpyxl import Workbook
+    except ImportError:
+        from flask import Response
+        return Response("openpyxl is not installed.", status=500)
+
+    buf = io.BytesIO()
+    wb = Workbook()
+    ws = wb.active
+    ws.append(headers)
+    for row in rows:
+        ws.append([sanitize_csv_value(cell) for cell in row])
+    wb.save(buf)
+    buf.seek(0)
+    safe_filename = filename.replace('"', "").replace("\r", "").replace("\n", "")
+    from flask import Response
+    return Response(
+        buf.getvalue(),
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{safe_filename}"'},
+    )
+
+
+def pdf_table_response(rows, headers, filename, title=None):
+    """Build a PDF table download using reportlab."""
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=letter, topMargin=0.5 * inch)
+    styles = getSampleStyleSheet()
+    elements = []
+
+    if title:
+        title_style = ParagraphStyle("TableTitle", parent=styles["Heading1"], fontSize=16, alignment=1)
+        elements.append(Paragraph(title, title_style))
+        elements.append(Spacer(1, 0.3 * inch))
+
+    # Build table data with header row
+    table_data = [headers]
+    for row in rows:
+        table_data.append([str(sanitize_csv_value(cell)) for cell in row])
+
+    # Auto column widths (evenly distributed)
+    ncols = len(headers)
+    col_width = 7.0 * inch / max(ncols, 1)
+    table = Table(table_data, colWidths=[col_width] * ncols)
+    table.setStyle(TableStyle([
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (-1, 0), 9),
+        ("FONTSIZE", (0, 1), (-1, -1), 8),
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#374151")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("LINEBELOW", (0, 0), (-1, 0), 1, colors.HexColor("#4b5563")),
+        ("TOPPADDING", (0, 0), (-1, -1), 4),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f3f4f6")]),
+    ]))
+    elements.append(table)
+
+    doc.build(elements)
+    buf.seek(0)
+    safe_filename = filename.replace('"', "").replace("\r", "").replace("\n", "")
+    from flask import Response
+    return Response(
+        buf.getvalue(),
+        mimetype="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{safe_filename}"'},
+    )
+
+
+def export_response(rows, headers, filename_base, fmt="csv", title=None):
+    """Return rows in the requested format (csv, xlsx, or pdf)."""
+    if fmt == "xlsx":
+        return xlsx_response(rows, headers, f"{filename_base}.xlsx")
+    elif fmt == "pdf":
+        return pdf_table_response(rows, headers, f"{filename_base}.pdf", title=title)
+    return csv_response(rows, headers, f"{filename_base}.csv")
+
+
 def generate_receipt_number(payment_date=None, max_retries=5):
     """Generate a unique invoice number in format INV-YYYYMMDD-XXXX.
 

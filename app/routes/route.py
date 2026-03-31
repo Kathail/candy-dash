@@ -15,7 +15,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 
 from app import db
-from app.models import Customer, RouteStop, Payment, ActivityLog
+from app.models import Customer, Invoice, RouteStop, Payment, ActivityLog
 from app.helpers import generate_receipt_pdf, generate_receipt_number, audit
 import logging
 
@@ -37,6 +37,7 @@ def index():
 
     stops = (
         RouteStop.query
+        .options(joinedload(RouteStop.customer))
         .join(Customer)
         .filter(RouteStop.route_date == route_date)
         .order_by(Customer.city, RouteStop.sequence)
@@ -173,6 +174,20 @@ def complete_stop(id):
             )
             db.session.add(payment)
 
+            # Auto-create invoice when a sale is recorded (consistent with record_payment)
+            if amount_sold > 0:
+                invoice = Invoice(
+                    customer_id=customer.id,
+                    invoice_number=receipt_number,
+                    amount=amount_sold,
+                    invoice_date=date.today(),
+                    description=request.form.get("payment_notes", "").strip() or None,
+                    payment_type=payment_type,
+                    status="paid" if amount_paid >= amount_sold else "unpaid",
+                    created_by=current_user.id,
+                )
+                db.session.add(invoice)
+
             parts = []
             if amount_sold > 0:
                 parts.append(f"Sold ${amount_sold:,.2f}")
@@ -289,6 +304,7 @@ def summary():
 
     stops = (
         RouteStop.query
+        .options(joinedload(RouteStop.customer))
         .join(Customer)
         .filter(RouteStop.route_date == route_date)
         .order_by(RouteStop.sequence)
@@ -298,6 +314,7 @@ def summary():
     next_date = route_date + timedelta(days=1)
     next_day_stops_list = (
         RouteStop.query
+        .options(joinedload(RouteStop.customer))
         .join(Customer)
         .filter(RouteStop.route_date == next_date)
         .order_by(RouteStop.sequence)

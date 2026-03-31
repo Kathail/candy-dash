@@ -1,13 +1,17 @@
 """Customers blueprint – CRUD, payments, notes, status."""
 
 import io
-from datetime import datetime, timezone
+from collections import OrderedDict
+from datetime import date, datetime, timezone
 from decimal import Decimal, InvalidOperation
 
 from flask import (
-    Blueprint, render_template, request, redirect, url_for, flash, abort, jsonify, Response, send_file,
+    Blueprint, render_template, request, redirect, url_for, flash, abort, jsonify, send_file,
 )
 from flask_login import login_required, current_user
+
+from sqlalchemy import func
+from sqlalchemy.orm import joinedload
 
 from app import db, limiter
 from app.models import Customer, Payment, Invoice, InvoiceItem, Note, ActivityLog, RouteStop, VALID_CUSTOMER_STATUSES
@@ -81,12 +85,14 @@ def index():
     )
     cities = [c[0] for c in cities]
 
-    customers = query.all()
+    # Paginate (30 per page)
+    page = request.args.get("page", 1, type=int)
+    per_page = 30
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+    customers = pagination.items
     customer_ids = [c.id for c in customers]
 
     # Last completed visit per customer
-    from sqlalchemy import func
-    from datetime import date
     last_visits = {}
     if customer_ids:
         rows = (
@@ -124,7 +130,6 @@ def index():
                 last_notes[r.customer_id] = r.description
 
     # Group by city for the default view
-    from collections import OrderedDict
     grouped = OrderedDict()
     for c in customers:
         city = c.city or "No City"
@@ -143,6 +148,7 @@ def index():
         direction=direction,
         cities=cities,
         today=today,
+        pagination=pagination,
     )
 
     return render_template("customers.html", **tpl_ctx)
@@ -160,6 +166,7 @@ def profile(id):
 
     payments = (
         Payment.query
+        .options(joinedload(Payment.recorder))
         .filter_by(customer_id=customer.id)
         .order_by(Payment.payment_date.desc())
         .limit(200)
@@ -168,6 +175,7 @@ def profile(id):
 
     activity = (
         ActivityLog.query
+        .options(joinedload(ActivityLog.user))
         .filter_by(customer_id=customer.id)
         .order_by(ActivityLog.created_at.desc())
         .limit(50)
@@ -176,6 +184,7 @@ def profile(id):
 
     route_history = (
         RouteStop.query
+        .options(joinedload(RouteStop.creator))
         .filter_by(customer_id=customer.id)
         .order_by(RouteStop.route_date.desc())
         .limit(50)
@@ -189,8 +198,42 @@ def profile(id):
         .all()
     )
 
+    # Build unified transaction timeline: payments + standalone invoices (not auto-created from payments)
+    payment_receipt_numbers = {p.receipt_number for p in payments if p.receipt_number}
+    standalone_invoices = [inv for inv in invoices if inv.invoice_number not in payment_receipt_numbers]
+
+    # Merge into a single list sorted by date descending
+    transactions = []
+    for p in payments:
+        bal_after = p.previous_balance + (p.amount_sold or 0) - p.amount
+        transactions.append({
+            'type': 'payment',
+            'date': p.payment_date,
+            'payment': p,
+            'balance_after': bal_after,
+        })
+    for inv in standalone_invoices:
+        if isinstance(inv.invoice_date, datetime):
+            inv_dt = inv.invoice_date if inv.invoice_date.tzinfo else inv.invoice_date.replace(tzinfo=timezone.utc)
+        else:
+            inv_dt = datetime.combine(inv.invoice_date, datetime.min.time(), tzinfo=timezone.utc)
+        transactions.append({
+            'type': 'invoice',
+            'date': inv_dt,
+            'invoice': inv,
+        })
+
+    def _sort_key(t):
+        d = t['date']
+        if d.tzinfo is None:
+            d = d.replace(tzinfo=timezone.utc)
+        return d
+
+    transactions.sort(key=_sort_key, reverse=True)
+
     notes = (
         Note.query
+        .options(joinedload(Note.user))
         .filter_by(customer_id=customer.id)
         .order_by(Note.created_at.desc())
         .limit(50)
@@ -201,6 +244,7 @@ def profile(id):
         "customer_profile.html",
         customer=customer,
         payments=payments,
+        transactions=transactions,
         activity=activity,
         route_history=route_history,
         invoices=invoices,
@@ -386,12 +430,11 @@ def record_payment(id):
 
         # Auto-create invoice when a sale is recorded
         if amount_sold > 0:
-            from datetime import date as date_type
             invoice = Invoice(
                 customer_id=customer.id,
                 invoice_number=receipt_number,
                 amount=amount_sold,
-                invoice_date=date_type.today(),
+                invoice_date=date.today(),
                 description=notes,
                 payment_type=payment_type,
                 status="paid" if amount_paid >= amount_sold else "unpaid",
@@ -458,7 +501,14 @@ def delete_payment(id, payment_id):
         # Lock the customer row to prevent concurrent balance updates
         customer = db.session.query(Customer).filter_by(id=id).with_for_update().one()
         # Reverse both legs: undo the sale (amount_sold) and undo the payment (amount)
-        customer.balance = customer.balance - (payment.amount_sold or Decimal("0")) + payment.amount
+        customer.balance = max(customer.balance - (payment.amount_sold or Decimal("0")) + payment.amount, Decimal("0"))
+
+        # Also delete auto-created invoice that shares this receipt number
+        auto_invoice = Invoice.query.filter_by(
+            customer_id=customer.id, invoice_number=payment.receipt_number
+        ).first()
+        if auto_invoice:
+            db.session.delete(auto_invoice)
 
         db.session.add(ActivityLog(
             customer_id=customer.id,
@@ -482,38 +532,6 @@ def delete_payment(id, payment_id):
 
     flash(f"Payment #{payment.receipt_number} deleted and balance restored.", "success")
     return redirect(url_for("customers.profile", id=id))
-
-
-# ---------------------------------------------------------------------------
-# Add note
-# ---------------------------------------------------------------------------
-
-@bp.route("/<int:id>/add-note", methods=["POST"])
-@login_required
-def add_note(id):
-    """Append a note to the customer and log the activity."""
-    customer = Customer.query.get_or_404(id)
-    note = request.form.get("note", "").strip()
-
-    if not note:
-        flash("Note cannot be empty.", "warning")
-        return redirect(url_for("customers.profile", id=customer.id))
-
-    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
-    separator = "\n---\n" if customer.notes else ""
-    customer.notes = (customer.notes or "") + f"{separator}[{timestamp}] {note}"
-
-    db.session.add(ActivityLog(
-        customer_id=customer.id,
-        user_id=current_user.id,
-        action="note_added",
-        description=note,
-    ))
-    audit("note_added", f"Note added to '{customer.name}'")
-    db.session.commit()
-
-    flash("Note added.", "success")
-    return redirect(url_for("customers.profile", id=customer.id))
 
 
 # ---------------------------------------------------------------------------
@@ -613,10 +631,9 @@ def add_invoice(id):
 
     invoice_date_str = request.form.get("invoice_date", "")
     try:
-        from datetime import date as date_type
-        invoice_date = date_type.fromisoformat(invoice_date_str) if invoice_date_str else date_type.today()
+        invoice_date = date.fromisoformat(invoice_date_str) if invoice_date_str else date.today()
     except ValueError:
-        invoice_date = date_type.today()
+        invoice_date = date.today()
 
     invoice = Invoice(
         customer_id=customer.id,
@@ -723,32 +740,57 @@ def mark_invoice_paid(id, invoice_id):
     try:
         customer = db.session.query(Customer).filter_by(id=id).with_for_update().one()
         previous_balance = customer.balance
-        customer.balance = max(previous_balance - invoice.amount, Decimal("0"))
         pay_type = request.form.get("payment_type", "cash")
+
+        # Check if this invoice was auto-created from a payment (shares receipt number).
+        # If so, the original payment already partially reduced the balance — only the
+        # remaining unpaid portion needs to be subtracted now.
+        existing_payment = None
+        if invoice.invoice_number:
+            existing_payment = Payment.query.filter_by(
+                customer_id=customer.id, receipt_number=invoice.invoice_number
+            ).first()
+
+        if existing_payment:
+            # Auto-created invoice: the original payment paid (existing_payment.amount)
+            # toward a sale of (existing_payment.amount_sold). The unpaid remainder is
+            # already in the balance. Subtract only what hasn't been paid yet.
+            already_paid = existing_payment.amount or Decimal("0")
+            remaining = max(invoice.amount - already_paid, Decimal("0"))
+            customer.balance = max(previous_balance - remaining, Decimal("0"))
+            payment_amount = remaining
+        else:
+            # Manually created invoice: full amount is in the balance
+            customer.balance = max(previous_balance - invoice.amount, Decimal("0"))
+            payment_amount = invoice.amount
+
         invoice.status = "paid"
         invoice.payment_type = pay_type
 
-        # Record as a payment
-        receipt_number = generate_receipt_number()
-        payment = Payment(
-            customer_id=customer.id,
-            amount=invoice.amount,
-            amount_sold=Decimal("0"),
-            payment_type=pay_type,
-            receipt_number=receipt_number,
-            previous_balance=previous_balance,
-            notes=f"Invoice #{invoice.invoice_number or invoice.id} paid",
-            recorded_by=current_user.id,
-        )
-        db.session.add(payment)
+        # Record as a payment (only for the remaining amount)
+        if payment_amount > 0:
+            receipt_number = generate_receipt_number()
+            payment = Payment(
+                customer_id=customer.id,
+                amount=payment_amount,
+                amount_sold=Decimal("0"),
+                payment_type=pay_type,
+                receipt_number=receipt_number,
+                previous_balance=previous_balance,
+                notes=f"Invoice #{invoice.invoice_number or invoice.id} paid",
+                recorded_by=current_user.id,
+            )
+            db.session.add(payment)
+        else:
+            receipt_number = invoice.invoice_number or str(invoice.id)
 
         db.session.add(ActivityLog(
             customer_id=customer.id,
             user_id=current_user.id,
             action="payment_recorded",
-            description=f"Invoice #{invoice.invoice_number or invoice.id} paid. ${invoice.amount:,.2f}. Balance: ${previous_balance:,.2f} → ${customer.balance:,.2f}.",
+            description=f"Invoice #{invoice.invoice_number or invoice.id} paid. ${payment_amount:,.2f}. Balance: ${previous_balance:,.2f} → ${customer.balance:,.2f}.",
         ))
-        audit("invoice_paid", f"Invoice #{invoice.invoice_number or invoice.id} (${invoice.amount:,.2f}) for '{customer.name}'")
+        audit("invoice_paid", f"Invoice #{invoice.invoice_number or invoice.id} (${payment_amount:,.2f}) for '{customer.name}'")
         db.session.commit()
     except Exception:
         logging.exception("Invoice payment failed")

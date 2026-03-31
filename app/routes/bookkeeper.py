@@ -6,6 +6,7 @@ from decimal import Decimal
 from flask import Blueprint, render_template, request
 from flask_login import login_required, current_user
 from sqlalchemy import func
+from sqlalchemy.orm import joinedload
 
 from app import db
 from app.models import Customer, Payment, ActivityLog
@@ -83,6 +84,7 @@ def index():
     # --- Recent payments (last 20) ---
     recent_payments = (
         Payment.query
+        .options(joinedload(Payment.customer))
         .join(Customer)
         .order_by(Payment.payment_date.desc())
         .limit(20)
@@ -115,6 +117,7 @@ def index():
     # --- Recent activity (last 15 financial actions) ---
     recent_activity = (
         ActivityLog.query
+        .options(joinedload(ActivityLog.customer))
         .join(Customer)
         .filter(ActivityLog.action.in_(("payment_recorded", "payment_deleted", "customer_created", "lead_converted")))
         .order_by(ActivityLog.created_at.desc())
@@ -122,11 +125,17 @@ def index():
         .all()
     )
 
+    # Date strings for export links
+    start_date = period_start.strftime("%Y-%m-%d")
+    end_date = today.isoformat()
+
     return render_template(
         "bookkeeper.html",
         today=today,
         period=period,
         period_label=period_label,
+        start_date=start_date,
+        end_date=end_date,
         payment_count=payment_count,
         payment_total=payment_total,
         avg_payment=avg_payment,

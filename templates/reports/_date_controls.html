@@ -1,0 +1,58 @@
+{# Inline date range controls for report sub-pages.
+   Expects: current_url (the report endpoint name), start, end #}
+<div x-data="{
+  open: false,
+  startDate: '{{ start.strftime('%Y-%m-%d') }}',
+  endDate: '{{ end.strftime('%Y-%m-%d') }}',
+  todayStr: new Date().toISOString().split('T')[0],
+  fmt(d) { return d.toISOString().split('T')[0]; },
+  setPreset(name) {
+    const t = new Date();
+    switch (name) {
+      case 'today': this.startDate = this.endDate = this.fmt(t); break;
+      case 'week': { const d = t.getDay(); const m = new Date(t); m.setDate(t.getDate() - (d === 0 ? 6 : d - 1)); this.startDate = this.fmt(m); this.endDate = this.fmt(t); break; }
+      case 'month': this.startDate = this.fmt(new Date(t.getFullYear(), t.getMonth(), 1)); this.endDate = this.fmt(t); break;
+      case 'lastMonth': { const s = new Date(t.getFullYear(), t.getMonth() - 1, 1); const e = new Date(t.getFullYear(), t.getMonth(), 0); this.startDate = this.fmt(s); this.endDate = this.fmt(e); break; }
+      case 'quarter': { const qm = Math.floor(t.getMonth() / 3) * 3; this.startDate = this.fmt(new Date(t.getFullYear(), qm, 1)); this.endDate = this.fmt(t); break; }
+    }
+    this.go();
+  },
+  go() { window.location.href = '{{ current_url }}?start_date=' + this.startDate + '&end_date=' + this.endDate; },
+}" class="animate-fade-in-up stagger-1">
+  <button @click="open = !open"
+          class="inline-flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 font-medium btn-press transition-colors">
+    <svg aria-hidden="true" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+    </svg>
+    Change dates
+    <svg aria-hidden="true" class="w-3 h-3 transition-transform" :class="open && 'rotate-180'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+    </svg>
+  </button>
+
+  <div x-show="open" x-transition x-cloak class="mt-2 bg-panel rounded-xl border border-app p-3 space-y-2">
+    <div class="flex flex-wrap gap-1.5">
+      {% for key, label in [('today', 'Today'), ('week', 'Week'), ('month', 'Month'), ('lastMonth', 'Last Month'), ('quarter', 'Quarter')] %}
+      <button type="button" @click="setPreset('{{ key }}')"
+              class="px-2.5 py-1.5 text-2xs font-semibold rounded-lg border border-gray-700 bg-gray-800 text-gray-400 hover:bg-gray-700 transition-colors btn-press min-h-[36px]">
+        {{ label }}
+      </button>
+      {% endfor %}
+    </div>
+    <div class="flex gap-2 items-end">
+      <div class="flex-1">
+        <label class="block text-2xs text-gray-500 mb-0.5">From</label>
+        <input type="date" x-model="startDate" :max="endDate || todayStr"
+               class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 text-xs min-h-[36px] focus:border-indigo-500 focus:ring-indigo-500">
+      </div>
+      <div class="flex-1">
+        <label class="block text-2xs text-gray-500 mb-0.5">To</label>
+        <input type="date" x-model="endDate" :min="startDate" :max="todayStr"
+               class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 text-xs min-h-[36px] focus:border-indigo-500 focus:ring-indigo-500">
+      </div>
+      <button @click="go()" class="px-3 min-h-[36px] bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-500 transition-colors btn-press">
+        Go
+      </button>
+    </div>
+  </div>
+</div>

@@ -10,7 +10,7 @@
   <div class="flex items-center justify-between animate-fade-in-up">
     <div>
       <h1 class="text-xl font-bold text-gray-100">Bookkeeping</h1>
-      <p class="text-xs text-faint mt-0.5">{{ period_label }} · {{ today.strftime('%B %d, %Y') }}</p>
+      <p class="text-xs text-faint mt-0.5">{{ period_label }} &middot; {{ today.strftime('%B %d, %Y') }}</p>
     </div>
     <div class="flex items-center gap-1 bg-panel rounded-lg border border-app p-1">
       {% for val, label in [('today', 'Today'), ('week', 'Week'), ('month', 'Month'), ('quarter', 'Qtr')] %}
@@ -49,11 +49,11 @@
         </div>
         <div>
           <p class="text-lg font-bold text-green-400">{{ payment_total|currency }}</p>
-          <p class="text-2xs text-faint">{{ payment_count }} payments · {{ period_label|lower }}</p>
+          <p class="text-2xs text-faint">{{ payment_count }} payments &middot; {{ period_label|lower }}</p>
         </div>
       </div>
     </div>
-    <div class="bg-panel rounded-xl border border-app p-4">
+    <a href="{{ url_for('balances.index') }}" class="bg-panel rounded-xl border border-app p-4 hover:bg-panel-hover transition-colors">
       <div class="flex items-center gap-2.5">
         <div class="w-9 h-9 rounded-lg bg-orange-500/15 flex items-center justify-center flex-shrink-0">
           <svg aria-hidden="true" class="w-4.5 h-4.5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -62,10 +62,10 @@
         </div>
         <div>
           <p class="text-lg font-bold text-gray-100">${{ '{:,.2f}'.format(total_outstanding) }}</p>
-          <p class="text-2xs text-faint">{{ customers_with_balance }} owe</p>
+          <p class="text-2xs text-faint">{{ customers_with_balance }} owe &rarr;</p>
         </div>
       </div>
-    </div>
+    </a>
     <div class="bg-panel rounded-xl border border-app p-4">
       <div class="flex items-center gap-2.5">
         <div class="w-9 h-9 rounded-lg bg-indigo-500/15 flex items-center justify-center flex-shrink-0">
@@ -106,13 +106,13 @@
   </div>
   <div class="bg-panel rounded-xl border border-app overflow-hidden divide-y divide-gray-700/60 animate-fade-in-up">
     {% for row in city_collections %}
-    <div class="flex items-center gap-3 px-4 py-3">
+    <a href="{{ url_for('customers.index', city=row.city or '') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-700/30 transition-colors">
       <div class="flex-1 min-w-0">
         <p class="text-sm font-medium text-gray-200">{{ row.city or 'No City' }}</p>
         <p class="text-2xs text-faint">{{ row.count }} payment{{ 's' if row.count != 1 else '' }}</p>
       </div>
       <span class="text-sm font-bold text-green-400">${{ '{:,.2f}'.format(row.total) }}</span>
-    </div>
+    </a>
     {% endfor %}
   </div>
   {% endif %}
@@ -125,17 +125,17 @@
     </div>
     <h2 class="text-xs font-bold text-amber-400 uppercase tracking-wider">Outstanding</h2>
     <div class="flex-1 h-px bg-gray-700"></div>
-    <span class="text-2xs text-gray-600">{{ customers_with_balance }} accounts</span>
+    <a href="{{ url_for('balances.index') }}" class="text-2xs text-indigo-400 hover:text-indigo-300 font-medium btn-press">View all &rarr;</a>
   </div>
   <div class="bg-panel rounded-xl border border-app overflow-hidden divide-y divide-gray-700/60 animate-fade-in-up">
     {% for customer in top_balances %}
-    <div class="flex items-center gap-3 px-4 py-3">
+    <a href="{{ url_for('customers.profile', id=customer.id) }}" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-700/30 transition-colors">
       <div class="flex-1 min-w-0">
         <p class="text-sm font-medium text-gray-200 truncate">{{ customer.name }}</p>
         <p class="text-2xs text-faint">{{ customer.city or '—' }}</p>
       </div>
       <span class="text-sm font-bold text-amber-400">{{ customer.balance|currency }}</span>
-    </div>
+    </a>
     {% endfor %}
   </div>
   {% endif %}
@@ -153,13 +153,20 @@
   </div>
   <div class="bg-panel rounded-xl border border-app overflow-hidden divide-y divide-gray-700/60 animate-fade-in-up">
     {% for payment in recent_payments %}
-    <div class="flex items-center gap-3 px-4 py-3">
+    <a href="{{ url_for('customers.profile', id=payment.customer_id) }}" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-700/30 transition-colors">
+      <div class="flex-shrink-0 w-14 text-center">
+        <p class="text-xs font-bold text-gray-300">{{ payment.payment_date|dateformat('%b %d') }}</p>
+        <p class="text-2xs text-gray-500">{{ payment.payment_date|dateformat('%I:%M %p') }}</p>
+      </div>
       <div class="flex-1 min-w-0">
         <p class="text-sm font-medium text-gray-200 truncate">{{ payment.customer.name }}</p>
-        <p class="text-2xs text-faint">{{ payment.receipt_number }} · {{ payment.payment_date|dateformat }}</p>
+        <p class="text-2xs text-faint">{{ payment.receipt_number }}{% if payment.payment_type %} &middot; {{ payment.payment_type }}{% endif %}</p>
       </div>
+      {% if payment.amount_sold and payment.amount_sold > 0 %}
+      <span class="text-xs font-semibold text-amber-400">+{{ payment.amount_sold|currency }}</span>
+      {% endif %}
       <span class="text-sm font-bold text-green-400">{{ payment.amount|currency }}</span>
-    </div>
+    </a>
     {% endfor %}
   </div>
   {% endif %}
@@ -175,15 +182,27 @@
     <h2 class="text-xs font-bold text-purple-400 uppercase tracking-wider">Activity</h2>
     <div class="flex-1 h-px bg-gray-700"></div>
   </div>
-  <div class="bg-panel rounded-xl border border-app overflow-hidden divide-y divide-gray-700/60 animate-fade-in-up">
+  <div x-data="{ showAll: false }" class="bg-panel rounded-xl border border-app overflow-hidden divide-y divide-gray-700/60 animate-fade-in-up">
     {% for entry in recent_activity %}
-    <div class="flex items-center gap-3 px-4 py-3">
+    <a href="{{ url_for('customers.profile', id=entry.customer_id) }}"
+       class="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-700/30 transition-colors" {% if loop.index > 5 %}x-show="showAll" x-cloak{% endif %}>
+      <span class="flex-shrink-0 w-2 h-2 rounded-full"
+            style="background-color: {{ 'rgb(34 197 94 / 0.5)' if entry.action == 'payment_recorded' else 'rgb(239 68 68 / 0.5)' if entry.action == 'payment_deleted' else 'rgb(59 130 246 / 0.5)' if entry.action == 'customer_created' else 'rgb(168 85 247 / 0.5)' }}"></span>
       <div class="flex-1 min-w-0">
-        <p class="text-sm text-gray-200 truncate">{{ entry.description or entry.action }}</p>
-        <p class="text-2xs text-faint">{{ entry.customer.name }} · {{ entry.created_at|dateformat }}</p>
+        <p class="text-sm text-gray-300">
+          <span class="font-medium text-gray-100">{{ entry.customer.name }}</span>
+          <span class="text-faint">&middot;</span>
+          <span class="text-2xs">{{ entry.action|replace('_', ' ')|capitalize }}</span>
+        </p>
+        <p class="text-2xs text-faint mt-0.5">{{ entry.created_at|dateformat('%b %d, %I:%M %p') }}</p>
       </div>
-    </div>
+    </a>
     {% endfor %}
+    {% if recent_activity|length > 5 %}
+    <button @click="showAll = !showAll" class="w-full px-4 py-2.5 text-sm text-indigo-400 hover:bg-gray-700/30 transition-colors">
+      <span x-text="showAll ? 'Show less' : 'Show all {{ recent_activity|length }} entries'"></span>
+    </button>
+    {% endif %}
   </div>
   {% endif %}
 
@@ -197,15 +216,26 @@
     <h2 class="text-xs font-bold text-blue-400 uppercase tracking-wider">Export</h2>
     <div class="flex-1 h-px bg-gray-700"></div>
   </div>
-  <div class="flex gap-2 animate-fade-in-up">
-    <a href="{{ url_for('reports.financial', format='csv', start_date=start_date, end_date=end_date) }}"
-       class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-panel border border-app text-gray-300 text-sm font-medium rounded-xl hover:bg-gray-700 transition-colors min-h-[44px] btn-press">
-      Financial CSV
-    </a>
-    <a href="{{ url_for('reports.tax', format='csv', start_date=start_date, end_date=end_date) }}"
-       class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-panel border border-app text-gray-300 text-sm font-medium rounded-xl hover:bg-gray-700 transition-colors min-h-[44px] btn-press">
-      Tax CSV
-    </a>
+  <div class="bg-panel rounded-xl border border-app overflow-hidden divide-y divide-gray-700/60 animate-fade-in-up">
+    {% set exports = [
+      ('reports.financial', 'Sales Report'),
+      ('reports.tax', 'Tax Report'),
+      ('exports.payments', 'Payments'),
+      ('exports.customers', 'Customers'),
+    ] %}
+    {% for endpoint, label in exports %}
+    <div class="flex items-center gap-3 px-4 py-3">
+      <span class="flex-1 text-sm font-medium text-gray-200">{{ label }}</span>
+      <div class="flex items-center gap-1">
+        <a href="{{ url_for(endpoint, start_date=start_date, end_date=end_date, format='csv') }}"
+           class="px-2 py-1.5 text-2xs font-medium text-gray-500 hover:text-gray-300 hover:bg-gray-700 rounded-lg transition-colors btn-press">CSV</a>
+        <a href="{{ url_for(endpoint, start_date=start_date, end_date=end_date, format='xlsx') }}"
+           class="px-2 py-1.5 text-2xs font-medium text-gray-500 hover:text-gray-300 hover:bg-gray-700 rounded-lg transition-colors btn-press">Excel</a>
+        <a href="{{ url_for(endpoint, start_date=start_date, end_date=end_date, format='pdf') }}"
+           class="px-2 py-1.5 text-2xs font-medium text-gray-500 hover:text-gray-300 hover:bg-gray-700 rounded-lg transition-colors btn-press">PDF</a>
+      </div>
+    </div>
+    {% endfor %}
   </div>
 
   <div class="h-4"></div>

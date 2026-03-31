@@ -3,7 +3,7 @@
 from datetime import date, datetime, timezone
 from decimal import Decimal, InvalidOperation
 
-from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
+from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
 from sqlalchemy import func
 

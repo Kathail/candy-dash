@@ -157,6 +157,7 @@ def quick_payment(id):
         return redirect(url_for("balances.index"))
 
     notes = request.form.get("notes", "").strip()
+    payment_type = request.form.get("payment_type", "cash").strip() or "cash"
 
     try:
         # Lock the customer row to prevent concurrent balance updates
@@ -167,6 +168,7 @@ def quick_payment(id):
         payment = Payment(
             customer_id=customer.id,
             amount=amount,
+            payment_type=payment_type,
             receipt_number=receipt_number,
             previous_balance=previous_balance,
             notes=notes,

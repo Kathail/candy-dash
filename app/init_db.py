@@ -139,10 +139,12 @@ def init_database():
                 role="demo",
                 is_active=True,
             )
-            demo.set_password("demo")
+            demo_password = os.environ.get("DEMO_PASSWORD", "demo")
+            demo.set_password(demo_password)
             db.session.add(demo)
             db.session.commit()
-            log.info("Demo user created (username: demo, password: demo)")
+            log.info("Demo user created (username: demo, password: %s)",
+                     "from DEMO_PASSWORD env var" if os.environ.get("DEMO_PASSWORD") else "demo (default)")
     else:
         # Deactivate demo user if it exists and DEMO_ENABLED is not set
         demo_user = User.query.filter_by(username="demo", role="demo").first()

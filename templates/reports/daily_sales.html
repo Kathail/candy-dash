@@ -2,6 +2,7 @@
 
 {% block title %}Daily Sales - Candy Dash{% endblock %}
 {% block page_title %}Daily Sales{% endblock %}
+{% block vendor_js %}<script defer src="{{ url_for('static', filename='vendor/chart.min.js') }}"></script>{% endblock %}
 
 {% block content %}
 <div class="max-w-4xl mx-auto space-y-6">
@@ -35,9 +36,26 @@
           </svg>
           Excel
         </a>
+        <a href="{{ url_for('reports.daily_sales', start_date=start.strftime('%Y-%m-%d'), end_date=end.strftime('%Y-%m-%d'), format='pdf') }}"
+           class="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-700 border border-gray-600 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-600 transition-colors btn-press min-h-[44px]">
+          <svg class="w-3.5 h-3.5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+          </svg>
+          PDF
+        </a>
+        <button onclick="window.print()" class="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-700 border border-gray-600 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-600 transition-colors btn-press min-h-[44px] no-print">
+          <svg class="w-3.5 h-3.5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+          </svg>
+          Print
+        </button>
       </div>
     </div>
   </div>
+
+  {# ── Date Controls ── #}
+  {% set current_url = url_for('reports.daily_sales') %}
+  {% include "reports/_date_controls.html" %}
 
   {# ── KPI Cards ── #}
   <div class="grid grid-cols-2 gap-3">
@@ -50,6 +68,13 @@
       <p class="text-xl font-bold text-gray-100 mt-1">{{ grand_count }}</p>
     </div>
   </div>
+
+  {# ── Chart ── #}
+  {% if rows %}
+  <div class="bg-panel rounded-xl border border-app p-4 animate-fade-in-up stagger-3">
+    <canvas id="dailySalesChart" height="160"></canvas>
+  </div>
+  {% endif %}
 
   {# ── Daily Breakdown ── #}
   {% if rows %}
@@ -86,4 +111,45 @@
   {% endif %}
 
 </div>
+{% endblock %}
+
+{% block scripts %}
+{% if rows %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  function renderChart() {
+    var data = {{ rows|map(attribute='total')|list|tojson }};
+    var labels = [{% for row in rows %}"{{ row.invoice_date.strftime('%b %d') }}"{{ ', ' if not loop.last else '' }}{% endfor %}];
+    data.reverse(); labels.reverse();
+    var ctx = document.getElementById('dailySalesChart');
+    if (!ctx || typeof Chart === 'undefined') return;
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Sales',
+          data: data.map(Number),
+          backgroundColor: 'rgba(16, 185, 129, 0.6)',
+          borderColor: 'rgb(16, 185, 129)',
+          borderWidth: 1,
+          borderRadius: 4,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: '#9ca3af', font: { size: 10 } } },
+          y: { grid: { color: 'rgba(55,65,81,0.5)' }, ticks: { color: '#9ca3af', font: { size: 10 }, callback: function(v) { return '$' + v.toLocaleString(); } } },
+        }
+      }
+    });
+  }
+  if (typeof Chart !== 'undefined') { renderChart(); }
+  else { window.addEventListener('load', renderChart); }
+});
+</script>
+{% endif %}
 {% endblock %}

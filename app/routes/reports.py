@@ -1,15 +1,14 @@
 """Reporting routes with CSV and Excel export support."""
 
-import io
-from datetime import datetime, timezone, date, timedelta
+from datetime import datetime, timezone, date
 from decimal import Decimal
 
-from flask import Blueprint, render_template, request, Response, flash
+from flask import Blueprint, render_template, request, flash
 from flask_login import login_required
 from sqlalchemy import func
 
 from app import db
-from app.helpers import format_currency, format_date, staff_required, csv_response
+from app.helpers import staff_required, export_response, parse_date_range
 from app.models import Customer, Payment, Invoice, User
 
 bp = Blueprint("reports", __name__, url_prefix="/reports")
@@ -27,68 +26,11 @@ def before_request():
 
 
 def _parse_date_range():
-    """Parse start_date and end_date from query params. Returns (start, end) datetimes.
-
-    Enforces start <= end and caps range at MAX_REPORT_DAYS.
-    """
-    start_str = request.args.get("start_date", "")
-    end_str = request.args.get("end_date", "")
-
-    try:
-        start = datetime.strptime(start_str, "%Y-%m-%d").replace(tzinfo=timezone.utc)
-    except (ValueError, TypeError):
-        today = date.today()
-        start = datetime(today.year, today.month, 1, tzinfo=timezone.utc)
-
-    try:
-        end = datetime.strptime(end_str, "%Y-%m-%d").replace(
-            hour=23, minute=59, second=59, microsecond=999999, tzinfo=timezone.utc
-        )
-    except (ValueError, TypeError):
-        end = datetime.now(timezone.utc)
-
-    # Don't allow future end dates
-    now = datetime.now(timezone.utc)
-    if end > now:
-        end = now
-
-    # Swap if reversed
-    if start > end:
-        start, end = end.replace(hour=0, minute=0, second=0, microsecond=0), \
-                     start.replace(hour=23, minute=59, second=59, microsecond=999999)
-
-    # Cap range
-    max_start = end - timedelta(days=MAX_REPORT_DAYS)
-    if start < max_start:
-        start = max_start.replace(hour=0, minute=0, second=0, microsecond=0)
-
-    return start, end
+    """Parse date range using shared helper, capped at MAX_REPORT_DAYS."""
+    return parse_date_range(max_days=MAX_REPORT_DAYS)
 
 
 
-
-def _xlsx_response(rows, headers, filename):
-    """Build an Excel download response using openpyxl."""
-    try:
-        from openpyxl import Workbook
-    except ImportError:
-        return Response("openpyxl is not installed.", status=500)
-
-    wb = Workbook()
-    ws = wb.active
-    ws.append(headers)
-    for row in rows:
-        ws.append(list(row))
-
-    output = io.BytesIO()
-    wb.save(output)
-    output.seek(0)
-    safe_filename = filename.replace('"', "").replace("\r", "").replace("\n", "")
-    return Response(
-        output.getvalue(),
-        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f'attachment; filename="{safe_filename}"'},
-    )
 
 
 @bp.route("/")
@@ -121,13 +63,11 @@ def daily_sales():
     grand_total = sum(r.total for r in rows)
     grand_count = sum(r.count for r in rows)
 
-    if fmt in ("csv", "xlsx"):
+    if fmt in ("csv", "xlsx", "pdf"):
         headers = ["Date", "Sales Count", "Total"]
         export_rows = [(str(r.invoice_date), r.count, str(r.total)) for r in rows]
         filename = f"daily_sales_{start.strftime('%Y%m%d')}_{end.strftime('%Y%m%d')}"
-        if fmt == "csv":
-            return csv_response(export_rows, headers, f"{filename}.csv")
-        return _xlsx_response(export_rows, headers, f"{filename}.xlsx")
+        return export_response(export_rows, headers, filename, fmt, title="Daily Sales")
 
     return render_template(
         "reports/daily_sales.html",
@@ -188,16 +128,14 @@ def financial():
     )
 
     # Export
-    if fmt in ("csv", "xlsx"):
+    if fmt in ("csv", "xlsx", "pdf"):
         headers = ["Customer", "City", "Sales Count", "Total"]
         rows = [
             (row.name, row.city or "", row.count, str(row.total))
             for row in by_customer
         ]
         filename = f"sales_report_{start.strftime('%Y%m%d')}_{end.strftime('%Y%m%d')}"
-        if fmt == "csv":
-            return csv_response(rows, headers, f"{filename}.csv")
-        return _xlsx_response(rows, headers, f"{filename}.xlsx")
+        return export_response(rows, headers, filename, fmt, title="Sales Report")
 
     return render_template(
         "reports/financial.html",
@@ -238,16 +176,14 @@ def tax():
     taxable_total = sum(r.total for r in rows if not r.tax_exempt)
     exempt_total = sum(r.total for r in rows if r.tax_exempt)
 
-    if fmt in ("csv", "xlsx"):
+    if fmt in ("csv", "xlsx", "pdf"):
         headers = ["Customer", "City", "Tax Exempt", "Sales Count", "Total"]
         export_rows = [
             (r.name, r.city or "", "Yes" if r.tax_exempt else "No", r.count, str(r.total))
             for r in rows
         ]
         filename = f"tax_report_{start.strftime('%Y%m%d')}_{end.strftime('%Y%m%d')}"
-        if fmt == "csv":
-            return csv_response(export_rows, headers, f"{filename}.csv")
-        return _xlsx_response(export_rows, headers, f"{filename}.xlsx")
+        return export_response(export_rows, headers, filename, fmt, title="Tax Report")
 
     return render_template(
         "reports/tax.html",
@@ -281,13 +217,11 @@ def collections():
         .all()
     )
 
-    if fmt in ("csv", "xlsx"):
+    if fmt in ("csv", "xlsx", "pdf"):
         headers = ["Sales Rep", "Sales Count", "Total"]
         export_rows = [(r.username, r.count, str(r.total)) for r in rows]
         filename = f"sales_by_rep_{start.strftime('%Y%m%d')}_{end.strftime('%Y%m%d')}"
-        if fmt == "csv":
-            return csv_response(export_rows, headers, f"{filename}.csv")
-        return _xlsx_response(export_rows, headers, f"{filename}.xlsx")
+        return export_response(export_rows, headers, filename, fmt, title="Sales by Rep")
 
     return render_template(
         "reports/collections.html",
