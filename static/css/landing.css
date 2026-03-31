@@ -116,6 +116,9 @@ img { display: block; max-width: 100%; }
 .nav-links-desktop { display: none; }
 @media (min-width: 768px) { .nav-links-desktop { display: flex; } }
 
+.nav-links-mobile-logo { display: block; }
+@media (min-width: 768px) { .nav-links-mobile-logo { display: none; } }
+
 /* Mobile menu */
 .nav-mobile-toggle {
     display: flex;

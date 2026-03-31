@@ -18,6 +18,7 @@
             <a href="/" class="nav-brand">
                 <img src="{{ url_for('static', filename='img/logo.png') }}" alt="">
                 <span>Northern Sweet Supply</span>
+                <img src="{{ url_for('static', filename='img/cottage-country.png') }}" alt="Cottage Country" style="height: 36px; width: auto; object-fit: contain;">
             </a>
             <div class="nav-links nav-links-desktop">
                 <a href="#products" class="nav-link">Products</a>
@@ -26,7 +27,6 @@
                 <a href="#contact" class="nav-link">Contact</a>
                 <a href="{{ url_for('auth.login') }}" class="nav-link nav-link--login">Employee Login</a>
             </div>
-            <a href="{{ url_for('auth.login') }}" class="nav-link nav-link--login" style="display:none" id="mobile-login">Login</a>
         </div>
     </nav>
 
@@ -133,9 +133,9 @@
                 <div class="card">
                     <div class="card-icon card-icon--gold">🖤</div>
                     <h3 class="card-title">Licorice</h3>
-                    <p class="card-text">Black Jack Licorice Mix, Licorice Allsorts, Licorice Buddies, Premium Licorice Blend, Sour Licorice Tubes, and Strawberry Licorice Tubes.</p>
+                    <p class="card-text">Black Jack Licorice Mix, Licorice Buddies, Premium Licorice Blend, Sour Licorice Tubes, and Strawberry Licorice Tubes.</p>
                     <div class="card-brands">
-                        {% for p in ["Black Jack Mix", "Licorice Allsorts", "Licorice Buddies", "Sour Licorice Tubes"] %}
+                        {% for p in ["Black Jack Mix", "Licorice Buddies", "Premium Blend", "Sour Licorice Tubes"] %}
                         <span class="card-brand-tag">{{ p }}</span>
                         {% endfor %}
                     </div>
@@ -157,9 +157,9 @@
                 <div class="card">
                     <div class="card-icon card-icon--gold">🌊</div>
                     <h3 class="card-title">Salt Water Taffy</h3>
-                    <p class="card-text">Assorted Salt Water Taffy in multiple flavours, plus No Sugar Added Salt Water Taffy. A classic Canadian candy favourite.</p>
+                    <p class="card-text">Assorted Salt Water Taffy in multiple flavours. A classic Canadian candy favourite.</p>
                     <div class="card-brands">
-                        {% for p in ["Assorted Flavours", "No Sugar Added"] %}
+                        {% for p in ["Assorted Flavours"] %}
                         <span class="card-brand-tag">{{ p }}</span>
                         {% endfor %}
                     </div>
@@ -172,18 +172,6 @@
                     <p class="card-text">Freeze Dried Original Puffs, Sour Puffs, Berry Puffs, Tropical Puffs, Taffy Puffs, Banana Puffs, Shark Puffs, and Frog Puffs.</p>
                     <div class="card-brands">
                         {% for p in ["Original Puffs", "Sour Puffs", "Berry Puffs", "Tropical Puffs", "Shark Puffs"] %}
-                        <span class="card-brand-tag">{{ p }}</span>
-                        {% endfor %}
-                    </div>
-                </div>
-
-                {# ── No Sugar Added ── #}
-                <div class="card">
-                    <div class="card-icon card-icon--gold">💚</div>
-                    <h3 class="card-title">No Sugar Added</h3>
-                    <p class="card-text">Full sugar-free line: No Sugar Added Cola Bottles, Gummy Bears, Peppermints, Fruit Gems, and Salt Water Taffy.</p>
-                    <div class="card-brands">
-                        {% for p in ["NSA Cola Bottles", "NSA Gummy Bears", "NSA Peppermints", "NSA Fruit Gems"] %}
                         <span class="card-brand-tag">{{ p }}</span>
                         {% endfor %}
                     </div>
@@ -275,13 +263,13 @@
     <section class="section" style="padding-top: 3rem; padding-bottom: 3rem;">
         <div class="container" style="text-align: center;">
             <p style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--gray-500); margin-bottom: 1.25rem;">Brands We Carry</p>
-            <div class="brands-bar reveal-stagger">
-                {% for brand, url in [
-                    ("Cottage Country Candies", "https://www.cottagecountrycandies.com"),
-                    ("Scholtens Candy Inc.", "https://www.scholtens.com"),
-                ] %}
-                <a href="{{ url }}" target="_blank" rel="noopener" class="brand-badge">{{ brand }}</a>
-                {% endfor %}
+            <div class="brands-bar reveal-stagger" style="gap: 2rem;">
+                <a href="https://www.cottagecountrycandies.com" target="_blank" rel="noopener" class="brand-badge" style="padding: 0.75rem 1.5rem;">
+                    <img src="{{ url_for('static', filename='img/cottage-country.png') }}" alt="Cottage Country Candies" style="height: 40px; width: auto; object-fit: contain;">
+                </a>
+                <a href="https://scholtensinc.com/" target="_blank" rel="noopener" class="brand-badge" style="padding: 0.75rem 1.5rem;">
+                    <img src="{{ url_for('static', filename='img/scholtens.png') }}" alt="Scholtens Candy Inc." style="height: 40px; width: auto; object-fit: contain;">
+                </a>
             </div>
             <p style="margin-top: 1rem; font-size: 0.8125rem; color: var(--gray-500);">And more suppliers coming soon.</p>
         </div>
