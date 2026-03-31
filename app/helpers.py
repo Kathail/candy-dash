@@ -5,8 +5,8 @@ from decimal import Decimal
 from datetime import datetime, timezone, date
 from zoneinfo import ZoneInfo
 
-# Toronto timezone (handles EST/EDT automatically)
-TZ_DISPLAY = ZoneInfo("America/Toronto")
+import os
+TZ_DISPLAY = ZoneInfo(os.environ.get("TZ_DISPLAY", "America/Toronto"))
 from functools import wraps
 from urllib.parse import urlparse, urljoin
 
@@ -74,6 +74,48 @@ def safe_redirect(target):
     if test_url.scheme in ("http", "https") and ref_url.netloc == test_url.netloc:
         return target
     return default
+
+
+def get_needs_attention(limit=5):
+    """Return customers not visited in 30+ days. Shared by dashboard and analytics."""
+    from datetime import timedelta
+    from sqlalchemy import func as sa_func
+    from app import db
+    from app.models import Customer, RouteStop
+
+    today = date.today()
+    subq = (
+        db.session.query(
+            RouteStop.customer_id,
+            sa_func.max(RouteStop.route_date).label("last_visit"),
+        )
+        .filter(RouteStop.completed.is_(True))
+        .group_by(RouteStop.customer_id)
+        .subquery()
+    )
+    rows = (
+        db.session.query(
+            Customer.id, Customer.name, Customer.city,
+            Customer.balance, subq.c.last_visit,
+        )
+        .outerjoin(subq, Customer.id == subq.c.customer_id)
+        .filter(Customer.status == "active")
+        .filter(db.or_(
+            subq.c.last_visit.is_(None),
+            subq.c.last_visit < today - timedelta(days=30),
+        ))
+        .order_by(subq.c.last_visit.asc().nullsfirst())
+        .limit(limit)
+        .all()
+    )
+    return [
+        {
+            "id": r.id, "name": r.name, "city": r.city or "—",
+            "balance": float(r.balance or 0), "last_visit": r.last_visit,
+            "days_since": (today - r.last_visit).days if r.last_visit else None,
+        }
+        for r in rows
+    ]
 
 
 def format_currency(value):
@@ -282,7 +324,7 @@ def generate_receipt_number(payment_date=None, max_retries=5):
                 Payment.query
                 .filter(Payment.receipt_number.like(f"{prefix}%"))
                 .order_by(Payment.receipt_number.desc())
-                .with_for_update(skip_locked=True)
+                .with_for_update()
                 .first()
             )
 
@@ -309,8 +351,9 @@ def generate_receipt_number(payment_date=None, max_retries=5):
             logging.exception("Receipt number generation failed (attempt %d/%d)", attempt + 1, max_retries)
             db.session.rollback()
             if attempt == max_retries - 1:
-                short_uuid = uuid.uuid4().hex[:6].upper()
-                return f"{prefix}{short_uuid}"
+                # Use timestamp-based numeric fallback to maintain format consistency
+                fallback_seq = int(datetime.now(timezone.utc).strftime("%H%M%S"))
+                return f"{prefix}{fallback_seq:04d}"
 
 
 def generate_receipt_pdf(payment, customer):

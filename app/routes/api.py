@@ -25,7 +25,7 @@ def before_request():
 @bp.route("/customers/search")
 def customer_search():
     """Search customers by name and payments by receipt number."""
-    q = request.args.get("q", "").strip()
+    q = request.args.get("q", "").strip()[:100]
     if not q or len(q) < 2:
         return jsonify([])
 

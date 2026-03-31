@@ -73,13 +73,15 @@
     ] %}
     {% for endpoint, title, desc, color, icon in reports %}
     <div class="flex items-center gap-3 px-4 py-3 hover:bg-gray-700/30 transition-colors animate-fade-in-up stagger-{{ loop.index + 2 }}">
-      <div class="w-9 h-9 rounded-lg bg-{{ color }}-500/15 flex items-center justify-center flex-shrink-0">
+      {% set bg_map = {'green': 'bg-green-500/15', 'indigo': 'bg-indigo-500/15', 'blue': 'bg-blue-500/15'} %}
+      {% set text_map = {'green': 'text-green-400', 'indigo': 'text-indigo-400', 'blue': 'text-blue-400'} %}
+      <div class="w-9 h-9 rounded-lg {{ bg_map.get(color, 'bg-gray-500/15') }} flex items-center justify-center flex-shrink-0">
         {% if icon %}
-        <svg aria-hidden="true" class="w-4.5 h-4.5 text-{{ color }}-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg aria-hidden="true" class="w-4.5 h-4.5 {{ text_map.get(color, 'text-gray-400') }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ icon }}"/>
         </svg>
         {% else %}
-        <span aria-hidden="true" class="text-sm font-black text-{{ color }}-400">$</span>
+        <span aria-hidden="true" class="text-sm font-black {{ text_map.get(color, 'text-gray-400') }}">$</span>
         {% endif %}
       </div>
       <a :href="'{{ url_for(endpoint) }}?start_date=' + startDate + '&end_date=' + endDate"

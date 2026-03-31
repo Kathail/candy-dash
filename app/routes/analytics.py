@@ -209,48 +209,8 @@ def index():
     ]
 
     # --- Needs attention: active customers not visited in 30+ days ---
-    subq = (
-        db.session.query(
-            RouteStop.customer_id,
-            func.max(RouteStop.route_date).label("last_visit"),
-        )
-        .filter(RouteStop.completed.is_(True))
-        .group_by(RouteStop.customer_id)
-        .subquery()
-    )
-
-    needs_attention = (
-        db.session.query(
-            Customer.id,
-            Customer.name,
-            Customer.city,
-            Customer.balance,
-            subq.c.last_visit,
-        )
-        .outerjoin(subq, Customer.id == subq.c.customer_id)
-        .filter(Customer.status == "active")
-        .filter(
-            db.or_(
-                subq.c.last_visit.is_(None),
-                subq.c.last_visit < today - timedelta(days=30),
-            )
-        )
-        .order_by(subq.c.last_visit.asc().nullsfirst())
-        .limit(10)
-        .all()
-    )
-
-    attention_list = [
-        {
-            "id": r.id,
-            "name": r.name,
-            "city": r.city or "—",
-            "balance": float(r.balance or 0),
-            "last_visit": r.last_visit,
-            "days_since": (today - r.last_visit).days if r.last_visit else None,
-        }
-        for r in needs_attention
-    ]
+    from app.helpers import get_needs_attention
+    attention_list = get_needs_attention(limit=10)
 
     # --- Best collection days (day of week averages) ---
     # Use extract('dow') for Postgres (0=Sun), strftime for SQLite

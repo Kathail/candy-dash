@@ -46,10 +46,26 @@ def index():
     else:
         query = query.order_by(Purchase.purchase_date.desc())
 
-    purchases = query.all()
+    # Total across all matching (separate query with same filters, before pagination)
+    total_query = Purchase.query
+    if supplier_filter:
+        total_query = total_query.filter(Purchase.supplier == supplier_filter)
+    if month_filter:
+        try:
+            year, month = month_filter.split("-")
+            total_query = total_query.filter(
+                db.extract("year", Purchase.purchase_date) == int(year),
+                db.extract("month", Purchase.purchase_date) == int(month),
+            )
+        except (ValueError, AttributeError):
+            pass
+    total = db.session.query(func.coalesce(func.sum(Purchase.amount), 0)).filter(
+        Purchase.id.in_(total_query.with_entities(Purchase.id))
+    ).scalar()
 
-    # Totals
-    total = sum(p.amount for p in purchases)
+    page = request.args.get("page", 1, type=int)
+    pagination = query.paginate(page=page, per_page=20, error_out=False)
+    purchases = pagination.items
 
     # Distinct suppliers for filter
     suppliers = (
@@ -81,6 +97,7 @@ def index():
         month_filter=month_filter,
         month_options=month_options,
         sort=sort,
+        pagination=pagination,
     )
 
 

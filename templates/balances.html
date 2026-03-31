@@ -49,7 +49,7 @@
       'text': 'text-red-400',
     },
   } %}
-  <div class="grid grid-cols-4 gap-2 animate-fade-in-up stagger-1">
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 animate-fade-in-up stagger-1">
     {% set buckets = [('0-30', 'green', '0-30d'), ('31-60', 'yellow', '31-60d'), ('61-90', 'orange', '61-90d'), ('90+', 'red', '90+d')] %}
     {% for key, color, label in buckets %}
     {% set bucket_count = customers_with_aging_counts.get(key, 0) if customers_with_aging_counts is defined else 0 %}
@@ -128,7 +128,7 @@
     </div>
     <h2 class="text-xs font-bold text-amber-400 uppercase tracking-wider">Outstanding</h2>
     <div class="flex-1 h-px bg-gray-700"></div>
-    <span class="text-2xs text-gray-600">{{ customers|length }} account{{ 's' if customers|length != 1 else '' }}</span>
+    <span class="text-2xs text-gray-600">{{ total_items }} account{{ 's' if total_items != 1 else '' }}</span>
   </div>
   {% endif %}
 
@@ -165,9 +165,9 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="next" value="{{ url_for('balances.index') }}">
             <div class="flex gap-2">
-              <input type="number" name="amount_sold" step="0.01" min="0" placeholder="Sold $"
+              <input type="number" name="amount_sold" step="0.01" min="0" inputmode="decimal" placeholder="Sold $"
                      class="flex-1 theme-input rounded-xl text-sm min-h-[44px]">
-              <input type="number" name="amount_paid" step="0.01" min="0" placeholder="Paid $" value="{{ '%.2f'|format(customer.balance|float) }}"
+              <input type="number" name="amount_paid" step="0.01" min="0" inputmode="decimal" placeholder="Paid $"
                      class="flex-1 theme-input rounded-xl text-sm min-h-[44px]">
               <select name="payment_type" aria-label="Payment type"
                       class="theme-input rounded-xl text-sm min-h-[44px]">
@@ -199,6 +199,20 @@
     </div>
     {% endif %}
   </div>
+
+  {% if total_pages > 1 %}
+  <div class="flex items-center justify-center gap-2 pt-1">
+    {% if page > 1 %}
+    <a href="{{ url_for('balances.index', city=city_filter, bucket=bucket_filter, sort=sort, page=page-1) }}#balance-list"
+       class="px-3 py-1.5 text-xs font-medium text-indigo-400 hover:text-indigo-300 bg-panel border border-app rounded-lg btn-press">&larr; Prev</a>
+    {% endif %}
+    <span class="text-2xs text-faint">Page {{ page }} of {{ total_pages }}</span>
+    {% if page < total_pages %}
+    <a href="{{ url_for('balances.index', city=city_filter, bucket=bucket_filter, sort=sort, page=page+1) }}#balance-list"
+       class="px-3 py-1.5 text-xs font-medium text-indigo-400 hover:text-indigo-300 bg-panel border border-app rounded-lg btn-press">Next &rarr;</a>
+    {% endif %}
+  </div>
+  {% endif %}
 
   <div class="h-4"></div>
 

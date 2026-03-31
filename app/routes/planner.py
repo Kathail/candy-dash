@@ -351,10 +351,16 @@ def reorder():
     if not isinstance(stop_ids, list):
         return jsonify({"error": "stop_ids must be an array."}), 400
 
+    # Validate all stops exist and belong to the same date
+    stops = RouteStop.query.filter(RouteStop.id.in_(stop_ids)).all()
+    stop_map = {s.id: s for s in stops}
+    dates = {s.route_date for s in stops}
+    if len(dates) > 1:
+        return jsonify({"error": "Cannot reorder stops across different dates."}), 400
+
     for index, stop_id in enumerate(stop_ids, start=1):
-        stop = RouteStop.query.get(stop_id)
-        if stop:
-            stop.sequence = index
+        if stop_id in stop_map:
+            stop_map[stop_id].sequence = index
 
     db.session.commit()
     return jsonify({"success": True, "count": len(stop_ids)})

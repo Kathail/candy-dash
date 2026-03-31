@@ -45,28 +45,30 @@ def index():
             )
         )
 
-    leads = query.order_by(Customer.name).all()
+    page = request.args.get("page", 1, type=int)
+    pagination = query.order_by(Customer.name).paginate(page=page, per_page=30, error_out=False)
+    leads = pagination.items
     lead_ids = [l.id for l in leads]
 
-    # Last note per lead
+    # Last note per lead (optimized subquery)
     last_notes = {}
     if lead_ids:
-        rows = (
+        from sqlalchemy import func
+        max_note = (
             db.session.query(
                 ActivityLog.customer_id,
-                ActivityLog.description,
-                ActivityLog.created_at,
+                func.max(ActivityLog.id).label("max_id"),
             )
-            .filter(
-                ActivityLog.customer_id.in_(lead_ids),
-                ActivityLog.action == "note_added",
-            )
-            .order_by(ActivityLog.customer_id, ActivityLog.created_at.desc())
+            .filter(ActivityLog.customer_id.in_(lead_ids), ActivityLog.action == "note_added")
+            .group_by(ActivityLog.customer_id)
+            .subquery()
+        )
+        rows = (
+            db.session.query(ActivityLog.customer_id, ActivityLog.description)
+            .join(max_note, ActivityLog.id == max_note.c.max_id)
             .all()
         )
-        for r in rows:
-            if r.customer_id not in last_notes:
-                last_notes[r.customer_id] = r.description
+        last_notes = {r.customer_id: r.description for r in rows}
 
     # Group by city
     grouped = OrderedDict()
@@ -113,6 +115,7 @@ def index():
         city_filter=city_filter,
         q=q,
         today=date.today(),
+        pagination=pagination,
     )
 
 

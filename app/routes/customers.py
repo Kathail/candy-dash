@@ -109,25 +109,27 @@ def index():
         )
         last_visits = {r.customer_id: r.last_date for r in rows}
 
-    # Last note per customer
+    # Last note per customer (subquery to avoid fetching all rows)
     last_notes = {}
     if customer_ids:
-        rows = (
+        max_note_id = (
             db.session.query(
                 ActivityLog.customer_id,
-                ActivityLog.description,
-                ActivityLog.created_at,
+                func.max(ActivityLog.id).label("max_id"),
             )
             .filter(
                 ActivityLog.customer_id.in_(customer_ids),
                 ActivityLog.action == "note_added",
             )
-            .order_by(ActivityLog.customer_id, ActivityLog.created_at.desc())
+            .group_by(ActivityLog.customer_id)
+            .subquery()
+        )
+        rows = (
+            db.session.query(ActivityLog.customer_id, ActivityLog.description)
+            .join(max_note_id, ActivityLog.id == max_note_id.c.max_id)
             .all()
         )
-        for r in rows:
-            if r.customer_id not in last_notes:
-                last_notes[r.customer_id] = r.description
+        last_notes = {r.customer_id: r.description for r in rows}
 
     # Group by city for the default view
     grouped = OrderedDict()
@@ -341,6 +343,7 @@ def edit(id):
             flash("Invalid balance amount.", "error")
             return render_template("customer_form.html", customer=customer), 400
 
+        old_balance = customer.balance
         customer.name = name
         customer.address = request.form.get("address", "").strip()
         customer.city = request.form.get("city", "").strip()
@@ -351,13 +354,16 @@ def edit(id):
         customer.tax_exempt = bool(request.form.get("tax_exempt"))
         customer.lead_source = request.form.get("lead_source", "").strip() or None
 
+        desc = f"Customer '{customer.name}' updated."
+        if old_balance != balance:
+            desc += f" Balance: ${old_balance:,.2f} → ${balance:,.2f}."
         db.session.add(ActivityLog(
             customer_id=customer.id,
             user_id=current_user.id,
             action="customer_edited",
-            description=f"Customer '{customer.name}' updated.",
+            description=desc,
         ))
-        audit("customer_edited", f"Edited customer '{customer.name}'")
+        audit("customer_edited", f"Edited customer '{customer.name}'" + (f" Balance: ${old_balance:,.2f} → ${balance:,.2f}" if old_balance != balance else ""))
         db.session.commit()
 
         flash(f"Customer '{customer.name}' updated.", "success")
@@ -417,7 +423,9 @@ def record_payment(id):
 
         # Apply sale (increases balance) then payment (decreases balance)
         new_balance = previous_balance + amount_sold - amount_paid
+        overpayment = Decimal("0")
         if new_balance < 0:
+            overpayment = -new_balance
             new_balance = Decimal("0")
         customer.balance = new_balance
 
@@ -450,14 +458,22 @@ def record_payment(id):
             )
             db.session.add(invoice)
 
-        # Mark unpaid invoices as paid if balance is now zero
-        if new_balance == 0 and amount_paid > 0:
+        # Mark unpaid invoices as paid FIFO, only up to what this payment covers
+        if amount_paid > 0:
             unpaid_invoices = Invoice.query.filter_by(
                 customer_id=customer.id, status="unpaid"
-            ).all()
-            for inv in unpaid_invoices:
-                inv.status = "paid"
-                inv.payment_type = payment_type
+            ).order_by(Invoice.invoice_date.asc()).all()
+            remaining_credit = amount_paid - amount_sold  # excess beyond the current sale
+            if remaining_credit > 0:
+                for inv in unpaid_invoices:
+                    if inv.invoice_number == receipt_number:
+                        continue  # skip the invoice we just created above
+                    if remaining_credit >= inv.amount:
+                        inv.status = "paid"
+                        inv.payment_type = payment_type
+                        remaining_credit -= inv.amount
+                    else:
+                        break
 
         # Build description
         parts = []
@@ -488,6 +504,8 @@ def record_payment(id):
         flash(f"Transaction recorded. Invoice #{receipt_number}. Sale ${amount_sold:,.2f}.", "success")
     else:
         flash(f"Transaction recorded. Invoice #{receipt_number}.", "success")
+    if overpayment > 0:
+        flash(f"Note: overpayment of ${overpayment:,.2f} — balance was already zero.", "warning")
     return redirect(redirect_to)
 
 
@@ -517,6 +535,22 @@ def delete_payment(id, payment_id):
         ).first()
         if auto_invoice:
             db.session.delete(auto_invoice)
+
+        # Revert invoices that may have been FIFO-marked paid by this payment's excess
+        if payment.amount and payment.amount > (payment.amount_sold or Decimal("0")):
+            excess = payment.amount - (payment.amount_sold or Decimal("0"))
+            paid_invoices = Invoice.query.filter_by(
+                customer_id=customer.id, status="paid", payment_type=payment.payment_type
+            ).order_by(Invoice.invoice_date.desc()).all()
+            for inv in paid_invoices:
+                if inv.invoice_number == payment.receipt_number:
+                    continue
+                if excess >= inv.amount:
+                    inv.status = "unpaid"
+                    inv.payment_type = None
+                    excess -= inv.amount
+                else:
+                    break
 
         db.session.add(ActivityLog(
             customer_id=customer.id,
@@ -656,10 +690,12 @@ def add_invoice(id):
 
     # Parse line items
     item_count = int(request.form.get("item_count", 0) or 0)
+    items_total = Decimal("0")
     for i in range(item_count):
         item_qty = Decimal(request.form.get(f"item_qty_{i}", "0") or "0")
         item_price = Decimal(request.form.get(f"item_price_{i}", "0") or "0")
         item_amount = item_qty * item_price
+        items_total += item_amount
         if item_amount > 0:
             invoice.items.append(InvoiceItem(
                 item_number=request.form.get(f"item_number_{i}", "").strip() or None,
@@ -670,14 +706,14 @@ def add_invoice(id):
                 amount=item_amount,
             ))
 
+    if item_count > 0 and items_total > 0 and items_total != amount:
+        flash(f"Warning: line items total ${items_total:,.2f} doesn't match invoice amount ${amount:,.2f}.", "warning")
+
     try:
-        db.session.add(invoice)
-
-        # Lock the customer row for safe balance update
+        # Lock the customer row FIRST for safe balance update
         customer = db.session.query(Customer).filter_by(id=id).with_for_update().one()
-
-        # Add the invoice amount to customer balance
-        customer.balance += amount
+        db.session.add(invoice)
+        customer.balance = customer.balance + amount
 
         db.session.add(ActivityLog(
             customer_id=customer.id,
@@ -709,9 +745,9 @@ def delete_invoice(id, invoice_id):
     try:
         customer = db.session.query(Customer).filter_by(id=id).with_for_update().one()
 
-        # Only reverse balance if invoice is unpaid (paid invoices were already
-        # settled via a payment record that reduced the balance separately).
-        if invoice.status != "paid":
+        # Only reverse balance if invoice is unpaid (paid/void invoices were already
+        # settled or written off — their balance impact was handled separately).
+        if invoice.status == "unpaid":
             customer.balance = max(customer.balance - invoice.amount, Decimal("0"))
 
         db.session.add(ActivityLog(
@@ -741,12 +777,14 @@ def mark_invoice_paid(id, invoice_id):
     invoice = Invoice.query.get_or_404(invoice_id)
     if invoice.customer_id != id:
         abort(404)
-    if invoice.status == "paid":
-        flash("Invoice already paid.", "warning")
-        return redirect(url_for("customers.profile", id=id))
 
     try:
+        # Lock customer row first, then re-check invoice status inside the lock
         customer = db.session.query(Customer).filter_by(id=id).with_for_update().one()
+        db.session.refresh(invoice)
+        if invoice.status in ("paid", "void"):
+            flash("Invoice already paid." if invoice.status == "paid" else "Void invoice cannot be paid.", "warning")
+            return redirect(url_for("customers.profile", id=id))
         previous_balance = customer.balance
         pay_type = request.form.get("payment_type", "cash")
 

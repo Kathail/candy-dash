@@ -158,7 +158,9 @@ def complete_stop(id):
             receipt_number = generate_receipt_number()
 
             new_balance = previous_balance + amount_sold - amount_paid
-            new_balance = max(new_balance, Decimal("0"))
+            if new_balance < 0:
+                flash(f"Note: overpayment of ${-new_balance:,.2f} — balance was already zero.", "warning")
+                new_balance = Decimal("0")
             customer.balance = new_balance
 
             payment = Payment(
@@ -188,6 +190,23 @@ def complete_stop(id):
                 )
                 db.session.add(invoice)
 
+            # Mark old unpaid invoices paid FIFO if excess payment
+            if amount_paid > 0:
+                excess = amount_paid - amount_sold
+                if excess > 0:
+                    unpaid_invoices = Invoice.query.filter_by(
+                        customer_id=customer.id, status="unpaid"
+                    ).order_by(Invoice.invoice_date.asc()).all()
+                    for inv in unpaid_invoices:
+                        if inv.invoice_number == receipt_number:
+                            continue
+                        if excess >= inv.amount:
+                            inv.status = "paid"
+                            inv.payment_type = payment_type
+                            excess -= inv.amount
+                        else:
+                            break
+
             parts = []
             if amount_sold > 0:
                 parts.append(f"Sold ${amount_sold:,.2f}")
@@ -205,13 +224,8 @@ def complete_stop(id):
         except Exception:
             logging.exception("Inline payment failed for stop #%s", id)
             db.session.rollback()
-            flash("Stop completed but payment failed. Please record the payment manually.", "error")
-            # Re-fetch the stop after rollback and just mark it complete
-            stop = RouteStop.query.get(id)
-            stop.completed = True
-            stop.completed_at = datetime.now(timezone.utc)
-            db.session.commit()
-            return redirect(url_for("route.index", date=stop.route_date.isoformat()))
+            flash("Payment failed — stop was not completed. Please try again.", "error")
+            return redirect(url_for("route.index", date=RouteStop.query.get(id).route_date.isoformat()))
 
     audit("stop_completed", f"Completed route stop for customer #{stop.customer_id} on {stop.route_date}")
 
@@ -247,6 +261,7 @@ def uncomplete_stop(id):
         response.headers["HX-Trigger"] = "stopCompleted"
         return response
 
+    flash("Stop unmarked. Note: any payment recorded during completion has NOT been reversed.", "warning")
     return redirect(url_for("route.index", date=stop.route_date.isoformat()))
 
 

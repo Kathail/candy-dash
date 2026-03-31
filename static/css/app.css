@@ -8,11 +8,11 @@
 
 :root {
     --bg: #111827;
-    --bg-panel: #1a2332;
-    --bg-panel-hover: #243044;
-    --bg-input: #0f1726;
+    --bg-panel: #1f2937;
+    --bg-panel-hover: #283548;
+    --bg-input: #111827;
 
-    --border: #2d3a4d;
+    --border: #374151;
 
     --text: #e5e7eb;
     --text-muted: #9ca3af;
@@ -78,8 +78,8 @@
 }
 
 @utility text-2xs {
-    font-size: 0.6875rem;
-    line-height: 1.3;
+    font-size: 0.75rem;
+    line-height: 1.35;
 }
 
 @utility safe-bottom {
@@ -122,14 +122,14 @@
     animation: loading-bar 1.2s ease-in-out infinite;
 }
 
-@utility stagger-1 { animation-delay: 0.03s; }
-@utility stagger-2 { animation-delay: 0.06s; }
-@utility stagger-3 { animation-delay: 0.09s; }
-@utility stagger-4 { animation-delay: 0.12s; }
-@utility stagger-5 { animation-delay: 0.15s; }
-@utility stagger-6 { animation-delay: 0.18s; }
-@utility stagger-7 { animation-delay: 0.21s; }
-@utility stagger-8 { animation-delay: 0.24s; }
+@utility stagger-1 { animation-delay: 0.05s; }
+@utility stagger-2 { animation-delay: 0.10s; }
+@utility stagger-3 { animation-delay: 0.15s; }
+@utility stagger-4 { animation-delay: 0.20s; }
+@utility stagger-5 { animation-delay: 0.25s; }
+@utility stagger-6 { animation-delay: 0.30s; }
+@utility stagger-7 { animation-delay: 0.35s; }
+@utility stagger-8 { animation-delay: 0.40s; }
 
 @utility custom-scroll {
     overflow-y: auto;
@@ -256,8 +256,9 @@ textarea.theme-input::placeholder {
 }
 
 .theme-input:disabled {
-    opacity: 0.5;
+    opacity: 0.6;
     cursor: not-allowed;
+    filter: grayscale(30%);
 }
 
 /* -- Buttons -- */
@@ -296,9 +297,10 @@ textarea.theme-input::placeholder {
 
 .theme-btn-primary:disabled,
 .theme-btn-secondary:disabled {
-    opacity: 0.5;
+    opacity: 0.6;
     cursor: not-allowed;
     pointer-events: none;
+    filter: grayscale(30%);
 }
 
 /* -- Navigation -- */

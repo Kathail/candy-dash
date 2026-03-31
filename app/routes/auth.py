@@ -27,8 +27,16 @@ def login():
 
         user = User.query.filter_by(username=username).first()
 
-        if user is None or not user.check_password(password) or not user.is_active:
-            # Log failed attempt with the user_id if user exists but password/active check failed
+        # Always run password check to prevent timing-based username enumeration
+        if user is not None:
+            password_ok = user.check_password(password)
+        else:
+            # Burn the same time as a real check
+            from werkzeug.security import generate_password_hash
+            generate_password_hash(password)
+            password_ok = False
+
+        if user is None or not password_ok or not user.is_active:
             if user:
                 audit("login_failed", f"Failed login attempt for '{username}'", user_id=user.id)
                 db.session.commit()

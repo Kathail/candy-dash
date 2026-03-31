@@ -318,7 +318,7 @@ def import_csv():
                     if phone: c.phone = phone
                     if notes: c.notes = notes
                     if lead_source: c.lead_source = lead_source
-                    if balance is not None: c.balance = balance
+                    if raw_bal: c.balance = balance
                     updated += 1
                 else:
                     skipped += 1

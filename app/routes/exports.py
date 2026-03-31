@@ -3,6 +3,8 @@
 from flask import Blueprint, request
 from flask_login import login_required
 
+from sqlalchemy.orm import joinedload
+
 from app import db
 from app.helpers import admin_required, export_response, parse_date_range_optional
 from app.models import Customer, Payment, RouteStop
@@ -57,6 +59,7 @@ def payments():
 
     query = (
         Payment.query
+        .options(joinedload(Payment.customer), joinedload(Payment.recorder))
         .join(Customer, Payment.customer_id == Customer.id)
         .order_by(Payment.payment_date.desc())
     )
@@ -105,6 +108,7 @@ def route_history():
 
     query = (
         RouteStop.query
+        .options(joinedload(RouteStop.customer), joinedload(RouteStop.creator))
         .join(Customer, RouteStop.customer_id == Customer.id)
         .order_by(RouteStop.route_date.desc(), RouteStop.sequence)
     )

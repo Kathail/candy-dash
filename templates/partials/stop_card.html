@@ -1,7 +1,7 @@
 {# HTMX partial: returned after complete/uncomplete #}
 <div id="stop-{{ stop.id }}" x-data="{ showPay: false }"
      class="bg-panel rounded-xl border overflow-hidden
-            {{ 'border-green-700/40 animate-pop-in' if stop.completed else 'border-app' }}">
+            {{ 'border-l-4 border-l-green-500 border-green-700/40 animate-pop-in' if stop.completed else 'border-app' }}">
   <div class="p-4">
 
     {# Name + balance row #}
@@ -36,7 +36,7 @@
         <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
         </svg>
-        <span class="underline underline-offset-2 truncate max-w-[200px]">{{ stop.customer.address }}</span>
+        <span class="underline underline-offset-2 truncate">{{ stop.customer.address }}</span>
       </a>
       {% endif %}
       {% if stop.customer.phone %}
@@ -117,12 +117,11 @@
             class="flex flex-col gap-2">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="flex gap-2">
-          <input type="number" name="amount_sold" step="0.01" min="0"
-                 aria-label="Amount sold" placeholder="Sold"
+          <input type="number" name="amount_sold" step="0.01" min="0" inputmode="decimal"
+                 aria-label="Amount sold" placeholder="Sold $"
                  class="flex-1 theme-input rounded-xl text-sm min-h-[44px]">
-          <input type="number" name="amount" step="0.01" min="0"
-                 placeholder="Paid" value="{{ '%.2f'|format(stop.customer.balance|float) }}"
-                 aria-label="Amount paid"
+          <input type="number" name="amount" step="0.01" min="0" inputmode="decimal"
+                 placeholder="Paid $" aria-label="Amount paid"
                  class="flex-1 theme-input rounded-xl text-sm min-h-[44px]">
         </div>
         <div class="flex gap-2">

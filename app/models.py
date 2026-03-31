@@ -52,6 +52,9 @@ class User(UserMixin, db.Model):
 
 class Customer(db.Model):
     __tablename__ = "customers"
+    __table_args__ = (
+        db.Index("ix_customers_status_balance", "status", "balance"),
+    )
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False, index=True)
@@ -151,6 +154,10 @@ class Note(db.Model):
 
 class Payment(db.Model):
     __tablename__ = "payments"
+    __table_args__ = (
+        db.Index("ix_payments_customer_date", "customer_id", "payment_date"),
+        db.Index("ix_payments_date_amount", "payment_date", "amount"),
+    )
 
     id = db.Column(db.Integer, primary_key=True)
     customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=False, index=True)
@@ -247,6 +254,9 @@ class Purchase(db.Model):
 
 class ActivityLog(db.Model):
     __tablename__ = "activity_logs"
+    __table_args__ = (
+        db.Index("ix_activity_customer_action", "customer_id", "action", "created_at"),
+    )
 
     id = db.Column(db.Integer, primary_key=True)
     customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=False, index=True)

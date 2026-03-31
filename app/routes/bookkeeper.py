@@ -17,8 +17,11 @@ bp = Blueprint("bookkeeper", __name__, url_prefix="/books")
 @bp.before_request
 @login_required
 def before_request():
-    """Require login for bookkeeper routes."""
-    pass
+    """Require login and non-demo role for bookkeeper routes."""
+    from flask_login import current_user
+    if current_user.role == "demo":
+        from flask import abort
+        abort(403)
 
 
 @bp.route("/")
@@ -92,17 +95,19 @@ def index():
         .paginate(page=page, per_page=per_page, error_out=False)
     )
 
-    # --- Top balances (all with balance > 0) ---
-    top_balances = (
+    # --- Top balances (paginated) ---
+    bal_page = request.args.get("bal_page", 1, type=int)
+    balances_paginated = (
         Customer.query
         .filter(Customer.status == "active", Customer.balance > 0)
         .order_by(Customer.balance.desc())
-        .limit(15)
-        .all()
+        .paginate(page=bal_page, per_page=10, error_out=False)
     )
 
-    # --- Collections by city (for the period) ---
-    city_collections = (
+    # --- Collections by city (paginated) ---
+    city_page = request.args.get("city_page", 1, type=int)
+    city_per_page = 10
+    city_collections_all = (
         db.session.query(
             Customer.city,
             func.sum(Payment.amount).label("total"),
@@ -114,16 +119,20 @@ def index():
         .order_by(func.sum(Payment.amount).desc())
         .all()
     )
+    city_total_pages = max(1, (len(city_collections_all) + city_per_page - 1) // city_per_page)
+    city_page = min(city_page, city_total_pages)
+    city_start = (city_page - 1) * city_per_page
+    city_collections = city_collections_all[city_start:city_start + city_per_page]
 
-    # --- Recent activity (last 15 financial actions) ---
-    recent_activity = (
+    # --- Recent activity (paginated) ---
+    act_page = request.args.get("act_page", 1, type=int)
+    activity_paginated = (
         ActivityLog.query
         .options(joinedload(ActivityLog.customer))
         .join(Customer)
         .filter(ActivityLog.action.in_(("payment_recorded", "payment_deleted", "customer_created", "lead_converted")))
         .order_by(ActivityLog.created_at.desc())
-        .limit(15)
-        .all()
+        .paginate(page=act_page, per_page=10, error_out=False)
     )
 
     # Date strings for export links
@@ -147,7 +156,11 @@ def index():
         today_total=today_total,
         recent_payments=payments_paginated.items,
         payments_pagination=payments_paginated,
-        top_balances=top_balances,
+        top_balances=balances_paginated.items,
+        balances_pagination=balances_paginated,
         city_collections=city_collections,
-        recent_activity=recent_activity,
+        city_page=city_page,
+        city_total_pages=city_total_pages,
+        recent_activity=activity_paginated.items,
+        activity_pagination=activity_paginated,
     )

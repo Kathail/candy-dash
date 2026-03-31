@@ -325,17 +325,24 @@
 
 {% block scripts %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+function scrollToNext() {
   var next = document.getElementById('next-stop');
   if (next) {
     setTimeout(function() {
       next.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 400);
+    }, 300);
   }
-});
-// Refresh page when a stop is completed/uncompleted to update collection totals
+}
+document.addEventListener('DOMContentLoaded', scrollToNext);
+// After stop completion, reload to update totals then scroll to next
 document.body.addEventListener('stopCompleted', function() {
-  setTimeout(function() { window.location.reload(); }, 500);
+  setTimeout(function() {
+    window.location.reload();
+  }, 400);
 });
+// After page reload, scroll to next stop
+if (performance.navigation && performance.navigation.type === 1) {
+  scrollToNext();
+}
 </script>
 {% endblock %}

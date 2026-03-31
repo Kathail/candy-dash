@@ -131,6 +131,20 @@
   </div>
   {% endif %}
 
+  {% if pagination.pages > 1 %}
+  <div class="flex items-center justify-center gap-2 pt-1">
+    {% if pagination.has_prev %}
+    <a href="{{ url_for('purchases.index', supplier=supplier_filter, month=month_filter, sort=sort, page=pagination.prev_num) }}"
+       class="px-3 py-1.5 text-xs font-medium text-indigo-400 hover:text-indigo-300 bg-panel border border-app rounded-lg btn-press">&larr; Prev</a>
+    {% endif %}
+    <span class="text-2xs text-faint">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+    {% if pagination.has_next %}
+    <a href="{{ url_for('purchases.index', supplier=supplier_filter, month=month_filter, sort=sort, page=pagination.next_num) }}"
+       class="px-3 py-1.5 text-xs font-medium text-indigo-400 hover:text-indigo-300 bg-panel border border-app rounded-lg btn-press">Next &rarr;</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
   <div class="h-4"></div>
 </div>
 {% endblock %}
