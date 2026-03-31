@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Northern Sweet Supply — Candy, Snack & Beverage Distribution</title>
-    <meta name="description" content="Candy, snack, and beverage distribution for Northern Ontario retailers. Weekly delivery to Sudbury, Sault Ste. Marie, Timmins, and surrounding communities.">
+    <title>Northern Sweet Supply — Cottage Country Candy Distributor | Northern Ontario</title>
+    <meta name="description" content="Authorized Cottage Country Candies distributor serving Northern Ontario. Candy, snacks, and confectionery wholesale for retailers in Sudbury, Sault Ste. Marie, Timmins, North Bay, and surrounding communities.">
     <link rel="icon" href="{{ url_for('static', filename='icons/favicon.svg') }}" type="image/svg+xml">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}?v=1">
 </head>
@@ -36,13 +36,13 @@
     <section class="hero">
         <div class="container">
             <div class="hero-content">
-                <p class="section-eyebrow">Northern Ontario's Distributor</p>
+                <p class="section-eyebrow">Cottage Country Candies Distributor</p>
                 <h1 class="hero-title">
-                    Your shelves, stocked.<br>
-                    <span class="gold">Every&nbsp;week.</span>
+                    Candy distribution<br>
+                    <span class="gold">for Northern Ontario.</span>
                 </h1>
                 <p class="hero-text">
-                    We deliver candy, snacks, and beverages to convenience stores, gas stations, and variety shops across Sudbury, Sault Ste. Marie, Timmins, and the Highway 11 corridor.
+                    Authorized Cottage Country Candies distributor supplying candy, snacks, and confectionery to convenience stores, gas stations, and variety shops across Sudbury, Sault Ste. Marie, Timmins, and Northern Ontario.
                 </p>
                 <div class="hero-actions">
                     <a href="#contact" class="btn btn-gold">Become a Customer</a>
@@ -58,8 +58,8 @@
                         <div class="hero-stat-label">Regions served</div>
                     </div>
                     <div>
-                        <div class="hero-stat-value">Weekly</div>
-                        <div class="hero-stat-label">Scheduled routes</div>
+                        <div class="hero-stat-value">Cottage Country</div>
+                        <div class="hero-stat-label">Authorized distributor</div>
                     </div>
                 </div>
             </div>
@@ -75,15 +75,15 @@
         <div class="container">
             <div class="reveal">
                 <p class="section-eyebrow">What We Carry</p>
-                <h2 class="section-title">Everything your customers want.</h2>
-                <p class="section-subtitle">From checkout counter impulse buys to full snack aisles — we carry the brands that move.</p>
+                <h2 class="section-title">Cottage Country Candies & more.</h2>
+                <p class="section-subtitle">Featuring the full Cottage Country Candies (Scholtens) line, plus candy, snacks, and confectionery from top brands.</p>
             </div>
 
             <div class="grid-3 reveal-stagger" style="margin-top: 2.5rem;">
                 {% set products = [
                     ("🍫", "gold", "Candy & Chocolate",
-                     "Chocolate bars, gummies, sour candy, licorice, novelty items, and more.",
-                     ["Cadbury", "Mars", "Hershey's", "Nestl&eacute;", "Haribo"]),
+                     "Cottage Country gummies, chocolate bars, sour candy, licorice, novelty items, and more.",
+                     ["Cottage Country", "Scholtens", "Cadbury", "Mars", "Haribo"]),
                     ("🥤", "blue", "Beverages",
                      "Pop, juice, water, energy drinks, iced tea. Singles and multi-packs.",
                      ["Coca-Cola", "Pepsi", "Red Bull", "Monster", "Nestea"]),
@@ -125,11 +125,9 @@
     <div class="container"><div class="divider"></div></div>
     <section class="section" style="padding-top: 3rem; padding-bottom: 3rem;">
         <div class="container" style="text-align: center;">
-            <p style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--gray-500); margin-bottom: 1.25rem;">Brands We Carry</p>
+            <p style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--gray-500); margin-bottom: 1.25rem;">Our Suppliers</p>
             <div class="brands-bar reveal-stagger">
-                {% for brand in ["Cottage Country", "Cadbury", "Mars", "Nestl&eacute;", "Hershey's",
-                                  "Lay's", "Old Dutch", "Coca-Cola", "Pepsi", "Red Bull",
-                                  "Haribo", "Maynards", "Pringles", "Doritos", "Sour Patch Kids"] %}
+                {% for brand in ["Cottage Country Candies", "Scholtens"] %}
                 <span class="brand-badge">{{ brand }}</span>
                 {% endfor %}
             </div>
@@ -150,18 +148,18 @@
 
             <div class="grid-2 reveal-stagger" style="margin-top: 2.5rem;">
                 {% set programs = [
-                    ("🚛", "Weekly Scheduled Delivery",
-                     "Your store is on a set route. Same day, every week. No guesswork, no missed deliveries."),
+                    ("🚛", "Route Delivery",
+                     "Your store gets added to a delivery route. Consistent, reliable service across Northern Ontario."),
                     ("🏪", "In-Store Display Options",
                      "Spinners, counter displays, clip strips, and seasonal endcaps to maximize your impulse sales."),
                     ("📅", "Seasonal Planning",
                      "We stock Easter, Halloween, Christmas, and Valentine's months ahead so you're never caught short."),
                     ("📝", "Flexible Ordering",
-                     "Adjust your order week to week. Add items, scale back, try new products — no commitments."),
+                     "Adjust your order as needed. Add items, scale back, try new products — no long-term commitments."),
                     ("💰", "No Minimum Orders",
                      "Start small. Order what makes sense for your store. We'll grow with you."),
-                    ("📊", "Account Management",
-                     "Your own rep who knows your store, your customers, and your sales patterns."),
+                    ("📊", "Dedicated Rep",
+                     "A rep who knows your store, your customers, and what sells in your area."),
                 ] %}
                 {% for emoji, title, desc in programs %}
                 <div class="program-item">
@@ -185,8 +183,8 @@
         <div class="container">
             <div class="reveal">
                 <p class="section-eyebrow">Our Coverage Area</p>
-                <h2 class="section-title">Serving Northern Ontario, weekly.</h2>
-                <p class="section-subtitle">Scheduled routes across the region. Predictable delivery you can count on.</p>
+                <h2 class="section-title">Serving Northern Ontario.</h2>
+                <p class="section-subtitle">Delivery routes across the region. Candy distribution you can count on.</p>
             </div>
 
             <div class="grid-2 reveal-stagger" style="margin-top: 2.5rem;">
@@ -222,7 +220,7 @@
                         <p class="section-eyebrow">Get Started</p>
                         <h2 class="section-title">Ready to stock your shelves?</h2>
                         <p class="section-subtitle" style="margin-top: 0.75rem;">
-                            Fill out the form and we'll get you set up. Most new customers are on a route within the week.
+                            Fill out the form and we'll get you set up on a delivery route.
                         </p>
 
                         <div style="margin-top: 2rem; display: flex; flex-direction: column; gap: 1rem;">
@@ -300,7 +298,7 @@
                 </div>
             </div>
             <div class="footer-bottom">
-                <p class="footer-copy">Proudly serving Northern Ontario &middot; &copy; 2026 Northern Sweet Supply. All rights reserved.</p>
+                <p class="footer-copy">Cottage Country Candies distributor &middot; Proudly serving Northern Ontario &middot; &copy; 2026 Northern Sweet Supply</p>
             </div>
         </div>
     </footer>
