@@ -19,7 +19,7 @@
     <div class="relative z-10">
       <div class="text-center">
         <p class="text-indigo-200 text-2xs font-semibold uppercase tracking-wider">{{ today.strftime('%A') }} · Total Sales</p>
-        <p class="text-3xl font-bold mt-0.5">{{ (payment_sum + total_outstanding)|currency }}</p>
+        <p class="text-3xl font-bold mt-0.5">{{ sales_sum|currency }}</p>
       </div>
 
       <div class="flex items-center justify-between mt-3">
@@ -52,8 +52,8 @@
     </div>
   </div>
 
-  {# Collected vs Owing breakdown #}
-  <div class="grid grid-cols-2 gap-3 animate-fade-in-up stagger-1">
+  {# Collected / Sold / Owing breakdown #}
+  <div class="grid grid-cols-3 gap-3 animate-fade-in-up stagger-1">
     <div class="bg-panel rounded-xl border border-app p-4">
       <div class="flex items-center gap-2.5">
         <div class="w-9 h-9 rounded-lg bg-green-500/15 flex items-center justify-center flex-shrink-0">
@@ -61,7 +61,18 @@
         </div>
         <div>
           <p class="text-lg font-bold text-green-400">{{ payment_sum|currency }}</p>
-          <p class="text-2xs text-faint">collected · {{ payment_count }} payments</p>
+          <p class="text-2xs text-faint">collected · {{ collection_count }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="bg-panel rounded-xl border border-app p-4">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-lg bg-amber-500/15 flex items-center justify-center flex-shrink-0">
+          <span class="text-sm font-black text-amber-400">$</span>
+        </div>
+        <div>
+          <p class="text-lg font-bold text-amber-400">{{ sales_sum|currency }}</p>
+          <p class="text-2xs text-faint">sold · {{ sales_count }}</p>
         </div>
       </div>
     </div>
@@ -72,7 +83,7 @@
         </div>
         <div>
           <p class="text-lg font-bold text-orange-400">{{ total_outstanding|currency }}</p>
-          <p class="text-2xs text-faint">owing · {{ overdue_count }} accounts</p>
+          <p class="text-2xs text-faint">owing · {{ overdue_count }}</p>
         </div>
       </div>
     </div>

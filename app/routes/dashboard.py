@@ -37,15 +37,21 @@ def index():
         func.count(Payment.id),
         func.coalesce(func.sum(Payment.amount), Decimal("0")),
         func.coalesce(func.max(Payment.amount), Decimal("0")),
+        func.coalesce(func.sum(Payment.amount_sold), Decimal("0")),
+        func.sum(db.case((Payment.amount > 0, 1), else_=0)),
+        func.sum(db.case((Payment.amount_sold > 0, 1), else_=0)),
     ).filter(
         Payment.payment_date >= day_start, Payment.payment_date <= day_end
     ).first()
     payment_count = payment_stats[0]
     payment_sum = payment_stats[1] or Decimal("0")
     highest_today = payment_stats[2] or Decimal("0")
+    sales_sum = payment_stats[3] or Decimal("0")
+    collection_count = int(payment_stats[4] or 0)
+    sales_count = int(payment_stats[5] or 0)
 
     # Today's avg order value
-    avg_order_today = round(float(payment_sum) / payment_count, 2) if payment_count else 0
+    avg_order_today = round(float(payment_sum) / collection_count, 2) if collection_count else 0
 
     # Yesterday's payments for comparison
     yest_payment = db.session.query(
@@ -215,6 +221,9 @@ def index():
         completed_stops=completed_stops,
         payment_count=payment_count,
         payment_sum=payment_sum,
+        sales_sum=sales_sum,
+        collection_count=collection_count,
+        sales_count=sales_count,
         highest_today=highest_today,
         avg_order_today=avg_order_today,
         yest_payment=yest_payment,
