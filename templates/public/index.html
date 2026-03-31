@@ -127,8 +127,11 @@
         <div class="container" style="text-align: center;">
             <p style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--gray-500); margin-bottom: 1.25rem;">Our Suppliers</p>
             <div class="brands-bar reveal-stagger">
-                {% for brand in ["Cottage Country Candies", "Scholtens"] %}
-                <span class="brand-badge">{{ brand }}</span>
+                {% for brand, url in [
+                    ("Cottage Country Candies", "https://www.cottagecountrycandies.com"),
+                    ("Scholtens", "https://www.scholtens.com"),
+                ] %}
+                <a href="{{ url }}" target="_blank" rel="noopener" class="brand-badge">{{ brand }}</a>
                 {% endfor %}
             </div>
         </div>
@@ -235,7 +238,7 @@
                                 <div class="program-icon" style="width: 2.25rem; height: 2.25rem; font-size: 1rem;">✉️</div>
                                 <div>
                                     <div style="font-size: 0.8125rem; color: var(--gray-400);">Email</div>
-                                    <a href="mailto:info@northernsweetsupply.ca" style="font-size: 0.9375rem; font-weight: 600; color: var(--white);">info@northernsweetsupply.ca</a>
+                                    <a href="mailto:sales@northernsweetsupply.ca" style="font-size: 0.9375rem; font-weight: 600; color: var(--white);">sales@northernsweetsupply.ca</a>
                                 </div>
                             </div>
                         </div>
