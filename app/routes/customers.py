@@ -87,7 +87,7 @@ def index():
 
     # Paginate (30 per page)
     page = request.args.get("page", 1, type=int)
-    per_page = 30
+    per_page = 10
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
     customers = pagination.items
     customer_ids = [c.id for c in customers]

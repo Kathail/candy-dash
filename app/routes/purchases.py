@@ -64,7 +64,7 @@ def index():
     ).scalar()
 
     page = request.args.get("page", 1, type=int)
-    pagination = query.paginate(page=page, per_page=20, error_out=False)
+    pagination = query.paginate(page=page, per_page=10, error_out=False)
     purchases = pagination.items
 
     # Distinct suppliers for filter

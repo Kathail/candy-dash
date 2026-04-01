@@ -124,5 +124,19 @@
     {% endif %}
   </div>
 
+  {% if total_pages is defined and total_pages > 1 %}
+  <div class="flex items-center justify-center gap-2 pt-1">
+    {% if page > 1 %}
+    <a href="{{ url_for('reports.financial', start_date=start.strftime('%Y-%m-%d'), end_date=end.strftime('%Y-%m-%d'), page=page-1) }}"
+       class="px-3 py-1.5 text-xs font-medium text-indigo-400 hover:text-indigo-300 bg-panel border border-app rounded-lg btn-press">&larr; Prev</a>
+    {% endif %}
+    <span class="text-2xs text-faint">Page {{ page }} of {{ total_pages }}</span>
+    {% if page < total_pages %}
+    <a href="{{ url_for('reports.financial', start_date=start.strftime('%Y-%m-%d'), end_date=end.strftime('%Y-%m-%d'), page=page+1) }}"
+       class="px-3 py-1.5 text-xs font-medium text-indigo-400 hover:text-indigo-300 bg-panel border border-app rounded-lg btn-press">Next &rarr;</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
 </div>
 {% endblock %}

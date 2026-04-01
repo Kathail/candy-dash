@@ -48,7 +48,7 @@ def daily_sales():
     start_date = start.date() if hasattr(start, 'date') else start
     end_date = end.date() if hasattr(end, 'date') else end
 
-    rows = (
+    query = (
         db.session.query(
             Invoice.invoice_date,
             func.count(Invoice.id).label("count"),
@@ -57,25 +57,35 @@ def daily_sales():
         .filter(Invoice.invoice_date >= start_date, Invoice.invoice_date <= end_date)
         .group_by(Invoice.invoice_date)
         .order_by(Invoice.invoice_date.desc())
-        .all()
     )
 
-    grand_total = sum(r.total for r in rows)
-    grand_count = sum(r.count for r in rows)
-
     if fmt in ("csv", "xlsx", "pdf"):
+        rows = query.all()
         headers = ["Date", "Sales Count", "Total"]
         export_rows = [(str(r.invoice_date), r.count, str(r.total)) for r in rows]
         filename = f"daily_sales_{start.strftime('%Y%m%d')}_{end.strftime('%Y%m%d')}"
         return export_response(export_rows, headers, filename, fmt, title="Daily Sales")
 
+    rows = query.all()
+    grand_total = sum(r.total for r in rows)
+    grand_count = sum(r.count for r in rows)
+
+    # Paginate for display
+    page = request.args.get("page", 1, type=int)
+    per_page = 10
+    total_pages = max(1, (len(rows) + per_page - 1) // per_page)
+    page = min(page, total_pages)
+    page_rows = rows[(page - 1) * per_page : page * per_page]
+
     return render_template(
         "reports/daily_sales.html",
-        rows=rows,
+        rows=page_rows,
         grand_total=grand_total,
         grand_count=grand_count,
         start=start,
         end=end,
+        page=page,
+        total_pages=total_pages,
     )
 
 
@@ -112,7 +122,7 @@ def financial():
     )
 
     # By customer
-    by_customer = (
+    by_customer_query = (
         db.session.query(
             Customer.name,
             Customer.city,
@@ -123,12 +133,11 @@ def financial():
         .filter(Invoice.invoice_date >= start_date, Invoice.invoice_date <= end_date)
         .group_by(Customer.id, Customer.name, Customer.city)
         .order_by(func.sum(Invoice.amount).desc())
-        .limit(500)
-        .all()
     )
 
-    # Export
+    # Export gets all data
     if fmt in ("csv", "xlsx", "pdf"):
+        by_customer = by_customer_query.limit(500).all()
         headers = ["Customer", "City", "Sales Count", "Total"]
         rows = [
             (row.name, row.city or "", row.count, str(row.total))
@@ -137,6 +146,14 @@ def financial():
         filename = f"sales_report_{start.strftime('%Y%m%d')}_{end.strftime('%Y%m%d')}"
         return export_response(rows, headers, filename, fmt, title="Sales Report")
 
+    # Paginate for display
+    by_customer_all = by_customer_query.limit(500).all()
+    page = request.args.get("page", 1, type=int)
+    per_page = 10
+    total_pages = max(1, (len(by_customer_all) + per_page - 1) // per_page)
+    page = min(page, total_pages)
+    by_customer = by_customer_all[(page - 1) * per_page : page * per_page]
+
     return render_template(
         "reports/financial.html",
         summary=summary,
@@ -144,6 +161,8 @@ def financial():
         by_customer=by_customer,
         start=start,
         end=end,
+        page=page,
+        total_pages=total_pages,
     )
 
 
@@ -156,7 +175,7 @@ def tax():
     start_date = start.date() if hasattr(start, 'date') else start
     end_date = end.date() if hasattr(end, 'date') else end
 
-    rows = (
+    all_rows = (
         db.session.query(
             Customer.name,
             Customer.city,
@@ -172,18 +191,25 @@ def tax():
         .all()
     )
 
-    # Summaries
-    taxable_total = sum(r.total for r in rows if not r.tax_exempt)
-    exempt_total = sum(r.total for r in rows if r.tax_exempt)
+    # Summaries (across all data)
+    taxable_total = sum(r.total for r in all_rows if not r.tax_exempt)
+    exempt_total = sum(r.total for r in all_rows if r.tax_exempt)
 
     if fmt in ("csv", "xlsx", "pdf"):
         headers = ["Customer", "City", "Tax Exempt", "Sales Count", "Total"]
         export_rows = [
             (r.name, r.city or "", "Yes" if r.tax_exempt else "No", r.count, str(r.total))
-            for r in rows
+            for r in all_rows
         ]
         filename = f"tax_report_{start.strftime('%Y%m%d')}_{end.strftime('%Y%m%d')}"
         return export_response(export_rows, headers, filename, fmt, title="Tax Report")
+
+    # Paginate for display
+    page = request.args.get("page", 1, type=int)
+    per_page = 10
+    total_pages = max(1, (len(all_rows) + per_page - 1) // per_page)
+    page = min(page, total_pages)
+    rows = all_rows[(page - 1) * per_page : page * per_page]
 
     return render_template(
         "reports/tax.html",
@@ -192,6 +218,8 @@ def tax():
         exempt_total=exempt_total,
         start=start,
         end=end,
+        page=page,
+        total_pages=total_pages,
     )
 
 
