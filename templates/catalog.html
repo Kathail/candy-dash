@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Product Catalog - Candy Dash{% endblock %}
+{% block page_title %}Product Catalog{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-3" x-data="{ search: '', category: '' }">
+
+  {# -- Header -- #}
+  <div class="animate-fade-in-up">
+    <h1 class="text-xl font-bold text-gray-100">Product Catalog</h1>
+    <p class="text-xs text-faint mt-0.5">Cottage Country Candies (Scholtens) — full SKU reference</p>
+  </div>
+
+  {# -- Search & Filter -- #}
+  <div class="flex gap-2 animate-fade-in-up stagger-1">
+    <input type="text" x-model="search" placeholder="Search products or SKU..."
+           class="flex-1 theme-input rounded-xl text-sm min-h-[44px] px-4">
+    <select x-model="category" aria-label="Filter by category"
+            class="theme-input rounded-xl text-sm min-h-[44px]" style="width: auto; min-width: 140px;">
+      <option value="">All Categories</option>
+      {% for cat_name, _, _ in catalog %}
+      <option value="{{ cat_name }}">{{ cat_name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  {# -- Catalog -- #}
+  {% for cat_name, emoji, items in catalog %}
+  <div x-show="!category || category === '{{ cat_name }}'" class="animate-fade-in-up">
+    <div class="bg-panel rounded-xl border border-app overflow-hidden">
+      <div class="px-4 py-2.5 border-b border-gray-700/60 flex items-center gap-2">
+        <span>{{ emoji }}</span>
+        <h3 class="text-xs font-bold text-gray-200 uppercase tracking-wider">{{ cat_name }}</h3>
+        <span class="text-2xs text-faint ml-auto">{{ items|length }} SKUs</span>
+      </div>
+      <div class="divide-y divide-gray-700/40">
+        {% for sku, name, size in items %}
+        <div class="flex items-center gap-3 px-4 py-2"
+             x-show="!search || '{{ name|lower }} {{ sku }}'.includes(search.toLowerCase())">
+          <span class="text-2xs text-gray-600 font-mono w-14 flex-shrink-0">{{ sku }}</span>
+          <span class="text-sm text-gray-200 flex-1">{{ name }}</span>
+          <span class="text-2xs text-faint flex-shrink-0">{{ size }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+
+  <div class="h-4"></div>
+</div>
+{% endblock %}
