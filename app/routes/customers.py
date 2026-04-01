@@ -537,12 +537,14 @@ def delete_payment(id, payment_id):
         if auto_invoice:
             db.session.delete(auto_invoice)
 
-        # Revert invoices that may have been FIFO-marked paid by this payment's excess
+        # Revert invoices that may have been FIFO-marked paid by this payment's excess.
+        # Uses LIFO order (newest first) and payment_type heuristic — no direct link
+        # exists between a payment and the invoices it FIFO-marked.
         if payment.amount and payment.amount > (payment.amount_sold or Decimal("0")):
             excess = payment.amount - (payment.amount_sold or Decimal("0"))
             paid_invoices = Invoice.query.filter_by(
                 customer_id=customer.id, status="paid", payment_type=payment.payment_type
-            ).order_by(Invoice.invoice_date.asc()).all()
+            ).order_by(Invoice.invoice_date.desc()).all()
             for inv in paid_invoices:
                 if inv.invoice_number == payment.receipt_number:
                     continue
@@ -838,7 +840,7 @@ def mark_invoice_paid(id, invoice_id):
         db.session.add(ActivityLog(
             customer_id=customer.id,
             user_id=current_user.id,
-            action="payment_recorded",
+            action="invoice_paid",
             description=f"Invoice #{invoice.invoice_number or invoice.id} paid. ${payment_amount:,.2f}. Balance: ${previous_balance:,.2f} → ${customer.balance:,.2f}.",
         ))
         audit("invoice_paid", f"Invoice #{invoice.invoice_number or invoice.id} (${payment_amount:,.2f}) for '{customer.name}'")

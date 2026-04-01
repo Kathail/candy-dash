@@ -9,6 +9,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 
 from app import db
+from app.helpers import staff_required
 from app.models import Customer, Payment, ActivityLog
 
 bp = Blueprint("bookkeeper", __name__, url_prefix="/books")
@@ -16,12 +17,10 @@ bp = Blueprint("bookkeeper", __name__, url_prefix="/books")
 
 @bp.before_request
 @login_required
+@staff_required
 def before_request():
     """Require login and non-demo role for bookkeeper routes."""
-    from flask_login import current_user
-    if current_user.role == "demo":
-        from flask import abort
-        abort(403)
+    pass
 
 
 @bp.route("/")
@@ -107,7 +106,7 @@ def index():
     # --- Collections by city (paginated) ---
     city_page = request.args.get("city_page", 1, type=int)
     city_per_page = 10
-    city_collections_all = (
+    city_query = (
         db.session.query(
             Customer.city,
             func.sum(Payment.amount).label("total"),
@@ -117,12 +116,11 @@ def index():
         .filter(Payment.payment_date >= period_start)
         .group_by(Customer.city)
         .order_by(func.sum(Payment.amount).desc())
-        .all()
     )
-    city_total_pages = max(1, (len(city_collections_all) + city_per_page - 1) // city_per_page)
+    city_total_count = city_query.count()
+    city_total_pages = max(1, (city_total_count + city_per_page - 1) // city_per_page)
     city_page = min(city_page, city_total_pages)
-    city_start = (city_page - 1) * city_per_page
-    city_collections = city_collections_all[city_start:city_start + city_per_page]
+    city_collections = city_query.offset((city_page - 1) * city_per_page).limit(city_per_page).all()
 
     # --- Recent activity (paginated) ---
     act_page = request.args.get("act_page", 1, type=int)
@@ -130,7 +128,7 @@ def index():
         ActivityLog.query
         .options(joinedload(ActivityLog.customer))
         .join(Customer)
-        .filter(ActivityLog.action.in_(("payment_recorded", "payment_deleted", "customer_created", "lead_converted")))
+        .filter(ActivityLog.action.in_(("payment_recorded", "payment_deleted", "invoice_paid", "customer_created", "lead_converted")))
         .order_by(ActivityLog.created_at.desc())
         .paginate(page=act_page, per_page=10, error_out=False)
     )

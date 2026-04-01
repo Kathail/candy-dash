@@ -7,7 +7,7 @@ from sqlalchemy.orm import joinedload
 
 from app import db
 from app.helpers import admin_required, export_response, parse_date_range_optional
-from app.models import Customer, Payment, RouteStop
+from app.models import Customer, Invoice, Payment, RouteStop
 
 bp = Blueprint("exports", __name__, url_prefix="/exports")
 
@@ -72,8 +72,8 @@ def payments():
     all_payments = query.all()
 
     headers = [
-        "ID", "Receipt Number", "Customer", "Amount",
-        "Previous Balance", "Payment Date", "Notes", "Recorded By",
+        "ID", "Receipt Number", "Customer", "Amount Sold", "Amount Paid",
+        "Payment Type", "Previous Balance", "Payment Date", "Notes", "Recorded By",
     ]
     rows = []
     for p in all_payments:
@@ -83,7 +83,9 @@ def payments():
             p.id,
             p.receipt_number,
             customer.name if customer else "",
+            str(p.amount_sold or 0),
             str(p.amount),
+            p.payment_type or "",
             str(p.previous_balance),
             p.payment_date.isoformat() if p.payment_date else "",
             p.notes or "",
@@ -147,3 +149,51 @@ def route_history():
         filename += f"_to_{end.strftime('%Y%m%d')}"
 
     return export_response(rows, headers, filename, fmt, title="Route History")
+
+
+@bp.route("/invoices")
+@admin_required
+def invoices():
+    """Export invoices, optionally filtered by date range."""
+    fmt = request.args.get("format", "csv").lower()
+    start, end = parse_date_range_optional()
+
+    query = (
+        Invoice.query
+        .options(joinedload(Invoice.customer), joinedload(Invoice.creator))
+        .join(Customer, Invoice.customer_id == Customer.id)
+        .order_by(Invoice.invoice_date.desc())
+    )
+
+    if start:
+        query = query.filter(Invoice.invoice_date >= start.date())
+    if end:
+        query = query.filter(Invoice.invoice_date <= end.date())
+
+    all_invoices = query.all()
+
+    headers = [
+        "ID", "Invoice Number", "Customer", "Amount", "Status",
+        "Invoice Date", "Payment Type", "Description", "Created By",
+    ]
+    rows = []
+    for inv in all_invoices:
+        rows.append((
+            inv.id,
+            inv.invoice_number or "",
+            inv.customer.name if inv.customer else "",
+            str(inv.amount),
+            inv.status,
+            inv.invoice_date.isoformat() if inv.invoice_date else "",
+            inv.payment_type or "",
+            inv.description or "",
+            inv.creator.username if inv.creator else "",
+        ))
+
+    filename = "invoices_export"
+    if start:
+        filename += f"_from_{start.strftime('%Y%m%d')}"
+    if end:
+        filename += f"_to_{end.strftime('%Y%m%d')}"
+
+    return export_response(rows, headers, filename, fmt, title="Invoices")

@@ -18,7 +18,7 @@
         </div>
         <div class="text-right">
           <p class="text-orange-200 text-2xs font-semibold uppercase tracking-wider">Accounts</p>
-          <p class="text-2xl font-bold mt-0.5">{{ customers | length }}</p>
+          <p class="text-2xl font-bold mt-0.5">{{ total_items }}</p>
         </div>
       </div>
     </div>
@@ -53,7 +53,7 @@
     {% set buckets = [('0-30', 'green', '0-30d'), ('31-60', 'yellow', '31-60d'), ('61-90', 'orange', '61-90d'), ('90+', 'red', '90+d')] %}
     {% for key, color, label in buckets %}
     {% set bucket_count = customers_with_aging_counts.get(key, 0) if customers_with_aging_counts is defined else 0 %}
-    <a href="{{ url_for('balances.index', bucket=key, city=city_filter, sort=sort) }}"
+    <a href="{{ url_for('balances.index', bucket=key, city=city_filter, sort=sort, q=q) }}"
        class="bg-panel rounded-xl border p-3 text-center btn-press transition-all
               {{ bucket_styles[color].active if bucket_filter == key else bucket_styles[color].inactive }}">
       <p class="text-lg font-bold {{ bucket_styles[color].text }}">{{ (bucket_totals.get(key, 0)) | currency }}</p>
@@ -77,7 +77,7 @@
         <span class="w-2 h-2 rounded-full bg-indigo-400"></span>
         {% endif %}
       </button>
-      {% if bucket_filter or city_filter %}
+      {% if bucket_filter or city_filter or q %}
       <a href="{{ url_for('balances.index') }}" class="inline-flex items-center gap-1 px-3 min-h-[44px] text-sm text-gray-500 hover:text-gray-300 transition-colors btn-press">
         Clear
       </a>
@@ -89,6 +89,9 @@
           class="bg-panel rounded-xl border border-app p-4 animate-fade-in-up mt-2">
       {% if bucket_filter %}
       <input type="hidden" name="bucket" value="{{ bucket_filter }}">
+      {% endif %}
+      {% if q %}
+      <input type="hidden" name="q" value="{{ q }}">
       {% endif %}
       <div class="flex flex-wrap gap-3">
         <select name="city" onchange="this.form.submit()"
@@ -112,13 +115,13 @@
   </div>
 
   {# -- Search -- #}
-  <div x-data="{ q: '' }" class="animate-fade-in-up stagger-2">
-    <input type="text" x-model="q" placeholder="Search customers..."
-           @input="document.querySelectorAll('[data-customer-name]').forEach(el => {
-             el.style.display = el.dataset.customerName.toLowerCase().includes(q.toLowerCase()) ? '' : 'none'
-           })"
+  <form method="get" action="{{ url_for('balances.index') }}" class="animate-fade-in-up stagger-2">
+    {% if bucket_filter %}<input type="hidden" name="bucket" value="{{ bucket_filter }}">{% endif %}
+    {% if city_filter %}<input type="hidden" name="city" value="{{ city_filter }}">{% endif %}
+    {% if sort != 'balance_desc' %}<input type="hidden" name="sort" value="{{ sort }}">{% endif %}
+    <input type="text" name="q" value="{{ q }}" placeholder="Search customers..."
            class="w-full theme-input rounded-xl text-sm min-h-[44px] px-4">
-  </div>
+  </form>
 
   {# -- Section Header -- #}
   {% if customers %}
@@ -134,81 +137,18 @@
 
   {# -- Balance List -- #}
   <div id="balance-list">
-    {% if customers %}
-    <div class="space-y-2">
-      {% for item in customers %}
-      {% set customer = item.customer %}
-      {% set bucket = item.bucket %}
-      <div data-customer-name="{{ customer.name }}" class="bg-panel rounded-xl border border-app overflow-hidden animate-fade-in-up stagger-{{ loop.index0 % 8 + 1 }}" x-data="{ showPay: false }">
-        <a href="{{ url_for('customers.profile', id=customer.id) }}"
-           class="flex items-center gap-3 px-4 py-3 hover:bg-gray-700/30 transition-colors btn-press">
-          <div class="flex-1 min-w-0">
-            <p class="text-sm font-semibold text-gray-100 truncate">{{ customer.name }}</p>
-            <p class="text-2xs text-gray-500">{{ customer.city or 'No city' }}</p>
-          </div>
-          <span class="text-sm font-bold text-amber-400 flex-shrink-0">{{ customer.balance | currency }}</span>
-          <span class="px-2 py-0.5 text-2xs font-semibold rounded-full flex-shrink-0
-                       {{ 'bg-green-500/20 text-green-400' if bucket == '0-30'
-                          else 'bg-yellow-500/20 text-yellow-400' if bucket == '31-60'
-                          else 'bg-orange-500/20 text-orange-400' if bucket == '61-90'
-                          else 'bg-red-500/20 text-red-400' }}">{{ bucket }}d</span>
-          <button @click.prevent.stop="showPay = !showPay" aria-label="Record payment"
-                  class="p-2 rounded-lg bg-green-600 text-white hover:bg-green-500 transition-colors btn-press flex-shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center">
-            <span aria-hidden="true" class="text-sm font-black ">$</span>
-          </button>
-        </a>
-
-        {# Payment form #}
-        <div x-show="showPay" x-transition.duration.200ms x-cloak class="px-4 pb-4 pt-1 border-t border-app">
-          <form method="post" action="{{ url_for('customers.record_payment', id=customer.id) }}"
-                class="flex flex-col gap-2">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <input type="hidden" name="next" value="{{ url_for('balances.index') }}">
-            <div class="flex gap-2">
-              <input type="number" name="amount_sold" step="0.01" min="0" inputmode="decimal" placeholder="Sold $"
-                     class="flex-1 theme-input rounded-xl text-sm min-h-[44px]">
-              <input type="number" name="amount_paid" step="0.01" min="0" inputmode="decimal" placeholder="Paid $"
-                     class="flex-1 theme-input rounded-xl text-sm min-h-[44px]">
-              <select name="payment_type" aria-label="Payment type"
-                      class="theme-input rounded-xl text-sm min-h-[44px]">
-                <option value="cash">Cash</option>
-                <option value="cheque">Cheque</option>
-                <option value="etransfer">E-Transfer</option>
-                <option value="debit">Debit</option>
-                <option value="credit">Credit</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-            <button type="submit"
-                    class="w-full inline-flex items-center justify-center gap-2 px-3 py-2.5 bg-green-600 text-white text-sm font-semibold rounded-xl hover:bg-green-500 transition-colors min-h-[44px] btn-press">
-              <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-              </svg>
-              Record Payment
-            </button>
-          </form>
-        </div>
-      </div>
-      {% endfor %}
-    </div>
-
-    {% else %}
-    <div class="bg-panel rounded-xl border border-app p-10 text-center animate-fade-in-up">
-      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="" class="w-12 h-12 mx-auto mb-3 rounded-lg object-contain opacity-50">
-      <p class="text-sm text-gray-500">No outstanding balances.</p>
-    </div>
-    {% endif %}
+    {% include "partials/balance_rows.html" %}
   </div>
 
   {% if total_pages > 1 %}
   <div class="flex items-center justify-center gap-2 pt-1">
     {% if page > 1 %}
-    <a href="{{ url_for('balances.index', city=city_filter, bucket=bucket_filter, sort=sort, page=page-1) }}#balance-list"
+    <a href="{{ url_for('balances.index', city=city_filter, bucket=bucket_filter, sort=sort, q=q, page=page-1) }}#balance-list"
        class="px-3 py-1.5 text-xs font-medium text-indigo-400 hover:text-indigo-300 bg-panel border border-app rounded-lg btn-press">&larr; Prev</a>
     {% endif %}
     <span class="text-2xs text-faint">Page {{ page }} of {{ total_pages }}</span>
     {% if page < total_pages %}
-    <a href="{{ url_for('balances.index', city=city_filter, bucket=bucket_filter, sort=sort, page=page+1) }}#balance-list"
+    <a href="{{ url_for('balances.index', city=city_filter, bucket=bucket_filter, sort=sort, q=q, page=page+1) }}#balance-list"
        class="px-3 py-1.5 text-xs font-medium text-indigo-400 hover:text-indigo-300 bg-panel border border-app rounded-lg btn-press">Next &rarr;</a>
     {% endif %}
   </div>

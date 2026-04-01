@@ -1,11 +1,11 @@
 """Outstanding balances management routes."""
 
-from datetime import date, datetime, timezone
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 
 from flask import Blueprint, render_template, request
 from flask_login import login_required
-from sqlalchemy import func
+from sqlalchemy import case, func
 
 from app import db
 from app.models import Customer, Payment
@@ -20,33 +20,15 @@ def before_request():
     pass
 
 
-def _aging_bucket(reference_date):
-    """Return aging bucket label for a reference date."""
-    now = datetime.now(timezone.utc)
-    if reference_date is None:
-        return "90+"
-    if isinstance(reference_date, date) and not isinstance(reference_date, datetime):
-        reference_date = datetime.combine(reference_date, datetime.min.time(), tzinfo=timezone.utc)
-    elif isinstance(reference_date, datetime) and reference_date.tzinfo is None:
-        reference_date = reference_date.replace(tzinfo=timezone.utc)
-    delta = (now - reference_date).days
-    if delta <= 30:
-        return "0-30"
-    elif delta <= 60:
-        return "31-60"
-    elif delta <= 90:
-        return "61-90"
-    return "90+"
-
-
 @bp.route("/")
 def index():
     """Show customers with outstanding balances, with aging and filters."""
     city_filter = request.args.get("city", "").strip()
     sort = request.args.get("sort", "balance_desc")
     bucket_filter = request.args.get("bucket", "").strip()
+    q = request.args.get("q", "").strip()
 
-    # Single query: customers + last payment date via LEFT JOIN subquery
+    # Subquery: last payment date per customer
     last_pay = (
         db.session.query(
             Payment.customer_id,
@@ -56,14 +38,53 @@ def index():
         .subquery()
     )
 
-    query = (
-        db.session.query(Customer, last_pay.c.last_date)
-        .outerjoin(last_pay, Customer.id == last_pay.c.customer_id)
-        .filter(Customer.balance > 0, Customer.status != "deleted")
+    # Aging bucket as a SQL CASE expression
+    now = datetime.now(timezone.utc)
+    ref_date = func.coalesce(last_pay.c.last_date, Customer.created_at)
+    bucket_expr = case(
+        (ref_date.is_(None), "90+"),
+        (ref_date < now - timedelta(days=90), "90+"),
+        (ref_date < now - timedelta(days=60), "61-90"),
+        (ref_date < now - timedelta(days=30), "31-60"),
+        else_="0-30",
     )
 
+    # Base filters (applied to both summary and list)
+    base_filters = [Customer.balance > 0, Customer.status != "deleted"]
     if city_filter:
-        query = query.filter(Customer.city == city_filter)
+        base_filters.append(Customer.city == city_filter)
+    if q:
+        base_filters.append(Customer.name.ilike(f"%{q}%"))
+
+    # Bucket summary (unfiltered by bucket so all buckets always show totals)
+    bucket_rows = (
+        db.session.query(
+            bucket_expr.label("bucket"),
+            func.sum(Customer.balance).label("total"),
+            func.count().label("count"),
+        )
+        .outerjoin(last_pay, Customer.id == last_pay.c.customer_id)
+        .filter(*base_filters)
+        .group_by(bucket_expr)
+        .all()
+    )
+
+    bucket_totals = {r.bucket: r.total for r in bucket_rows}
+    bucket_counts = {r.bucket: r.count for r in bucket_rows}
+    total_outstanding = sum((r.total for r in bucket_rows), Decimal("0"))
+
+    # Customer list query
+    query = (
+        db.session.query(Customer, bucket_expr.label("bucket"))
+        .outerjoin(last_pay, Customer.id == last_pay.c.customer_id)
+        .filter(*base_filters)
+    )
+
+    if bucket_filter:
+        query = query.filter(bucket_expr == bucket_filter)
+        total_items = bucket_counts.get(bucket_filter, 0)
+    else:
+        total_items = sum(r.count for r in bucket_rows)
 
     if sort == "balance_asc":
         query = query.order_by(Customer.balance.asc())
@@ -74,34 +95,14 @@ def index():
     else:
         query = query.order_by(Customer.balance.desc())
 
-    rows = query.all()
-
-    all_with_aging = []
-    for customer, last_date in rows:
-        bucket = _aging_bucket(last_date or customer.created_at)
-        if bucket_filter and bucket != bucket_filter:
-            continue
-        all_with_aging.append({"customer": customer, "bucket": bucket})
-
-    # Manual pagination (query uses session.query, not Model.query)
+    # Paginate (SQL-level)
     page = request.args.get("page", 1, type=int)
     per_page = 10
-    total_items = len(all_with_aging)
     total_pages = max(1, (total_items + per_page - 1) // per_page)
     page = min(page, total_pages)
-    start = (page - 1) * per_page
-    customers_with_aging = all_with_aging[start:start + per_page]
+    results = query.offset((page - 1) * per_page).limit(per_page).all()
 
-    # Summary totals (across ALL items, not just current page)
-    total_outstanding = sum(
-        item["customer"].balance for item in all_with_aging
-    )
-    bucket_totals = {}
-    bucket_counts = {}
-    for item in all_with_aging:
-        b = item["bucket"]
-        bucket_totals[b] = bucket_totals.get(b, Decimal("0")) + item["customer"].balance
-        bucket_counts[b] = bucket_counts.get(b, 0) + 1
+    customers_with_aging = [{"customer": r[0], "bucket": r[1]} for r in results]
 
     # Available cities for the filter dropdown
     cities = (
@@ -114,9 +115,8 @@ def index():
     cities = [c[0] for c in cities]
 
     template = "balances.html"
-    # Support HTMX partial rendering
     if request.headers.get("HX-Request"):
-        template = "partials/balances_table.html"
+        template = "partials/balance_rows.html"
 
     return render_template(
         template,
@@ -128,9 +128,8 @@ def index():
         city_filter=city_filter,
         bucket_filter=bucket_filter,
         sort=sort,
+        q=q,
         page=page,
         total_pages=total_pages,
         total_items=total_items,
     )
-
-
