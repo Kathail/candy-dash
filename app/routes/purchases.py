@@ -151,7 +151,8 @@ def add():
         .all()
     )
     suppliers = [s[0] for s in suppliers]
-    return render_template("purchase_form.html", purchase=None, suppliers=suppliers)
+    from app.routes.catalog import CATALOG
+    return render_template("purchase_form.html", purchase=None, suppliers=suppliers, catalog=CATALOG)
 
 
 @bp.route("/<int:id>/edit", methods=["GET", "POST"])
@@ -201,7 +202,8 @@ def edit(id):
         .all()
     )
     suppliers = [s[0] for s in suppliers]
-    return render_template("purchase_form.html", purchase=purchase, suppliers=suppliers)
+    from app.routes.catalog import CATALOG
+    return render_template("purchase_form.html", purchase=purchase, suppliers=suppliers, catalog=CATALOG)
 
 
 @bp.route("/<int:id>/delete", methods=["POST"])
