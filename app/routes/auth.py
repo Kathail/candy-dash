@@ -2,7 +2,7 @@
 
 from datetime import datetime, timezone
 
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_required, login_user, logout_user
 from sqlalchemy import func
 
@@ -44,6 +44,7 @@ def login():
             return render_template("auth/login.html"), 401
 
         login_user(user, remember=remember)
+        session.permanent = True
         audit("login", f"'{user.username}' logged in", user_id=user.id)
         db.session.commit()
         flash(f"Welcome back, {user.username}!", "success")

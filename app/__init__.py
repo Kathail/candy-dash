@@ -51,7 +51,7 @@ def create_app():
         "pool_pre_ping": True,
         "pool_recycle": 300,
     }
-    app.config["PERMANENT_SESSION_LIFETIME"] = 60 * 60 * 24 * 7  # 7 days
+    app.config["PERMANENT_SESSION_LIFETIME"] = 60 * 60 * 24 * 365  # 1 year
     app.config["MAX_CONTENT_LENGTH"] = 8 * 1024 * 1024  # 8 MB upload limit
 
     # Secure cookie settings
