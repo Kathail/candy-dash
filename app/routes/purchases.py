@@ -206,6 +206,120 @@ def edit(id):
     return render_template("purchase_form.html", purchase=purchase, suppliers=suppliers, catalog=CATALOG)
 
 
+@bp.route("/<int:id>/pdf")
+@login_required
+def pdf(id):
+    """Generate a purchase order PDF."""
+    import io
+    from flask import send_file
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib.units import inch
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib import colors
+    from app.helpers import format_currency, format_date
+
+    purchase = Purchase.query.get_or_404(id)
+
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=letter, topMargin=0.5 * inch)
+    styles = getSampleStyleSheet()
+    elements = []
+
+    # Logo
+    import os
+    from reportlab.platypus import Image
+    logo_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "static", "img", "logo.png")
+    if os.path.exists(logo_path):
+        try:
+            logo = Image(logo_path, width=1.0 * inch, height=1.0 * inch)
+            logo.hAlign = "CENTER"
+            elements.append(logo)
+            elements.append(Spacer(1, 8))
+        except Exception:
+            pass
+
+    title_style = ParagraphStyle("POTitle", parent=styles["Heading1"], fontSize=18, alignment=1)
+    normal_center = ParagraphStyle("NormalCenter", parent=styles["Normal"], alignment=1)
+
+    elements.append(Paragraph("Northern Sweet Supply", title_style))
+    elements.append(Paragraph("Purchase Order", normal_center))
+    elements.append(Spacer(1, 0.3 * inch))
+
+    # PO details
+    data = [
+        ["PO Number:", f"PO-{purchase.id:04d}"],
+        ["Date:", format_date(purchase.purchase_date, "%B %d, %Y")],
+        ["Supplier:", purchase.supplier],
+        ["Payment Type:", (purchase.payment_type or "cash").capitalize()],
+    ]
+    if purchase.invoice_number:
+        data.append(["Invoice #:", purchase.invoice_number])
+    data.append(["", ""])
+    data.append(["Total Amount:", format_currency(purchase.amount)])
+
+    table = Table(data, colWidths=[2.5 * inch, 4 * inch])
+    table.setStyle(TableStyle([
+        ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+        ("FONTNAME", (1, 0), (1, -1), "Helvetica"),
+        ("FONTSIZE", (0, 0), (-1, -1), 11),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+        ("TOPPADDING", (0, 0), (-1, -1), 4),
+        ("LINEBELOW", (0, -3), (-1, -3), 1, colors.grey),
+        ("LINEBELOW", (0, -1), (-1, -1), 1, colors.grey),
+        ("LINEABOVE", (0, 0), (-1, 0), 1, colors.grey),
+    ]))
+    elements.append(table)
+
+    # Items from description
+    if purchase.description:
+        elements.append(Spacer(1, 0.3 * inch))
+        elements.append(Paragraph("Items:", styles["Heading3"]))
+        elements.append(Spacer(1, 0.1 * inch))
+
+        items = [item.strip() for item in purchase.description.split(",") if item.strip()]
+        if items:
+            item_data = [["#", "Item", "Details"]]
+            for i, item in enumerate(items, 1):
+                # Try to split "2x Product Name 20x100g" into qty and name
+                parts = item.split(" ", 1)
+                if parts[0].endswith("x") and parts[0][:-1].isdigit():
+                    qty = parts[0]
+                    name = parts[1] if len(parts) > 1 else ""
+                else:
+                    qty = ""
+                    name = item
+                item_data.append([str(i), name, qty])
+
+            item_table = Table(item_data, colWidths=[0.4 * inch, 4.5 * inch, 1.5 * inch])
+            item_table.setStyle(TableStyle([
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, 0), 9),
+                ("FONTSIZE", (0, 1), (-1, -1), 9),
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#374151")),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                ("LINEBELOW", (0, 0), (-1, 0), 1, colors.HexColor("#4b5563")),
+                ("TOPPADDING", (0, 0), (-1, -1), 4),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f3f4f6")]),
+                ("ALIGN", (0, 0), (0, -1), "CENTER"),
+                ("ALIGN", (2, 0), (2, -1), "CENTER"),
+            ]))
+            elements.append(item_table)
+
+    elements.append(Spacer(1, 0.5 * inch))
+    elements.append(Paragraph(f"Total: {format_currency(purchase.amount)}", ParagraphStyle("Total", parent=styles["Normal"], fontSize=12, fontName="Helvetica-Bold", alignment=2)))
+
+    doc.build(elements)
+    buf.seek(0)
+    return send_file(
+        buf,
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name=f"PO-{purchase.id:04d}-{purchase.supplier.replace(' ', '_')}.pdf",
+    )
+
+
 @bp.route("/<int:id>/delete", methods=["POST"])
 @login_required
 def delete(id):
