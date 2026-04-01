@@ -131,6 +131,7 @@ def index():
 def complete_stop(id):
     """Mark a route stop as completed. Optionally record a payment."""
     stop = RouteStop.query.get_or_404(id)
+    route_date = stop.route_date  # Save before any potential rollback
     stop.completed = True
     stop.completed_at = datetime.now(timezone.utc)
 
@@ -225,7 +226,7 @@ def complete_stop(id):
             logging.exception("Inline payment failed for stop #%s", id)
             db.session.rollback()
             flash("Payment failed — stop was not completed. Please try again.", "error")
-            return redirect(url_for("route.index", date=RouteStop.query.get(id).route_date.isoformat()))
+            return redirect(url_for("route.index", date=route_date.isoformat()))
 
     audit("stop_completed", f"Completed route stop for customer #{stop.customer_id} on {stop.route_date}")
 

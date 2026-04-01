@@ -93,7 +93,7 @@
       <div class="flex flex-wrap gap-3">
         <select name="city" onchange="this.form.submit()"
                 aria-label="Filter by city"
-                class="min-h-[44px] rounded-lg border-gray-600 text-sm bg-gray-700 text-gray-200">
+                class="theme-input rounded-xl text-sm min-h-[44px]">
           <option value="">All Cities</option>
           {% for city in cities %}
           <option value="{{ city }}" {% if city == city_filter %}selected{% endif %}>{{ city }}</option>
@@ -101,7 +101,7 @@
         </select>
         <select name="sort" onchange="this.form.submit()"
                 aria-label="Sort order"
-                class="min-h-[44px] rounded-lg border-gray-600 text-sm bg-gray-700 text-gray-200">
+                class="theme-input rounded-xl text-sm min-h-[44px]">
           <option value="balance_desc" {% if sort == 'balance_desc' %}selected{% endif %}>Balance High-Low</option>
           <option value="balance_asc" {% if sort == 'balance_asc' %}selected{% endif %}>Balance Low-High</option>
           <option value="name_asc" {% if sort == 'name_asc' %}selected{% endif %}>Name A-Z</option>

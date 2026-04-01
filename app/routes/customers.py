@@ -378,6 +378,7 @@ def edit(id):
 
 @bp.route("/<int:id>/payment", methods=["POST"])
 @login_required
+@staff_required
 @limiter.limit("30/minute")
 def record_payment(id):
     """Record a sale and/or payment for a customer – fully atomic.
@@ -541,7 +542,7 @@ def delete_payment(id, payment_id):
             excess = payment.amount - (payment.amount_sold or Decimal("0"))
             paid_invoices = Invoice.query.filter_by(
                 customer_id=customer.id, status="paid", payment_type=payment.payment_type
-            ).order_by(Invoice.invoice_date.desc()).all()
+            ).order_by(Invoice.invoice_date.asc()).all()
             for inv in paid_invoices:
                 if inv.invoice_number == payment.receipt_number:
                     continue
@@ -582,6 +583,7 @@ def delete_payment(id, payment_id):
 
 @bp.route("/<int:id>/toggle-status", methods=["POST"])
 @login_required
+@staff_required
 def toggle_status(id):
     """Toggle customer between active and inactive."""
     customer = Customer.query.get_or_404(id)
@@ -630,6 +632,7 @@ def delete_customer(id):
 
 @bp.route("/<int:id>/toggle-tax-exempt", methods=["POST"])
 @login_required
+@staff_required
 def toggle_tax_exempt(id):
     """Toggle customer tax exempt status."""
     customer = Customer.query.get_or_404(id)
@@ -657,6 +660,7 @@ def toggle_tax_exempt(id):
 
 @bp.route("/<int:id>/invoices/add", methods=["POST"])
 @login_required
+@staff_required
 def add_invoice(id):
     """Add an invoice to a customer."""
     customer = Customer.query.get_or_404(id)
@@ -772,6 +776,7 @@ def delete_invoice(id, invoice_id):
 
 @bp.route("/<int:id>/invoices/<int:invoice_id>/mark-paid", methods=["POST"])
 @login_required
+@staff_required
 def mark_invoice_paid(id, invoice_id):
     """Mark an invoice as paid and reduce customer balance."""
     invoice = Invoice.query.get_or_404(invoice_id)
@@ -854,6 +859,7 @@ def mark_invoice_paid(id, invoice_id):
 
 @bp.route("/<int:id>/notes/add", methods=["POST"])
 @login_required
+@staff_required
 def add_note_entry(id):
     """Add a note entry to a customer."""
     customer = Customer.query.get_or_404(id)

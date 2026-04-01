@@ -62,13 +62,13 @@
   <div x-show="showFilters" x-transition x-cloak class="bg-panel rounded-xl border border-app p-4 animate-fade-in-up">
     <form method="get" action="{{ url_for('leads.index') }}" class="flex flex-wrap gap-2">
       {% if q %}<input type="hidden" name="q" value="{{ q }}">{% endif %}
-      <select name="lead_source" onchange="this.form.submit()" aria-label="Filter by status" class="min-h-[44px] rounded-lg border-gray-600 text-sm bg-gray-700 text-gray-200">
+      <select name="lead_source" onchange="this.form.submit()" aria-label="Filter by status" class="theme-input rounded-xl text-sm min-h-[44px]">
         <option value="">All Sources</option>
         {% for source in lead_sources %}
         <option value="{{ source }}" {% if source == lead_source_filter %}selected{% endif %}>{{ source }}</option>
         {% endfor %}
       </select>
-      <select name="city" onchange="this.form.submit()" aria-label="Filter by city" class="min-h-[44px] rounded-lg border-gray-600 text-sm bg-gray-700 text-gray-200">
+      <select name="city" onchange="this.form.submit()" aria-label="Filter by city" class="theme-input rounded-xl text-sm min-h-[44px]">
         <option value="">All Cities</option>
         {% for city in cities %}
         <option value="{{ city }}" {% if city == city_filter %}selected{% endif %}>{{ city }}</option>

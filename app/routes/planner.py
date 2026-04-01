@@ -7,6 +7,7 @@ from flask import (
 )
 from flask_login import login_required, current_user
 from sqlalchemy import func
+from sqlalchemy.orm import joinedload
 
 from app import db
 from app.helpers import staff_required
@@ -82,6 +83,7 @@ def index():
 
     stops = (
         RouteStop.query
+        .options(joinedload(RouteStop.customer))
         .join(Customer)
         .filter(RouteStop.route_date == selected_date)
         .order_by(RouteStop.sequence)
@@ -133,6 +135,7 @@ def index():
     # Active recurring schedules
     recurring_stops = (
         RecurringStop.query
+        .options(joinedload(RecurringStop.customer))
         .join(Customer)
         .filter(RecurringStop.is_active.is_(True))
         .order_by(Customer.name)
@@ -278,7 +281,8 @@ def add_city():
     if request.headers.get("X-Requested-With") == "XMLHttpRequest":
         # Return all stops for this date so the client can rebuild
         all_stops = (
-            RouteStop.query.join(Customer)
+            RouteStop.query.options(joinedload(RouteStop.customer))
+            .join(Customer)
             .filter(RouteStop.route_date == route_date)
             .order_by(RouteStop.sequence).all()
         )
@@ -471,6 +475,7 @@ def all_stops():
     cutoff = date.today() - timedelta(days=90)
     stops = (
         RouteStop.query
+        .options(joinedload(RouteStop.customer))
         .join(Customer)
         .filter(RouteStop.route_date >= cutoff)
         .order_by(RouteStop.route_date, RouteStop.sequence)
