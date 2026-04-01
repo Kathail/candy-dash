@@ -7,6 +7,8 @@
     <meta name="description" content="Authorized Cottage Country Candies (Scholtens) distributor. Wholesale candy, snacks, and confectionery for retailers in Sudbury, Sault Ste. Marie, Timmins, North Bay, and Northern Ontario. Gummy bears, sour candy, chocolate, salt water taffy, freeze dried candy, nuts, and more.">
     <link rel="icon" href="{{ url_for('static', filename='icons/favicon.svg') }}" type="image/svg+xml">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}?v=2">
+    <style>[x-cloak] { display: none !important; }</style>
+    <script defer src="{{ url_for('static', filename='vendor/alpine.min.js') }}?v=3"></script>
 </head>
 <body class="landing">
 
@@ -79,222 +81,104 @@
                 <p class="section-subtitle">Featuring the complete Cottage Country Candies (Scholtens) catalog. Gummies, sour candy, chocolate, salt water taffy, freeze dried candy, nuts, snacks, and seasonal favourites.</p>
             </div>
 
-            {# ── Top 20 Best Sellers ── #}
-            <div class="reveal" style="margin-top: 2.5rem; margin-bottom: 2.5rem;">
-                <h3 style="font-size: 1.125rem; font-weight: 800; color: var(--gold); margin-bottom: 0.5rem;">Top 20 Best Sellers</h3>
-                <p style="font-size: 0.8125rem; color: var(--gray-400); margin-bottom: 1rem;">Our most popular convenience packs, ranked by sales.</p>
-                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.375rem;">
-                    {% for rank, name in [
-                        (1, "Marshmallow Bananas"), (2, "Caramel Corn"), (3, "Traditional Cotton Candy"),
-                        (4, "Ju Jubes"), (5, "Soft & Chewy Mix"), (6, "Marshmallow Strawberries"),
-                        (7, "Sweet & Sour Mix"), (8, "Spearmint Leaves"), (9, "Jelly Beans"),
-                        (10, "Big Foot"), (11, "Sour Teezers"), (12, "Chocolate Macaroons"),
-                        (13, "Sour Neon Worms"), (14, "Premium Licorice Blend"), (15, "Sour Watermelon Slices"),
-                        (16, "Peach Rings"), (17, "Chocolate Rosebuds"), (18, "Sour Blue Raspberries"),
-                        (19, "Blue Raspberries"), (20, "Cola Bottles"),
-                    ] %}
-                    <div style="display: flex; align-items: center; gap: 0.625rem; padding: 0.5rem 0.75rem; border-radius: 0.5rem; background: rgba(212,163,74,0.06); border: 1px solid rgba(212,163,74,0.1);">
-                        <span style="font-size: 0.75rem; font-weight: 700; color: var(--gold); min-width: 1.5rem;">{{ rank }}.</span>
-                        <span style="font-size: 0.8125rem; font-weight: 600; color: var(--white);">{{ name }}</span>
-                    </div>
+            {# ── Top Sellers ── #}
+            <div class="card reveal" style="margin-top: 2.5rem; margin-bottom: 2rem; padding: 1.25rem 1.5rem;">
+                <h3 style="font-size: 0.875rem; font-weight: 700; color: var(--gold); margin-bottom: 0.75rem;">🏆 Top Sellers</h3>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.375rem;">
+                    {% for name in ["Marshmallow Bananas", "Caramel Corn", "Traditional Cotton Candy",
+                                     "Ju Jubes", "Soft & Chewy Mix", "Marshmallow Strawberries",
+                                     "Sweet & Sour Mix", "Spearmint Leaves", "Jelly Beans", "Big Foot",
+                                     "Sour Teezers", "Chocolate Macaroons", "Sour Neon Worms",
+                                     "Premium Licorice Blend", "Sour Watermelon Slices", "Peach Rings",
+                                     "Chocolate Rosebuds", "Sour Blue Raspberries", "Blue Raspberries", "Cola Bottles"] %}
+                    <span class="card-brand-tag"><span style="color: var(--gold); font-weight: 700;">{{ loop.index }}.</span> {{ name }}</span>
                     {% endfor %}
                 </div>
             </div>
 
-            <div class="grid-3 reveal-stagger">
+            {# ── Category Grid ── #}
+            {% set categories = [
+                ("🐻", "gold", "Gummy & Chewy", "Gummy Bears, Blue Whales, Peach Rings, Wine Gums, Cola Bottles, Ju Jubes, Nordic Berries",
+                 ["Assorted Fruit Slices", "Big Foot", "Blue Raspberries", "Blue Whales", "Cola Bottles", "Fruit Mix",
+                  "Green Apple Rings", "Gum Wheelies", "Gummy Alligators", "Gummy Bears", "Gummy Blue Sharks",
+                  "Gummy Blue Star Twists", "Gummy Frogs", "Gummy Pineapples", "Gummy Turtles", "Gummy Worms",
+                  "Jelly Beans", "Ju Jubes", "Juice Berries", "Jumbo Cola Bottles", "Jumbo Gums",
+                  "Multicolour Flowers", "Nordic Berries", "Peach Rings", "Peach Slices", "Peeled Gummy Mango",
+                  "Soft & Chewy Mix", "Strawberry Milkshakes", "Sweet & Sour Mix", "Sweet Bananas",
+                  "Sweet Fish", "Tutti Frutti Berries", "Wine Gums"]),
+                ("😝", "blue", "Sour Candy", "Sour Teezers, Sour Neon Worms, Sour Cherry Balls, Sour Belts, Sour Watermelon Slices",
+                 ["Sour Apple Rings", "Sour Belts Rainbow", "Sour Blue Raspberries", "Sour Bobcats",
+                  "Sour Cherry Balls", "Sour Cherry Slices", "Sour Dinos", "Sour Dog Bones", "Sour Fried Eggs",
+                  "Sour Grapes", "Sour Jolly Rancher Gummies", "Sour Jubes", "Sour Juice Berries",
+                  "Sour Neon Worms", "Sour Pleezers", "Sour Teezers", "Sour Watermelon Slices", "Tutti Frutti Sours"]),
+                ("🥜", "gold", "Nuts, Snacks & Trail Mix", "Cashews, Mixed Nuts, Hiker's Mix, BBQ Peanuts, Caramel Corn, Pepperoni",
+                 ["BBQ Peanuts", "Beer Nuts", "Cashews Roasted Salted", "Caramel Corn", "Deluxe Mixed Nuts",
+                  "Harvest Mix", "Hiker's Mix", "Peanuts Salted", "Peanuts No Salt", "Sweet Heat Bar Mix",
+                  "Pepperoni Mild", "Pepperoni Hot", "Pepperoni Honey Garlic", "Pretzels Twists"]),
+                ("🍫", "blue", "Chocolate", "Chocolate Almonds, Rosebuds, Macaroons, Peanuts, Raisins, Coins",
+                 ["Chocolate Almonds", "Dark Chocolate Almonds", "Chocolate Coins", "Chocolate Covered Jubes",
+                  "Chocolate Macaroons", "Chocolate Peanuts", "Chocolate Raisins", "Chocolate Rosebuds"]),
+                ("❄️", "gold", "Freeze Dried", "Original, Sour, Berry, Tropical, Taffy, Banana, Shark, Frog Puffs",
+                 ["Freeze Dried Original Puffs", "Freeze Dried Sour Puffs", "Freeze Dried Berry Puffs",
+                  "Freeze Dried Tropical Puffs", "Freeze Dried Taffy Puffs", "Freeze Dried Banana Puffs",
+                  "Freeze Dried Shark Puffs", "Freeze Dried Frog Puffs"]),
+                ("🍭", "blue", "Novelty & Cotton Candy", "Cotton Candy, Lollipops, Surprise Bags, Premium Mix Cups",
+                 ["Traditional Cotton Candy", "Gourmet Lollipops", "Jumbo Surprise Bags", "Super Surprise Bags",
+                  "Premium Gummy Mix Cup", "Premium Sour Mix Cup"]),
+                ("☁️", "gold", "Marshmallow", "Marshmallow Bananas, Strawberries, Peaches, Mix, Candy Corn",
+                 ["Marshmallow Bananas", "Marshmallow Strawberries", "Marshmallow Peaches", "Marshmallow Mix",
+                  "Marshmallow Bunnies", "Candy Corn"]),
+                ("🌿", "blue", "Mints", "Scotch Mints, Spearmint Leaves, English Mints, Wintergreen Pink",
+                 ["English Mints", "Scotch Mints", "Spearmint Leaves", "Spearmint Scotch Mints",
+                  "Spearmints Green", "Wintergreen Pink"]),
+                ("🖤", "gold", "Licorice", "Black Jack Mix, Licorice Buddies, Premium Blend, Tubes",
+                 ["Black Jack Licorice Mix", "Licorice Buddies", "Premium Licorice Blend",
+                  "Sour Licorice Tubes", "Strawberry Licorice Tubes"]),
+                ("🎃", "blue", "Seasonal & Holiday", "Easter Gumdrops, Jube Bunnies, Cinnamon Hearts, Candy Corn",
+                 ["Easter Gumdrops", "Jube Bunnies", "Marshmallow Bunnies", "Cinnamon Hearts", "Candy Corn"]),
+                ("💋", "gold", "Kisses, Taffy & Classic", "Salt Water Taffy, Cinnamon Hearts, Hot Lips, Kisses",
+                 ["Salt Water Taffy", "Cinnamon Hearts", "Hot Lips",
+                  "Blue Raspberry Kisses", "Strawberry Kisses", "Chocolate Truffle Kisses", "Sweet Blue Kisses"]),
+                ("📦", "blue", "Pack Formats", "Convenience, Value, Pouch, Cup, Bulk Bag, and Mini Pack options",
+                 ["Convenience Packs", "Value Packs", "Pouch Program", "Cup Program", "Bulk Bags", "Mini Packs"]),
+            ] %}
 
-                {# ── Gummy & Chewy ── #}
-                <div class="card">
-                    <div class="card-icon card-icon--gold">🐻</div>
-                    <h3 class="card-title">Gummy & Chewy Candy</h3>
-                    <div class="card-brands">
-                        {% for p in ["Assorted Fruit Slices", "Big Foot", "Blue Raspberries", "Blue Whales",
-                                      "Cola Bottles", "Fruit Mix", "Green Apple Rings", "Gum Wheelies",
-                                      "Gummy Alligators", "Gummy Bears", "Gummy Blue Sharks",
-                                      "Gummy Blue Star Twists", "Gummy Frogs", "Gummy Pineapples",
-                                      "Gummy Turtles", "Gummy Worms", "Jelly Beans", "Ju Jubes",
-                                      "Juice Berries", "Jumbo Cola Bottles", "Jumbo Gums",
-                                      "Multicolour Flowers", "Nordic Berries", "Peach Rings", "Peach Slices",
-                                      "Peeled Gummy Mango", "Soft & Chewy Mix", "Strawberry Milkshakes",
-                                      "Sweet & Sour Mix", "Sweet Bananas", "Sweet Fish",
-                                      "Tutti Frutti Berries", "Wine Gums"] %}
+            <div class="grid-3 reveal-stagger" style="margin-top: 0;">
+                {% for emoji, color, title, highlights, products in categories %}
+                <div class="card" x-data="{ open: false }">
+                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
+                        <div class="card-icon card-icon--{{ color }}" style="margin-bottom: 0;">{{ emoji }}</div>
+                        <div style="flex: 1; min-width: 0;">
+                            <h3 class="card-title" style="margin-bottom: 0;">{{ title }}</h3>
+                            <p style="font-size: 0.6875rem; color: var(--gray-500); font-weight: 600;">{{ products|length }} products</p>
+                        </div>
+                    </div>
+                    {% if products|length > 6 %}
+                    <p class="card-text" x-show="!open">{{ highlights }}</p>
+                    <div x-show="open" x-transition x-cloak style="display: flex; flex-wrap: wrap; gap: 0.375rem;">
+                        {% for p in products %}
                         <span class="card-brand-tag">{{ p }}</span>
                         {% endfor %}
                     </div>
+                    <button @click="open = !open"
+                            style="margin-top: 0.75rem; font-size: 0.75rem; font-weight: 600; color: var(--gold); background: none; border: none; cursor: pointer; padding: 0; text-align: left;"
+                            x-text="open ? '− Show less' : '+ Show all {{ products|length }}'"></button>
+                    {% else %}
+                    <p class="card-text">{{ highlights }}</p>
+                    {% endif %}
                 </div>
-
-                {# ── Sour Candy ── #}
-                <div class="card">
-                    <div class="card-icon card-icon--blue">😝</div>
-                    <h3 class="card-title">Sour Candy</h3>
-                    <div class="card-brands">
-                        {% for p in ["Sour Apple Rings", "Sour Belts Rainbow", "Sour Blue Raspberries",
-                                      "Sour Bobcats", "Sour Cherry Balls", "Sour Cherry Slices",
-                                      "Sour Dinos", "Sour Dog Bones", "Sour Fried Eggs", "Sour Grapes",
-                                      "Sour Jolly Rancher Gummies", "Sour Jubes", "Sour Juice Berries",
-                                      "Sour Neon Worms", "Sour Pleezers", "Sour Teezers",
-                                      "Sour Watermelon Slices", "Tutti Frutti Sours"] %}
-                        <span class="card-brand-tag">{{ p }}</span>
-                        {% endfor %}
-                    </div>
-                </div>
-
-                {# ── Marshmallow ── #}
-                <div class="card">
-                    <div class="card-icon card-icon--gold">☁️</div>
-                    <h3 class="card-title">Marshmallow</h3>
-                    <div class="card-brands">
-                        {% for p in ["Marshmallow Bananas", "Marshmallow Strawberries", "Marshmallow Peaches",
-                                      "Marshmallow Mix", "Marshmallow Bunnies", "Candy Corn"] %}
-                        <span class="card-brand-tag">{{ p }}</span>
-                        {% endfor %}
-                    </div>
-                </div>
-
-                {# ── Chocolate ── #}
-                <div class="card">
-                    <div class="card-icon card-icon--blue">🍫</div>
-                    <h3 class="card-title">Chocolate</h3>
-                    <div class="card-brands">
-                        {% for p in ["Chocolate Almonds", "Dark Chocolate Almonds", "Chocolate Coins",
-                                      "Chocolate Covered Jubes", "Chocolate Macaroons", "Chocolate Peanuts",
-                                      "Chocolate Raisins", "Chocolate Rosebuds"] %}
-                        <span class="card-brand-tag">{{ p }}</span>
-                        {% endfor %}
-                    </div>
-                </div>
-
-                {# ── Licorice ── #}
-                <div class="card">
-                    <div class="card-icon card-icon--gold">🖤</div>
-                    <h3 class="card-title">Licorice</h3>
-                    <div class="card-brands">
-                        {% for p in ["Black Jack Licorice Mix", "Licorice Buddies", "Premium Licorice Blend",
-                                      "Sour Licorice Tubes", "Strawberry Licorice Tubes"] %}
-                        <span class="card-brand-tag">{{ p }}</span>
-                        {% endfor %}
-                    </div>
-                </div>
-
-                {# ── Mints ── #}
-                <div class="card">
-                    <div class="card-icon card-icon--blue">🌿</div>
-                    <h3 class="card-title">Mints</h3>
-                    <div class="card-brands">
-                        {% for p in ["English Mints", "Scotch Mints", "Spearmint Leaves",
-                                      "Spearmint Scotch Mints", "Spearmints Green", "Wintergreen Pink"] %}
-                        <span class="card-brand-tag">{{ p }}</span>
-                        {% endfor %}
-                    </div>
-                </div>
-
-                {# ── Salt Water Taffy ── #}
-                <div class="card">
-                    <div class="card-icon card-icon--gold">🌊</div>
-                    <h3 class="card-title">Salt Water Taffy</h3>
-                    <div class="card-brands">
-                        {% for p in ["Salt Water Taffy (assorted flavours)"] %}
-                        <span class="card-brand-tag">{{ p }}</span>
-                        {% endfor %}
-                    </div>
-                </div>
-
-                {# ── Freeze Dried ── #}
-                <div class="card">
-                    <div class="card-icon card-icon--blue">❄️</div>
-                    <h3 class="card-title">Freeze Dried Candy</h3>
-                    <div class="card-brands">
-                        {% for p in ["Freeze Dried Original Puffs", "Freeze Dried Sour Puffs",
-                                      "Freeze Dried Berry Puffs", "Freeze Dried Tropical Puffs",
-                                      "Freeze Dried Taffy Puffs", "Freeze Dried Banana Puffs",
-                                      "Freeze Dried Shark Puffs", "Freeze Dried Frog Puffs"] %}
-                        <span class="card-brand-tag">{{ p }}</span>
-                        {% endfor %}
-                    </div>
-                </div>
-
-                {# ── Hot & Spicy ── #}
-                <div class="card">
-                    <div class="card-icon card-icon--blue">🔥</div>
-                    <h3 class="card-title">Hot & Spicy</h3>
-                    <div class="card-brands">
-                        {% for p in ["Cinnamon Hearts", "Hot Lips"] %}
-                        <span class="card-brand-tag">{{ p }}</span>
-                        {% endfor %}
-                    </div>
-                </div>
-
-                {# ── Kisses ── #}
-                <div class="card">
-                    <div class="card-icon card-icon--gold">💋</div>
-                    <h3 class="card-title">Kisses</h3>
-                    <div class="card-brands">
-                        {% for p in ["Blue Raspberry Kisses", "Strawberry Kisses",
-                                      "Chocolate Truffle Kisses", "Sweet Blue Kisses"] %}
-                        <span class="card-brand-tag">{{ p }}</span>
-                        {% endfor %}
-                    </div>
-                </div>
-
-                {# ── Novelty & Cotton Candy ── #}
-                <div class="card">
-                    <div class="card-icon card-icon--blue">🍭</div>
-                    <h3 class="card-title">Novelty & Cotton Candy</h3>
-                    <div class="card-brands">
-                        {% for p in ["Traditional Cotton Candy", "Gourmet Lollipops",
-                                      "Jumbo Surprise Bags", "Super Surprise Bags",
-                                      "Premium Gummy Mix Cup", "Premium Sour Mix Cup"] %}
-                        <span class="card-brand-tag">{{ p }}</span>
-                        {% endfor %}
-                    </div>
-                </div>
-
-                {# ── Nuts & Trail Mix ── #}
-                <div class="card">
-                    <div class="card-icon card-icon--gold">🥜</div>
-                    <h3 class="card-title">Nuts & Trail Mix</h3>
-                    <div class="card-brands">
-                        {% for p in ["BBQ Peanuts", "Beer Nuts", "Cashews Roasted Salted", "Caramel Corn",
-                                      "Deluxe Mixed Nuts", "Harvest Mix", "Hiker's Mix",
-                                      "Peanuts Salted", "Peanuts No Salt", "Sweet Heat Bar Mix"] %}
-                        <span class="card-brand-tag">{{ p }}</span>
-                        {% endfor %}
-                    </div>
-                </div>
-
-                {# ── Pepperoni & Snacks ── #}
-                <div class="card">
-                    <div class="card-icon card-icon--blue">🌶️</div>
-                    <h3 class="card-title">Pepperoni & Snacks</h3>
-                    <div class="card-brands">
-                        {% for p in ["Pepperoni Mild", "Pepperoni Hot", "Pepperoni Honey Garlic",
-                                      "Pretzels Twists"] %}
-                        <span class="card-brand-tag">{{ p }}</span>
-                        {% endfor %}
-                    </div>
-                </div>
-
-                {# ── Seasonal ── #}
-                <div class="card">
-                    <div class="card-icon card-icon--gold">🎃</div>
-                    <h3 class="card-title">Seasonal & Holiday</h3>
-                    <div class="card-brands">
-                        {% for p in ["Easter Gumdrops", "Jube Bunnies", "Marshmallow Bunnies",
-                                      "Cinnamon Hearts", "Candy Corn"] %}
-                        <span class="card-brand-tag">{{ p }}</span>
-                        {% endfor %}
-                    </div>
-                </div>
-
+                {% endfor %}
             </div>
 
-            <p class="reveal" style="margin-top: 1.5rem; text-align: center; font-size: 0.8125rem; color: var(--gray-400);">
-                Available in Convenience Packs, Value Packs, Mega Packs, Pouches, Cups, Bulk Bags, and Mini Packs.
-            </p>
-            <p class="reveal" style="margin-top: 0.5rem; text-align: center; font-size: 0.875rem; color: var(--gray-400);">
-                Can't find what you're looking for? We source from multiple suppliers —
-                <a href="#contact" style="color: var(--gold); font-weight: 600;">ask us about special orders</a>.
-            </p>
+            <div class="reveal" style="margin-top: 1.5rem; text-align: center;">
+                <p style="font-size: 0.8125rem; color: var(--gray-400); margin-bottom: 0.375rem;">
+                    Available in Convenience Packs, Value Packs, Pouches, Cups, Bulk Bags, and Mini Packs.
+                </p>
+                <p style="font-size: 0.875rem; color: var(--gray-400);">
+                    Can't find what you're looking for?
+                    <a href="#contact" style="color: var(--gold); font-weight: 600;">Ask us about special orders</a>.
+                </p>
+            </div>
         </div>
     </section>
 
