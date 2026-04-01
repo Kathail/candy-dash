@@ -32,6 +32,22 @@
         </div>
     </nav>
 
+    {# ── Flash messages ── #}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div style="position: fixed; top: 80px; right: 1rem; z-index: 200; display: flex; flex-direction: column; gap: 0.5rem;">
+      {% for category, message in messages %}
+      <div style="padding: 0.75rem 1.25rem; border-radius: 0.5rem; font-size: 0.875rem; max-width: 400px;
+                  {{ 'background: rgba(16,185,129,0.15); border-left: 4px solid #10b981; color: #6ee7b7;' if category == 'success' else
+                     'background: rgba(239,68,68,0.15); border-left: 4px solid #ef4444; color: #fca5a5;' if category == 'error' else
+                     'background: rgba(59,130,246,0.15); border-left: 4px solid #3b82f6; color: #93c5fd;' }}">
+        {{ message }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
     {# ══════════════════════════════════════════
        Hero
        ══════════════════════════════════════════ #}
@@ -306,7 +322,7 @@
                         </div>
                     </div>
 
-                    <form action="#" method="POST" onsubmit="return false;">
+                    <form action="{{ url_for('public.contact') }}" method="POST">
                         <div class="form-row">
                             <div class="form-group">
                                 <label class="form-label" for="store_name">Store Name</label>
