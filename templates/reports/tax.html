@@ -67,11 +67,6 @@
   </div>
 
   {# ── Taxable Customers ── #}
-  {% set taxable_rows = [] %}
-  {% for row in rows if not row.tax_exempt %}
-    {% if taxable_rows.append(row) %}{% endif %}
-  {% endfor %}
-
   <div class="bg-panel rounded-xl border border-app overflow-hidden animate-fade-in-up stagger-4">
     <div class="px-5 py-4 border-b border-app flex items-center gap-2">
       <div class="w-2 h-2 rounded-full bg-indigo-500" aria-hidden="true"></div>
@@ -89,7 +84,7 @@
           </div>
           <div>
             <p class="text-sm font-medium text-gray-100">{{ row.name or 'Unknown' }}</p>
-            <p class="text-2xs text-gray-500">{{ row.city or 'No city' }} &middot; {{ row.count }} payment{{ 's' if row.count != 1 else '' }}</p>
+            <p class="text-2xs text-gray-500">{{ row.city or 'No city' }} &middot; {{ row.count }} sale{{ 's' if row.count != 1 else '' }}</p>
           </div>
         </div>
         <span class="text-sm font-bold text-gray-100">{{ row.total|currency }}</span>
@@ -98,17 +93,12 @@
     </div>
     {% else %}
     <div class="px-5 py-8 text-center">
-      <p class="text-sm text-gray-500">No taxable payments.</p>
+      <p class="text-sm text-gray-500">No taxable sales.</p>
     </div>
     {% endif %}
   </div>
 
   {# ── Exempt Customers ── #}
-  {% set exempt_rows = [] %}
-  {% for row in rows if row.tax_exempt %}
-    {% if exempt_rows.append(row) %}{% endif %}
-  {% endfor %}
-
   <div class="bg-panel rounded-xl border border-app overflow-hidden animate-fade-in-up stagger-5">
     <div class="px-5 py-4 border-b border-app flex items-center gap-2">
       <div class="w-4 h-4 flex items-center justify-center text-blue-400" aria-hidden="true">
@@ -130,7 +120,7 @@
           </div>
           <div>
             <p class="text-sm font-medium text-gray-100">{{ row.name or 'Unknown' }}</p>
-            <p class="text-2xs text-gray-500">{{ row.city or 'No city' }} &middot; {{ row.count }} payment{{ 's' if row.count != 1 else '' }}</p>
+            <p class="text-2xs text-gray-500">{{ row.city or 'No city' }} &middot; {{ row.count }} sale{{ 's' if row.count != 1 else '' }}</p>
           </div>
         </div>
         <span class="text-sm font-bold text-gray-100">{{ row.total|currency }}</span>
@@ -139,24 +129,11 @@
     </div>
     {% else %}
     <div class="px-5 py-8 text-center">
-      <p class="text-sm text-gray-500">No tax-exempt payments.</p>
+      <p class="text-sm text-gray-500">No tax-exempt sales.</p>
     </div>
     {% endif %}
   </div>
 
-  {% if total_pages is defined and total_pages > 1 %}
-  <div class="flex items-center justify-center gap-2 pt-1">
-    {% if page > 1 %}
-    <a href="{{ url_for('reports.tax', start_date=start.strftime('%Y-%m-%d'), end_date=end.strftime('%Y-%m-%d'), page=page-1) }}"
-       class="px-3 py-1.5 text-xs font-medium text-indigo-400 hover:text-indigo-300 bg-panel border border-app rounded-lg btn-press">&larr; Prev</a>
-    {% endif %}
-    <span class="text-2xs text-faint">Page {{ page }} of {{ total_pages }}</span>
-    {% if page < total_pages %}
-    <a href="{{ url_for('reports.tax', start_date=start.strftime('%Y-%m-%d'), end_date=end.strftime('%Y-%m-%d'), page=page+1) }}"
-       class="px-3 py-1.5 text-xs font-medium text-indigo-400 hover:text-indigo-300 bg-panel border border-app rounded-lg btn-press">Next &rarr;</a>
-    {% endif %}
-  </div>
-  {% endif %}
 
 </div>
 {% endblock %}

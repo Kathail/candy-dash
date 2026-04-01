@@ -75,8 +75,8 @@
                         <div class="hero-stat-value">4</div>
                         <div class="hero-stat-label">Regions served</div>
                     </div>
-                    <div>
-                        <img src="{{ url_for('static', filename='img/cottage-country.png') }}" alt="Cottage Country Candies" style="height: 44px; width: auto; object-fit: contain;">
+                    <div style="text-align: center;">
+                        <img src="{{ url_for('static', filename='img/cottage-country.png') }}" alt="Cottage Country Candies" style="height: 44px; width: auto; object-fit: contain; display: block; margin: 0 auto;">
                         <div class="hero-stat-label">Authorized distributor</div>
                     </div>
                 </div>
@@ -97,20 +97,7 @@
                 <p class="section-subtitle">Featuring the complete Cottage Country Candies (Scholtens) catalog. Gummies, sour candy, chocolate, salt water taffy, freeze dried candy, nuts, snacks, and seasonal favourites.</p>
             </div>
 
-            {# ── Top Sellers ── #}
-            <div class="card reveal" style="margin-top: 2.5rem; margin-bottom: 2rem; padding: 1.25rem 1.5rem;">
-                <h3 style="font-size: 0.875rem; font-weight: 700; color: var(--gold); margin-bottom: 0.75rem;">🏆 Top Sellers</h3>
-                <div style="display: flex; flex-wrap: wrap; gap: 0.375rem;">
-                    {% for name in ["Marshmallow Bananas", "Caramel Corn", "Traditional Cotton Candy",
-                                     "Ju Jubes", "Soft & Chewy Mix", "Marshmallow Strawberries",
-                                     "Sweet & Sour Mix", "Spearmint Leaves", "Jelly Beans", "Big Foot",
-                                     "Sour Teezers", "Chocolate Macaroons", "Sour Neon Worms",
-                                     "Premium Licorice Blend", "Sour Watermelon Slices", "Peach Rings",
-                                     "Chocolate Rosebuds", "Sour Blue Raspberries", "Blue Raspberries", "Cola Bottles"] %}
-                    <span class="card-brand-tag"><span style="color: var(--gold); font-weight: 700;">{{ loop.index }}.</span> {{ name }}</span>
-                    {% endfor %}
-                </div>
-            </div>
+            <div style="margin-top: 2.5rem;"></div>
 
             {# ── Category Grid ── #}
             {% set categories = [

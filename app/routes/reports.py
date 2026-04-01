@@ -9,7 +9,7 @@ from sqlalchemy import func
 
 from app import db
 from app.helpers import staff_required, export_response, parse_date_range
-from app.models import Customer, Payment, Invoice, User
+from app.models import Customer, Invoice, User
 
 bp = Blueprint("reports", __name__, url_prefix="/reports")
 
@@ -70,6 +70,10 @@ def daily_sales():
     grand_total = sum(r.total for r in rows)
     grand_count = sum(r.count for r in rows)
 
+    # Chart data (all rows, chronological order, as floats for JSON)
+    chart_labels = [r.invoice_date.strftime('%b %d') for r in reversed(rows)]
+    chart_data = [float(r.total) for r in reversed(rows)]
+
     # Paginate for display
     page = request.args.get("page", 1, type=int)
     per_page = 10
@@ -80,6 +84,8 @@ def daily_sales():
     return render_template(
         "reports/daily_sales.html",
         rows=page_rows,
+        chart_labels=chart_labels,
+        chart_data=chart_data,
         grand_total=grand_total,
         grand_count=grand_count,
         start=start,
@@ -146,13 +152,13 @@ def financial():
         filename = f"sales_report_{start.strftime('%Y%m%d')}_{end.strftime('%Y%m%d')}"
         return export_response(rows, headers, filename, fmt, title="Sales Report")
 
-    # Paginate for display
-    by_customer_all = by_customer_query.limit(500).all()
+    # Paginate for display (SQL-level)
     page = request.args.get("page", 1, type=int)
     per_page = 10
-    total_pages = max(1, (len(by_customer_all) + per_page - 1) // per_page)
+    total_count = by_customer_query.count()
+    total_pages = max(1, (total_count + per_page - 1) // per_page)
     page = min(page, total_pages)
-    by_customer = by_customer_all[(page - 1) * per_page : page * per_page]
+    by_customer = by_customer_query.offset((page - 1) * per_page).limit(per_page).all()
 
     return render_template(
         "reports/financial.html",
@@ -175,7 +181,7 @@ def tax():
     start_date = start.date() if hasattr(start, 'date') else start
     end_date = end.date() if hasattr(end, 'date') else end
 
-    all_rows = (
+    base_query = (
         db.session.query(
             Customer.name,
             Customer.city,
@@ -186,16 +192,15 @@ def tax():
         .join(Invoice, Invoice.customer_id == Customer.id)
         .filter(Invoice.invoice_date >= start_date, Invoice.invoice_date <= end_date)
         .group_by(Customer.id, Customer.name, Customer.city, Customer.tax_exempt)
-        .order_by(Customer.tax_exempt.desc(), func.sum(Invoice.amount).desc())
-        .limit(500)
-        .all()
     )
 
-    # Summaries (across all data)
-    taxable_total = sum(r.total for r in all_rows if not r.tax_exempt)
-    exempt_total = sum(r.total for r in all_rows if r.tax_exempt)
-
     if fmt in ("csv", "xlsx", "pdf"):
+        all_rows = (
+            base_query
+            .order_by(Customer.tax_exempt.desc(), func.sum(Invoice.amount).desc())
+            .limit(500)
+            .all()
+        )
         headers = ["Customer", "City", "Tax Exempt", "Sales Count", "Total"]
         export_rows = [
             (r.name, r.city or "", "Yes" if r.tax_exempt else "No", r.count, str(r.total))
@@ -204,22 +209,30 @@ def tax():
         filename = f"tax_report_{start.strftime('%Y%m%d')}_{end.strftime('%Y%m%d')}"
         return export_response(export_rows, headers, filename, fmt, title="Tax Report")
 
-    # Paginate for display
-    page = request.args.get("page", 1, type=int)
-    per_page = 10
-    total_pages = max(1, (len(all_rows) + per_page - 1) // per_page)
-    page = min(page, total_pages)
-    rows = all_rows[(page - 1) * per_page : page * per_page]
+    taxable_rows = (
+        base_query
+        .filter(Customer.tax_exempt.isnot(True))
+        .order_by(func.sum(Invoice.amount).desc())
+        .all()
+    )
+    exempt_rows = (
+        base_query
+        .filter(Customer.tax_exempt.is_(True))
+        .order_by(func.sum(Invoice.amount).desc())
+        .all()
+    )
+
+    taxable_total = sum(r.total for r in taxable_rows)
+    exempt_total = sum(r.total for r in exempt_rows)
 
     return render_template(
         "reports/tax.html",
-        rows=rows,
+        taxable_rows=taxable_rows,
+        exempt_rows=exempt_rows,
         taxable_total=taxable_total,
         exempt_total=exempt_total,
         start=start,
         end=end,
-        page=page,
-        total_pages=total_pages,
     )
 
 

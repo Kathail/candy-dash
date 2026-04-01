@@ -70,11 +70,12 @@
       ('reports.daily_sales', 'Daily Sales', 'Day-by-day sales breakdown', 'green', 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'),
       ('reports.financial', 'Sales Report', 'Total sales by customer and city', 'indigo', ''),
       ('reports.tax', 'Tax Report', 'Taxable vs exempt breakdown', 'blue', 'M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z'),
+      ('reports.collections', 'Sales by Rep', 'Performance by sales representative', 'amber', 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z'),
     ] %}
     {% for endpoint, title, desc, color, icon in reports %}
     <div class="flex items-center gap-3 px-4 py-3 hover:bg-gray-700/30 transition-colors animate-fade-in-up stagger-{{ loop.index + 2 }}">
-      {% set bg_map = {'green': 'bg-green-500/15', 'indigo': 'bg-indigo-500/15', 'blue': 'bg-blue-500/15'} %}
-      {% set text_map = {'green': 'text-green-400', 'indigo': 'text-indigo-400', 'blue': 'text-blue-400'} %}
+      {% set bg_map = {'green': 'bg-green-500/15', 'indigo': 'bg-indigo-500/15', 'blue': 'bg-blue-500/15', 'amber': 'bg-amber-500/15'} %}
+      {% set text_map = {'green': 'text-green-400', 'indigo': 'text-indigo-400', 'blue': 'text-blue-400', 'amber': 'text-amber-400'} %}
       <div class="w-9 h-9 rounded-lg {{ bg_map.get(color, 'bg-gray-500/15') }} flex items-center justify-center flex-shrink-0">
         {% if icon %}
         <svg aria-hidden="true" class="w-4.5 h-4.5 {{ text_map.get(color, 'text-gray-400') }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">

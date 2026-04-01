@@ -70,7 +70,7 @@
   </div>
 
   {# ── Chart ── #}
-  {% if rows %}
+  {% if chart_data %}
   <div class="bg-panel rounded-xl border border-app p-4 animate-fade-in-up stagger-3">
     <canvas id="dailySalesChart" height="160"></canvas>
   </div>
@@ -127,13 +127,12 @@
 {% endblock %}
 
 {% block scripts %}
-{% if rows %}
+{% if chart_data %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   function renderChart() {
-    var data = {{ rows|map(attribute='total')|list|tojson }};
-    var labels = [{% for row in rows %}"{{ row.invoice_date.strftime('%b %d') }}"{{ ', ' if not loop.last else '' }}{% endfor %}];
-    data.reverse(); labels.reverse();
+    var data = {{ chart_data|tojson }};
+    var labels = {{ chart_labels|tojson }};
     var ctx = document.getElementById('dailySalesChart');
     if (!ctx || typeof Chart === 'undefined') return;
     new Chart(ctx, {
