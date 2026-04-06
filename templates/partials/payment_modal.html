@@ -50,13 +50,13 @@
             <div class="grid grid-cols-2 gap-3 mb-4">
                 <div>
                     <label for="payment-sold" class="block text-sm font-medium text-muted mb-1">Amount Sold ($)</label>
-                    <input type="number" id="payment-sold" step="0.01" min="0" x-model="amountSold"
+                    <input type="number" id="payment-sold" step="0.01" min="0" inputmode="decimal" x-model="amountSold"
                            placeholder="0.00"
                            class="theme-input rounded-lg min-h-[44px]" />
                 </div>
                 <div>
                     <label for="payment-paid" class="block text-sm font-medium text-muted mb-1">Amount Paid ($)</label>
-                    <input type="number" id="payment-paid" step="0.01" min="0" x-model="amountPaid"
+                    <input type="number" id="payment-paid" step="0.01" min="0" inputmode="decimal" x-model="amountPaid"
                            placeholder="0.00"
                            class="theme-input rounded-lg min-h-[44px]" />
                 </div>

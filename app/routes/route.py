@@ -193,6 +193,8 @@ def complete_stop(id):
                 )
                 db.session.add(invoice)
 
+            db.session.flush()  # get payment.id for FIFO tracking
+
             # Mark old unpaid invoices paid FIFO if excess payment
             if amount_paid > 0:
                 excess = amount_paid - amount_sold
@@ -206,6 +208,7 @@ def complete_stop(id):
                         if excess >= inv.amount:
                             inv.status = "paid"
                             inv.payment_type = payment_type
+                            inv.paid_by_payment_id = payment.id
                             excess -= inv.amount
                         else:
                             break
@@ -257,6 +260,7 @@ def uncomplete_stop(id):
     stop = RouteStop.query.get_or_404(id)
     stop.completed = False
     stop.completed_at = None
+    audit("stop_uncompleted", f"Uncompleted route stop for customer #{stop.customer_id} on {stop.route_date}")
     db.session.commit()
 
     if request.headers.get("HX-Request"):
