@@ -8,7 +8,7 @@ from flask_login import login_required
 from sqlalchemy import case, func
 
 from app import db
-from app.models import Customer, Invoice, Payment, VALID_PAYMENT_TYPES
+from app.models import Customer, Payment, VALID_PAYMENT_TYPES
 
 bp = Blueprint("balances", __name__, url_prefix="/balances")
 
@@ -31,18 +31,7 @@ def index():
     if payment_type_filter and payment_type_filter not in VALID_PAYMENT_TYPES:
         payment_type_filter = ""
 
-    # Subquery: oldest unpaid invoice date per customer (standard aging basis)
-    oldest_unpaid = (
-        db.session.query(
-            Invoice.customer_id,
-            func.min(Invoice.invoice_date).label("oldest_date"),
-        )
-        .filter(Invoice.status == "unpaid")
-        .group_by(Invoice.customer_id)
-        .subquery()
-    )
-
-    # Fallback: last payment date per customer
+    # Subquery: last payment date per customer
     last_pay = (
         db.session.query(
             Payment.customer_id,
@@ -52,9 +41,9 @@ def index():
         .subquery()
     )
 
-    # Aging bucket: prefer oldest unpaid invoice date, fallback to last payment, then created_at
+    # Aging bucket as a SQL CASE expression
     now = datetime.now(timezone.utc)
-    ref_date = func.coalesce(oldest_unpaid.c.oldest_date, last_pay.c.last_date, Customer.created_at)
+    ref_date = func.coalesce(last_pay.c.last_date, Customer.created_at)
     bucket_expr = case(
         (ref_date.is_(None), "90+"),
         (ref_date < now - timedelta(days=90), "90+"),
@@ -91,7 +80,6 @@ def index():
             func.sum(Customer.balance).label("total"),
             func.count().label("count"),
         )
-        .outerjoin(oldest_unpaid, Customer.id == oldest_unpaid.c.customer_id)
         .outerjoin(last_pay, Customer.id == last_pay.c.customer_id)
         .filter(*base_filters)
         .group_by(bucket_expr)
@@ -105,7 +93,6 @@ def index():
     # Customer list query
     query = (
         db.session.query(Customer, bucket_expr.label("bucket"))
-        .outerjoin(oldest_unpaid, Customer.id == oldest_unpaid.c.customer_id)
         .outerjoin(last_pay, Customer.id == last_pay.c.customer_id)
         .filter(*base_filters)
     )

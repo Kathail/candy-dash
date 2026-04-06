@@ -104,7 +104,7 @@
       <!-- Balance -->
       <div>
         <label for="balance" class="block text-sm font-medium text-gray-300 mb-1">Balance</label>
-        <input type="number" name="balance" id="balance" step="0.01" inputmode="decimal"
+        <input type="number" name="balance" id="balance" step="0.01"
                value="{{ customer.balance if customer and customer.balance is not none else '0.00' }}"
                class="w-full theme-input rounded-lg min-h-[44px]"
                placeholder="0.00">

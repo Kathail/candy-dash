@@ -14,9 +14,8 @@ bp = Blueprint("exports", __name__, url_prefix="/exports")
 
 @bp.before_request
 @login_required
-@admin_required
 def before_request():
-    """Require login and admin role for all export routes."""
+    """Require login for all export routes."""
     pass
 
 

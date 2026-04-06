@@ -54,7 +54,7 @@ def daily_sales():
             func.count(Invoice.id).label("count"),
             func.coalesce(func.sum(Invoice.amount), Decimal("0")).label("total"),
         )
-        .filter(Invoice.invoice_date >= start_date, Invoice.invoice_date <= end_date, Invoice.status != "void")
+        .filter(Invoice.invoice_date >= start_date, Invoice.invoice_date <= end_date)
         .group_by(Invoice.invoice_date)
         .order_by(Invoice.invoice_date.desc())
     )
@@ -111,7 +111,6 @@ def financial():
     ).filter(
         Invoice.invoice_date >= start_date,
         Invoice.invoice_date <= end_date,
-        Invoice.status != "void",
     ).first()
 
     # By city
@@ -122,7 +121,7 @@ def financial():
             func.coalesce(func.sum(Invoice.amount), Decimal("0")).label("total"),
         )
         .join(Invoice, Invoice.customer_id == Customer.id)
-        .filter(Invoice.invoice_date >= start_date, Invoice.invoice_date <= end_date, Invoice.status != "void")
+        .filter(Invoice.invoice_date >= start_date, Invoice.invoice_date <= end_date)
         .group_by(Customer.city)
         .order_by(func.sum(Invoice.amount).desc())
         .all()
@@ -137,7 +136,7 @@ def financial():
             func.coalesce(func.sum(Invoice.amount), Decimal("0")).label("total"),
         )
         .join(Invoice, Invoice.customer_id == Customer.id)
-        .filter(Invoice.invoice_date >= start_date, Invoice.invoice_date <= end_date, Invoice.status != "void")
+        .filter(Invoice.invoice_date >= start_date, Invoice.invoice_date <= end_date)
         .group_by(Customer.id, Customer.name, Customer.city)
         .order_by(func.sum(Invoice.amount).desc())
     )
@@ -191,7 +190,7 @@ def tax():
             func.coalesce(func.sum(Invoice.amount), Decimal("0")).label("total"),
         )
         .join(Invoice, Invoice.customer_id == Customer.id)
-        .filter(Invoice.invoice_date >= start_date, Invoice.invoice_date <= end_date, Invoice.status != "void")
+        .filter(Invoice.invoice_date >= start_date, Invoice.invoice_date <= end_date)
         .group_by(Customer.id, Customer.name, Customer.city, Customer.tax_exempt)
     )
 
@@ -253,7 +252,7 @@ def collections():
             func.coalesce(func.sum(Invoice.amount), Decimal("0")).label("total"),
         )
         .join(Invoice, Invoice.created_by == User.id)
-        .filter(Invoice.invoice_date >= start_date, Invoice.invoice_date <= end_date, Invoice.status != "void")
+        .filter(Invoice.invoice_date >= start_date, Invoice.invoice_date <= end_date)
         .group_by(User.id, User.username)
         .order_by(func.sum(Invoice.amount).desc())
         .all()

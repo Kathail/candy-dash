@@ -307,11 +307,6 @@ textarea.theme-input::placeholder {
 .nav-link {
     position: relative;
     transition: color 0.15s ease;
-    color: var(--text-muted);
-}
-
-.nav-link:hover {
-    color: var(--text);
 }
 
 .nav-link.active {

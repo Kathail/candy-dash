@@ -456,7 +456,6 @@ def record_payment(id):
             recorded_by=current_user.id,
         )
         db.session.add(payment)
-        db.session.flush()  # get payment.id for FIFO tracking
 
         # Auto-create invoice when a sale is recorded
         if amount_sold > 0:
@@ -485,7 +484,6 @@ def record_payment(id):
                     if remaining_credit >= inv.amount:
                         inv.status = "paid"
                         inv.payment_type = payment_type
-                        inv.paid_by_payment_id = payment.id if payment.id else None
                         remaining_credit -= inv.amount
                     else:
                         break
@@ -541,8 +539,8 @@ def delete_payment(id, payment_id):
     try:
         # Lock the customer row to prevent concurrent balance updates
         customer = db.session.query(Customer).filter_by(id=id).with_for_update().one()
-        # Restore balance to the state before this payment
-        customer.balance = payment.previous_balance
+        # Reverse both legs: undo the sale (amount_sold) and undo the payment (amount)
+        customer.balance = max(customer.balance - (payment.amount_sold or Decimal("0")) + payment.amount, Decimal("0"))
 
         # Also delete auto-created invoice that shares this receipt number
         auto_invoice = Invoice.query.filter_by(
@@ -551,14 +549,23 @@ def delete_payment(id, payment_id):
         if auto_invoice:
             db.session.delete(auto_invoice)
 
-        # Revert invoices that were FIFO-marked paid by this specific payment
-        fifo_marked = Invoice.query.filter_by(
-            customer_id=customer.id, paid_by_payment_id=payment.id
-        ).all()
-        for inv in fifo_marked:
-            inv.status = "unpaid"
-            inv.payment_type = None
-            inv.paid_by_payment_id = None
+        # Revert invoices that may have been FIFO-marked paid by this payment's excess.
+        # Uses LIFO order (newest first) and payment_type heuristic — no direct link
+        # exists between a payment and the invoices it FIFO-marked.
+        if payment.amount and payment.amount > (payment.amount_sold or Decimal("0")):
+            excess = payment.amount - (payment.amount_sold or Decimal("0"))
+            paid_invoices = Invoice.query.filter_by(
+                customer_id=customer.id, status="paid", payment_type=payment.payment_type
+            ).order_by(Invoice.invoice_date.desc()).all()
+            for inv in paid_invoices:
+                if inv.invoice_number == payment.receipt_number:
+                    continue
+                if excess >= inv.amount:
+                    inv.status = "unpaid"
+                    inv.payment_type = None
+                    excess -= inv.amount
+                else:
+                    break
 
         db.session.add(ActivityLog(
             customer_id=customer.id,
@@ -594,9 +601,6 @@ def delete_payment(id, payment_id):
 def toggle_status(id):
     """Toggle customer between active and inactive."""
     customer = Customer.query.get_or_404(id)
-    if customer.status not in ("active", "inactive"):
-        flash("Only active or inactive customers can be toggled.", "warning")
-        return redirect(url_for("customers.profile", id=customer.id))
     old_status = customer.status
     customer.status = "inactive" if old_status == "active" else "active"
 
@@ -703,17 +707,11 @@ def add_invoice(id):
     )
 
     # Parse line items
-    try:
-        item_count = int(request.form.get("item_count", 0) or 0)
-    except (ValueError, TypeError):
-        item_count = 0
+    item_count = int(request.form.get("item_count", 0) or 0)
     items_total = Decimal("0")
     for i in range(item_count):
-        try:
-            item_qty = Decimal(request.form.get(f"item_qty_{i}", "0") or "0")
-            item_price = Decimal(request.form.get(f"item_price_{i}", "0") or "0")
-        except (InvalidOperation, ValueError):
-            continue
+        item_qty = Decimal(request.form.get(f"item_qty_{i}", "0") or "0")
+        item_price = Decimal(request.form.get(f"item_price_{i}", "0") or "0")
         item_amount = item_qty * item_price
         items_total += item_amount
         if item_amount > 0:
@@ -790,46 +788,6 @@ def delete_invoice(id, invoice_id):
     return redirect(url_for("customers.profile", id=id))
 
 
-@bp.route("/<int:id>/invoices/<int:invoice_id>/void", methods=["POST"])
-@login_required
-@admin_required
-def void_invoice(id, invoice_id):
-    """Void an invoice. Reverses balance if unpaid, marks as void."""
-    invoice = Invoice.query.get_or_404(invoice_id)
-    if invoice.customer_id != id:
-        abort(404)
-    if invoice.status == "void":
-        flash("Invoice is already void.", "warning")
-        return redirect(url_for("customers.profile", id=id))
-
-    try:
-        customer = db.session.query(Customer).filter_by(id=id).with_for_update().one()
-        old_status = invoice.status
-
-        # Only reverse balance for unpaid invoices (paid ones already settled)
-        if old_status == "unpaid":
-            customer.balance = max(customer.balance - invoice.amount, Decimal("0"))
-
-        invoice.status = "void"
-
-        db.session.add(ActivityLog(
-            customer_id=customer.id,
-            user_id=current_user.id,
-            action="invoice_voided",
-            description=f"Invoice #{invoice.invoice_number or invoice.id} (${invoice.amount:,.2f}, was {old_status}) voided. Balance: ${customer.balance:,.2f}.",
-        ))
-        audit("invoice_voided", f"Voided invoice #{invoice.invoice_number or invoice.id} (${invoice.amount:,.2f}) for '{customer.name}'")
-        db.session.commit()
-    except Exception:
-        logging.exception("Invoice void failed")
-        db.session.rollback()
-        flash("Failed to void invoice.", "error")
-        return redirect(url_for("customers.profile", id=id))
-
-    flash(f"Invoice #{invoice.invoice_number or invoice.id} voided.", "success")
-    return redirect(url_for("customers.profile", id=id))
-
-
 @bp.route("/<int:id>/invoices/<int:invoice_id>/mark-paid", methods=["POST"])
 @login_required
 @staff_required
@@ -879,7 +837,7 @@ def mark_invoice_paid(id, invoice_id):
         # Record as a payment (only for the remaining amount)
         if payment_amount > 0:
             receipt_number = generate_receipt_number()
-            new_payment = Payment(
+            payment = Payment(
                 customer_id=customer.id,
                 amount=payment_amount,
                 amount_sold=Decimal("0"),
@@ -889,25 +847,7 @@ def mark_invoice_paid(id, invoice_id):
                 notes=f"Invoice #{invoice.invoice_number or invoice.id} paid",
                 recorded_by=current_user.id,
             )
-            db.session.add(new_payment)
-            db.session.flush()
-
-            # FIFO: mark other unpaid invoices paid if payment exceeds this invoice
-            excess = payment_amount - invoice.amount
-            if excess > 0:
-                other_unpaid = Invoice.query.filter(
-                    Invoice.customer_id == customer.id,
-                    Invoice.status == "unpaid",
-                    Invoice.id != invoice.id,
-                ).order_by(Invoice.invoice_date.asc()).all()
-                for inv in other_unpaid:
-                    if excess >= inv.amount:
-                        inv.status = "paid"
-                        inv.payment_type = pay_type
-                        inv.paid_by_payment_id = new_payment.id
-                        excess -= inv.amount
-                    else:
-                        break
+            db.session.add(payment)
         else:
             receipt_number = invoice.invoice_number or str(invoice.id)
 

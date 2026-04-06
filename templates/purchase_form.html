@@ -37,7 +37,7 @@
       <div class="grid grid-cols-2 gap-4">
         <div>
           <label for="amount" class="block text-sm font-medium text-gray-300 mb-1">Amount *</label>
-          <input type="number" id="amount" name="amount" required step="0.01" min="0.01" inputmode="decimal"
+          <input type="number" id="amount" name="amount" required step="0.01" min="0.01"
                  value="{{ purchase.amount if purchase else '' }}"
                  class="theme-input w-full text-sm rounded-lg min-h-[44px]"
                  placeholder="0.00">

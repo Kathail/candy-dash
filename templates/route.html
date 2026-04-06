@@ -44,7 +44,7 @@
 
   {# ── Collection Hero ── #}
   {% if total_count > 0 %}
-  <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-700 p-5 text-white animate-fade-in-up stagger-1" data-hero-stats>
+  <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-700 p-5 text-white animate-fade-in-up stagger-1">
     <div class="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4"></div>
 
     <div class="relative z-10">
@@ -205,12 +205,14 @@
               </svg>
               Done
             </button>
+            {% if stop.customer.balance and stop.customer.balance > 0 %}
             <button @click="showPay = !showPay"
                     :class="showPay ? 'bg-green-700 ring-2 ring-green-500/50' : 'bg-green-600 hover:bg-green-500'"
                     class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 text-white text-sm font-semibold rounded-xl transition-colors min-h-[44px] btn-press">
               <span aria-hidden="true" class="text-sm font-black">$</span>
-              {% if stop.customer.balance and stop.customer.balance > 0 %}Pay {{ stop.customer.balance|currency }}{% else %}Sell{% endif %}
+              Pay {{ stop.customer.balance|currency }}
             </button>
+            {% endif %}
             <form method="POST" action="{{ url_for('planner.remove_stop', id=stop.id) }}"
                   onsubmit="return confirm('Remove this stop?')">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -225,7 +227,7 @@
             <button hx-post="{{ url_for('route.uncomplete_stop', id=stop.id) }}"
                     hx-target="#stop-{{ stop.id }}" hx-swap="outerHTML"
                     hx-disabled-elt="this"
-                    hx-confirm="Undo this stop? Note: any payment recorded will NOT be reversed — you must delete it separately."
+                    hx-confirm="Undo this stop completion?"
                     class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 bg-gray-700 text-muted text-sm font-medium rounded-xl hover:bg-gray-600 transition-colors min-h-[44px] disabled:opacity-50 btn-press">
               Undo
             </button>
@@ -239,12 +241,12 @@
                   class="flex flex-col gap-2">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <div class="flex gap-2">
-                <input type="number" name="amount_sold" step="0.01" min="0" inputmode="decimal"
+                <input type="number" name="amount_sold" step="0.01" min="0"
                        aria-label="Amount sold" placeholder="Sold"
                        class="flex-1 theme-input rounded-xl text-sm min-h-[44px]">
-                <input type="number" name="amount" step="0.01" min="0" inputmode="decimal"
+                <input type="number" name="amount" step="0.01" min="0"
                        aria-label="Amount paid"
-                       placeholder="Paid"
+                       placeholder="Paid" value="{{ '%.2f'|format(stop.customer.balance|float) }}"
                        class="flex-1 theme-input rounded-xl text-sm min-h-[44px]">
               </div>
               <div class="flex gap-2">
@@ -289,6 +291,8 @@
     </div>
   {% endif %}
 
+  {# Spacer #}
+  {% if stops %}<div class="h-24 lg:h-20"></div>{% endif %}
 </div>
 
 {# ── Sticky Bottom Bar ── #}
@@ -334,15 +338,7 @@ document.addEventListener('DOMContentLoaded', scrollToNext);
 // After stop completion, reload to update totals then scroll to next
 document.body.addEventListener('stopCompleted', function() {
   setTimeout(function() {
-    fetch(window.location.href, {headers: {'HX-Request': 'false'}})
-      .then(r => r.text())
-      .then(html => {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        const newHero = doc.querySelector('[data-hero-stats]');
-        const currentHero = document.querySelector('[data-hero-stats]');
-        if (newHero && currentHero) currentHero.innerHTML = newHero.innerHTML;
-      });
+    window.location.reload();
   }, 400);
 });
 // After page reload, scroll to next stop

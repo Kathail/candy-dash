@@ -152,11 +152,11 @@ def index():
 
     total_outstanding = float(
         db.session.query(func.coalesce(func.sum(Customer.balance), 0))
-        .filter(Customer.status.in_(("active", "inactive")), Customer.balance > 0)
+        .filter(Customer.status == "active")
         .scalar()
     )
     customers_with_balance = (
-        Customer.query.filter(Customer.status.in_(("active", "inactive")), Customer.balance > 0).count()
+        Customer.query.filter(Customer.status == "active", Customer.balance > 0).count()
     )
 
     # --- Top stores by revenue ---

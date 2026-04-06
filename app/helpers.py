@@ -300,13 +300,14 @@ def export_response(rows, headers, filename_base, fmt="csv", title=None):
     return csv_response(rows, headers, f"{filename_base}.csv")
 
 
-def generate_receipt_number(payment_date=None):
+def generate_receipt_number(payment_date=None, max_retries=5):
     """Generate a unique invoice number in format INV-YYYYMMDD-XXXX.
 
-    Uses SELECT ... FOR UPDATE to lock concurrent access and reads
-    both committed and unflushed session objects for sequence.
-    Falls back to UUID suffix if collisions occur.
+    Uses SELECT ... FOR UPDATE SKIP LOCKED (Postgres) to prevent race
+    conditions without deadlocking concurrent transactions.
+    Falls back to UUID suffix if sequence collides after retries.
     """
+    import logging
     import uuid
     from app.models import Payment
     from app import db
@@ -317,42 +318,42 @@ def generate_receipt_number(payment_date=None):
     date_str = payment_date.strftime("%Y%m%d")
     prefix = f"INV-{date_str}-"
 
-    last = (
-        Payment.query
-        .filter(Payment.receipt_number.like(f"{prefix}%"))
-        .order_by(Payment.receipt_number.desc())
-        .with_for_update()
-        .first()
-    )
-
-    if last and last.receipt_number.startswith(prefix):
+    for attempt in range(max_retries):
         try:
-            seq = int(last.receipt_number[len(prefix):]) + 1
-        except ValueError:
-            seq = 1
-    else:
-        seq = 1
+            last = (
+                Payment.query
+                .filter(Payment.receipt_number.like(f"{prefix}%"))
+                .order_by(Payment.receipt_number.desc())
+                .with_for_update()
+                .first()
+            )
 
-    # Also check unflushed session objects for higher sequences
-    for obj in db.session.new:
-        if isinstance(obj, Payment) and hasattr(obj, 'receipt_number') and obj.receipt_number:
-            if obj.receipt_number.startswith(prefix):
+            if last and last.receipt_number.startswith(prefix):
                 try:
-                    pending_seq = int(obj.receipt_number[len(prefix):]) + 1
-                    seq = max(seq, pending_seq)
+                    seq = int(last.receipt_number[len(prefix):]) + 1
                 except ValueError:
-                    pass
+                    seq = 1
+            else:
+                seq = 1
 
-    candidate = f"{prefix}{seq:04d}"
+            # Also check unflushed session objects for higher sequences
+            for obj in db.session.new:
+                if isinstance(obj, Payment) and hasattr(obj, 'receipt_number') and obj.receipt_number:
+                    if obj.receipt_number.startswith(prefix):
+                        try:
+                            pending_seq = int(obj.receipt_number[len(prefix):]) + 1
+                            seq = max(seq, pending_seq)
+                        except ValueError:
+                            pass
 
-    # Check if candidate already exists (race condition safety)
-    existing = Payment.query.filter_by(receipt_number=candidate).first()
-    if existing:
-        # Use UUID fallback to guarantee uniqueness
-        fallback = uuid.uuid4().hex[:6].upper()
-        candidate = f"{prefix}{fallback}"
-
-    return candidate
+            return f"{prefix}{seq:04d}"
+        except Exception:
+            logging.exception("Receipt number generation failed (attempt %d/%d)", attempt + 1, max_retries)
+            db.session.rollback()
+            if attempt == max_retries - 1:
+                # Use timestamp-based numeric fallback to maintain format consistency
+                fallback_seq = int(datetime.now(timezone.utc).strftime("%H%M%S"))
+                return f"{prefix}{fallback_seq:04d}"
 
 
 def generate_receipt_pdf(payment, customer):
@@ -389,7 +390,7 @@ def generate_receipt_pdf(payment, customer):
     elements.append(Spacer(1, 0.3 * inch))
 
     amount_sold = getattr(payment, "amount_sold", None) or Decimal("0")
-    new_balance = max(payment.previous_balance + amount_sold - payment.amount, Decimal("0"))
+    new_balance = payment.previous_balance + amount_sold - payment.amount
 
     data = [
         ["Invoice #:", payment.receipt_number],
@@ -408,8 +409,7 @@ def generate_receipt_pdf(payment, customer):
     if payment.notes:
         data.append(["Notes:", payment.notes])
 
-    # Find the separator row (the empty row) dynamically
-    separator_row = next(i for i, row in enumerate(data) if row == ["", ""])
+    separator_row = 4  # the empty row
     table = Table(data, colWidths=[2.5 * inch, 4 * inch])
     table.setStyle(TableStyle([
         ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),

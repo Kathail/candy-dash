@@ -43,7 +43,7 @@ def login():
             flash("Invalid username or password.", "error")
             return render_template("auth/login.html"), 401
 
-        login_user(user, remember=remember)
+        login_user(user, remember=True)
         session.permanent = True
         audit("login", f"'{user.username}' logged in", user_id=user.id)
         db.session.commit()

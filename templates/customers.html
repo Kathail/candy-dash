@@ -38,8 +38,8 @@
       <input type="search" name="q" value="{{ q }}"
              aria-label="Search customers"
              placeholder="Search name, code, phone..."
-             oninput="clearTimeout(this._t);this._t=setTimeout(()=>this.form.submit(),400)"
-             class="w-full theme-input rounded-xl text-sm min-h-[44px]" style="padding-left: 2.25rem;">
+             onchange="this.form.submit()"
+             class="w-full py-2.5 rounded-xl border border-app bg-panel text-sm text-gray-200 focus:border-indigo-500 focus:ring-indigo-500 placeholder:text-gray-500 min-h-[44px]" style="padding-left: 2.25rem;">
       {% if status_filter %}<input type="hidden" name="status" value="{{ status_filter }}">{% endif %}
       {% if city_filter %}<input type="hidden" name="city" value="{{ city_filter }}">{% endif %}
     </form>
@@ -156,10 +156,10 @@
         <div @click.stop>
           <button type="button" role="switch" :aria-checked="taxExempt.toString()" aria-label="Tax exempt" title="Tax exempt"
                   @click="taxExempt = !taxExempt; fetch('{{ url_for('customers.toggle_tax_exempt', id=customer.id) }}', { method: 'POST', headers: { 'X-CSRFToken': document.querySelector('meta[name=csrf-token]').content, 'X-Requested-With': 'XMLHttpRequest' } }).then(r => { if (!r.ok) taxExempt = !taxExempt; }).catch(() => { taxExempt = !taxExempt; })"
-                  class="relative inline-flex h-6 w-10 items-center rounded-full focus:outline-none transition-colors duration-200"
-                  :class="taxExempt ? 'bg-cyan-500' : 'bg-gray-600'">
-            <span class="inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200"
-                  :class="taxExempt ? 'translate-x-5' : 'translate-x-0.5'"></span>
+                  class="relative inline-flex h-6 w-10 items-center rounded-full focus:outline-none"
+                  :style="'background-color:' + (taxExempt ? '#06b6d4' : '#4b5563') + '; transition: background-color 0.2s ease'">
+            <span class="inline-block h-4 w-4 rounded-full bg-white shadow-sm"
+                  :style="'transform: translateX(' + (taxExempt ? '20px' : '2px') + '); transition: transform 0.2s ease'"></span>
           </button>
         </div>
         {% if customer.phone %}

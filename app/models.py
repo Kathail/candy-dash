@@ -32,7 +32,7 @@ class User(UserMixin, db.Model):
 
     @property
     def is_admin(self):
-        return self.role in ("admin", "owner")
+        return self.role == "admin"
 
     @property
     def is_demo(self):
@@ -104,8 +104,6 @@ class Invoice(db.Model):
     __tablename__ = "invoices"
     __table_args__ = (
         db.Index("ix_invoices_customer_status", "customer_id", "status"),
-        db.Index("ix_invoices_date", "invoice_date"),
-        db.Index("ix_invoices_date_customer", "invoice_date", "customer_id"),
     )
 
     id = db.Column(db.Integer, primary_key=True)
@@ -116,13 +114,11 @@ class Invoice(db.Model):
     description = db.Column(db.Text, nullable=True)
     status = db.Column(db.String(20), nullable=False, default="unpaid")  # unpaid, paid, void
     payment_type = db.Column(db.String(20), nullable=True)  # set when paid
-    paid_by_payment_id = db.Column(db.Integer, db.ForeignKey("payments.id"), nullable=True)  # tracks which payment FIFO-marked this paid
     created_by = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     customer = db.relationship("Customer", backref=db.backref("invoices", lazy="dynamic", order_by="Invoice.invoice_date.desc()"))
     creator = db.relationship("User", foreign_keys=[created_by])
-    paid_by_payment = db.relationship("Payment", foreign_keys=[paid_by_payment_id])
 
     def __repr__(self):
         return f"<Invoice {self.invoice_number or self.id} ${self.amount}>"

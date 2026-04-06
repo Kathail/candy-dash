@@ -112,14 +112,8 @@
   {# -- Needs Attention (promote this — it's always useful) -- #}
   {% if attention_list %}
   <div class="animate-fade-in-up stagger-3">
-    <div class="flex items-center gap-2 pt-2 mb-2">
-      <div class="w-5 h-5 rounded-md bg-red-500/15 flex items-center justify-center">
-        <svg class="w-3 h-3 text-red-400" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-        </svg>
-      </div>
-      <h2 class="text-xs font-bold text-red-400 uppercase tracking-wider">Needs a Visit</h2>
-      <div class="flex-1 h-px bg-gray-700"></div>
+    <div class="flex items-center justify-between px-1 mb-2">
+      <h2 class="text-sm font-semibold text-muted uppercase tracking-wider">Needs a Visit</h2>
       <span class="text-2xs text-gray-600">30+ days</span>
     </div>
     <div class="bg-panel rounded-xl border border-app overflow-hidden divide-y divide-gray-700/60">
@@ -150,14 +144,8 @@
   {# -- Top Stores (only if revenue exists) -- #}
   {% if top_stores and has_revenue %}
   <div class="animate-fade-in-up stagger-4">
-    <div class="flex items-center gap-2 pt-2 mb-2">
-      <div class="w-5 h-5 rounded-md bg-emerald-500/15 flex items-center justify-center">
-        <svg class="w-3 h-3 text-emerald-400" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-        </svg>
-      </div>
-      <h2 class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Top Stores</h2>
-      <div class="flex-1 h-px bg-gray-700"></div>
+    <div class="flex items-center justify-between px-1 mb-2">
+      <h2 class="text-sm font-semibold text-muted uppercase tracking-wider">Top Stores</h2>
       <span class="text-2xs text-gray-600">by revenue</span>
     </div>
     <div class="bg-panel rounded-xl border border-app overflow-hidden divide-y divide-gray-700/60">
@@ -181,13 +169,9 @@
   {# -- Balance Overview (compact horizontal) -- #}
   {% if balance_stats.count > 0 %}
   <div class="animate-fade-in-up stagger-5">
-    <div class="flex items-center gap-2 pt-2 mb-2">
-      <div class="w-5 h-5 rounded-md bg-amber-500/15 flex items-center justify-center">
-        <span aria-hidden="true" class="text-xs font-black text-amber-400">$</span>
-      </div>
-      <h2 class="text-xs font-bold text-amber-400 uppercase tracking-wider">Balances</h2>
-      <div class="flex-1 h-px bg-gray-700"></div>
-      <a href="{{ url_for('balances.index') }}" class="text-2xs text-indigo-400 hover:text-indigo-300 font-medium btn-press">View all</a>
+    <div class="flex items-center justify-between px-1 mb-2">
+      <h2 class="text-sm font-semibold text-muted uppercase tracking-wider">Balances</h2>
+      <a href="{{ url_for('balances.index') }}" class="text-xs text-indigo-400 hover:text-indigo-300 font-medium btn-press">View all</a>
     </div>
     <div class="grid grid-cols-2 gap-3">
       <div class="bg-panel rounded-xl border border-app p-4">

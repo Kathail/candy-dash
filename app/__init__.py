@@ -51,10 +51,8 @@ def create_app():
     app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
         "pool_pre_ping": True,
         "pool_recycle": 300,
-        "pool_size": 3,
-        "max_overflow": 5,
     }
-    app.config["PERMANENT_SESSION_LIFETIME"] = 60 * 60 * 24 * 30  # 30 days
+    app.config["PERMANENT_SESSION_LIFETIME"] = 60 * 60 * 24 * 365  # 1 year
     app.config["MAX_CONTENT_LENGTH"] = 8 * 1024 * 1024  # 8 MB upload limit
 
     # Secure cookie settings
@@ -95,7 +93,7 @@ def create_app():
     from app.routes import register_blueprints
     register_blueprints(app)
 
-    # Read-only guard: block writes for demo users
+    # Read-only guard: block writes for demo and bookkeeper users
     @app.before_request
     def readonly_guard():
         from flask_login import current_user as cu
@@ -116,7 +114,7 @@ def create_app():
         # Block report exports and API access
         blocked_prefixes = ("reports.", "api.")
         if req.endpoint and any(req.endpoint.startswith(p) for p in blocked_prefixes):
-            if req.args.get("format") in ("csv", "xlsx", "pdf"):
+            if req.args.get("format") in ("csv", "xlsx"):
                 flash("Demo mode — exports are disabled.", "warning")
                 return redirect(safe_redirect(req.referrer))
             if req.endpoint.startswith("api."):
@@ -144,16 +142,20 @@ def create_app():
             # Skip badge queries on HTMX partial requests (no nav rendered)
             if _req.headers.get("HX-Request"):
                 return {}
+            from app.models import RouteStop, Customer
             from datetime import date as _date
             today = _date.today()
-            result = db.session.execute(db.text(
-                "SELECT "
-                "(SELECT COUNT(*) FROM route_stops WHERE route_date = :today AND completed = false), "
-                "(SELECT COUNT(*) FROM customers WHERE balance > 0 AND status = 'active')"
-            ), {"today": today}).first()
+            remaining_stops = RouteStop.query.filter(
+                RouteStop.route_date == today,
+                RouteStop.completed.is_(False),
+            ).count()
+            overdue_count = Customer.query.filter(
+                Customer.balance > 0,
+                Customer.status == "active",
+            ).count()
             return {
-                "nav_remaining_stops": result[0] if result else 0,
-                "nav_overdue_count": result[1] if result else 0,
+                "nav_remaining_stops": remaining_stops,
+                "nav_overdue_count": overdue_count,
             }
         except Exception:
             return {}
@@ -164,8 +166,8 @@ def create_app():
         try:
             db.session.execute(db.text("SELECT 1"))
             return jsonify({"status": "ok", "db": "connected"}), 200
-        except Exception:
-            return jsonify({"status": "error", "db": "unavailable"}), 503
+        except Exception as e:
+            return jsonify({"status": "error", "db": str(e)}), 503
 
     # Security headers
     @app.after_request
