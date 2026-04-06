@@ -53,7 +53,7 @@
     {% set buckets = [('0-30', 'green', '0-30d'), ('31-60', 'yellow', '31-60d'), ('61-90', 'orange', '61-90d'), ('90+', 'red', '90+d')] %}
     {% for key, color, label in buckets %}
     {% set bucket_count = customers_with_aging_counts.get(key, 0) if customers_with_aging_counts is defined else 0 %}
-    <a href="{{ url_for('balances.index', bucket=key, city=city_filter, sort=sort, q=q) }}"
+    <a href="{{ url_for('balances.index', bucket=key, city=city_filter, payment_type=payment_type_filter, sort=sort, q=q) }}"
        class="bg-panel rounded-xl border p-3 text-center btn-press transition-all
               {{ bucket_styles[color].active if bucket_filter == key else bucket_styles[color].inactive }}">
       <p class="text-lg font-bold {{ bucket_styles[color].text }}">{{ (bucket_totals.get(key, 0)) | currency }}</p>
@@ -64,7 +64,7 @@
   {% endif %}
 
   {# -- Filters -- #}
-  <div x-data="{ showFilters: {{ 'true' if city_filter or (sort != 'balance_desc') else 'false' }} }">
+  <div x-data="{ showFilters: {{ 'true' if city_filter or payment_type_filter or (sort != 'balance_desc') else 'false' }} }">
     <div class="flex gap-2 animate-fade-in-up stagger-2">
       <button @click="showFilters = !showFilters"
               :class="showFilters ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-gray-800 text-gray-400 border-gray-700'"
@@ -73,11 +73,11 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
         </svg>
         Filters
-        {% if city_filter or bucket_filter %}
+        {% if city_filter or bucket_filter or payment_type_filter %}
         <span class="w-2 h-2 rounded-full bg-indigo-400"></span>
         {% endif %}
       </button>
-      {% if bucket_filter or city_filter or q %}
+      {% if bucket_filter or city_filter or payment_type_filter or q %}
       <a href="{{ url_for('balances.index') }}" class="inline-flex items-center gap-1 px-3 min-h-[44px] text-sm text-gray-500 hover:text-gray-300 transition-colors btn-press">
         Clear
       </a>
@@ -102,6 +102,15 @@
           <option value="{{ city }}" {% if city == city_filter %}selected{% endif %}>{{ city }}</option>
           {% endfor %}
         </select>
+        <select name="payment_type" onchange="this.form.submit()"
+                aria-label="Filter by payment type"
+                class="theme-input rounded-xl text-sm min-h-[44px]">
+          <option value="">All Payment Types</option>
+          {% set pt_labels = {'cash': 'Cash', 'cheque': 'Cheque', 'debit': 'Debit', 'credit': 'Credit', 'etransfer': 'E-Transfer', 'scholtens': 'Scholtens', 'other': 'Other'} %}
+          {% for pt in payment_types %}
+          <option value="{{ pt }}" {% if pt == payment_type_filter %}selected{% endif %}>{{ pt_labels.get(pt, pt|capitalize) }}</option>
+          {% endfor %}
+        </select>
         <select name="sort" onchange="this.form.submit()"
                 aria-label="Sort order"
                 class="theme-input rounded-xl text-sm min-h-[44px]">
@@ -118,8 +127,9 @@
   <form method="get" action="{{ url_for('balances.index') }}" class="animate-fade-in-up stagger-2">
     {% if bucket_filter %}<input type="hidden" name="bucket" value="{{ bucket_filter }}">{% endif %}
     {% if city_filter %}<input type="hidden" name="city" value="{{ city_filter }}">{% endif %}
+    {% if payment_type_filter %}<input type="hidden" name="payment_type" value="{{ payment_type_filter }}">{% endif %}
     {% if sort != 'balance_desc' %}<input type="hidden" name="sort" value="{{ sort }}">{% endif %}
-    <input type="text" name="q" value="{{ q }}" placeholder="Search customers..."
+    <input type="text" name="q" value="{{ q }}" placeholder="Search name or customer code..."
            class="w-full theme-input rounded-xl text-sm min-h-[44px] px-4">
   </form>
 
@@ -143,12 +153,12 @@
   {% if total_pages > 1 %}
   <div class="flex items-center justify-center gap-2 pt-1">
     {% if page > 1 %}
-    <a href="{{ url_for('balances.index', city=city_filter, bucket=bucket_filter, sort=sort, q=q, page=page-1) }}#balance-list"
+    <a href="{{ url_for('balances.index', city=city_filter, bucket=bucket_filter, payment_type=payment_type_filter, sort=sort, q=q, page=page-1) }}#balance-list"
        class="px-3 py-1.5 text-xs font-medium text-indigo-400 hover:text-indigo-300 bg-panel border border-app rounded-lg btn-press">&larr; Prev</a>
     {% endif %}
     <span class="text-2xs text-faint">Page {{ page }} of {{ total_pages }}</span>
     {% if page < total_pages %}
-    <a href="{{ url_for('balances.index', city=city_filter, bucket=bucket_filter, sort=sort, q=q, page=page+1) }}#balance-list"
+    <a href="{{ url_for('balances.index', city=city_filter, bucket=bucket_filter, payment_type=payment_type_filter, sort=sort, q=q, page=page+1) }}#balance-list"
        class="px-3 py-1.5 text-xs font-medium text-indigo-400 hover:text-indigo-300 bg-panel border border-app rounded-lg btn-press">Next &rarr;</a>
     {% endif %}
   </div>

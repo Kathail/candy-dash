@@ -30,8 +30,17 @@
         <label for="name" class="block text-sm font-medium text-gray-300 mb-1">Name <span class="text-red-500">*</span></label>
         <input type="text" name="name" id="name" required
                value="{{ customer.name if customer else '' }}"
-               class="block w-full min-h-[44px] rounded-lg border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+               class="w-full theme-input rounded-lg min-h-[44px]"
                placeholder="Customer name">
+      </div>
+
+      <!-- Customer Code -->
+      <div>
+        <label for="customer_code" class="block text-sm font-medium text-gray-300 mb-1">Customer Code <span class="text-gray-500 text-xs font-normal">(optional)</span></label>
+        <input type="text" name="customer_code" id="customer_code"
+               value="{{ customer.customer_code if customer and customer.customer_code else '' }}"
+               class="w-full theme-input rounded-lg min-h-[44px]"
+               placeholder="Scholtens customer code">
       </div>
 
       <!-- Address -->
@@ -39,7 +48,7 @@
         <label for="address" class="block text-sm font-medium text-gray-300 mb-1">Address</label>
         <input type="text" name="address" id="address"
                value="{{ customer.address if customer and customer.address else '' }}"
-               class="block w-full min-h-[44px] rounded-lg border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+               class="w-full theme-input rounded-lg min-h-[44px]"
                placeholder="Street address">
       </div>
 
@@ -48,7 +57,7 @@
         <label for="city" class="block text-sm font-medium text-gray-300 mb-1">City</label>
         <input type="text" name="city" id="city"
                value="{{ customer.city if customer and customer.city else '' }}"
-               class="block w-full min-h-[44px] rounded-lg border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+               class="w-full theme-input rounded-lg min-h-[44px]"
                placeholder="City">
       </div>
 
@@ -57,7 +66,7 @@
         <label for="phone" class="block text-sm font-medium text-gray-300 mb-1">Phone</label>
         <input type="tel" name="phone" id="phone"
                value="{{ customer.phone if customer and customer.phone else '' }}"
-               class="block w-full min-h-[44px] rounded-lg border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+               class="w-full theme-input rounded-lg min-h-[44px]"
                placeholder="Phone number">
       </div>
 
@@ -65,7 +74,7 @@
       <div>
         <label for="status" class="block text-sm font-medium text-gray-300 mb-1">Status</label>
         <select name="status" id="status"
-                class="block w-full min-h-[44px] rounded-lg border-gray-600 bg-gray-700 text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                class="w-full theme-input rounded-lg min-h-[44px]">
           {% set current_status = customer.status if customer else 'active' %}
           <option value="active" {{ 'selected' if current_status == 'active' }}>Active</option>
           <option value="inactive" {{ 'selected' if current_status == 'inactive' }}>Inactive</option>
@@ -80,7 +89,7 @@
         <label for="lead_source" class="block text-sm font-medium text-gray-300 mb-1">Lead Source</label>
         <input type="text" name="lead_source" id="lead_source"
                value="{{ customer.lead_source if customer and customer.lead_source else '' }}"
-               class="block w-full min-h-[44px] rounded-lg border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+               class="w-full theme-input rounded-lg min-h-[44px]"
                placeholder="e.g., Referral, Walk-in, Google Maps">
       </div>
 
@@ -88,7 +97,7 @@
       <div>
         <label for="notes" class="block text-sm font-medium text-gray-300 mb-1">Notes</label>
         <textarea name="notes" id="notes" rows="3"
-                  class="block w-full min-h-[44px] rounded-lg border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+                  class="w-full theme-input rounded-lg"
                   placeholder="Any additional notes...">{{ customer.notes if customer and customer.notes else '' }}</textarea>
       </div>
 
@@ -97,7 +106,7 @@
         <label for="balance" class="block text-sm font-medium text-gray-300 mb-1">Balance</label>
         <input type="number" name="balance" id="balance" step="0.01"
                value="{{ customer.balance if customer and customer.balance is not none else '0.00' }}"
-               class="block w-full min-h-[44px] rounded-lg border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+               class="w-full theme-input rounded-lg min-h-[44px]"
                placeholder="0.00">
       </div>
 
@@ -112,17 +121,17 @@
       <!-- Submit -->
       <div class="flex gap-3 pt-4 border-t border-app">
         <button type="submit"
-                class="btn-press inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors min-h-[44px]">
+                class="btn-press theme-btn-primary rounded-lg min-h-[44px] px-4 py-2">
           {% if customer %}Update Customer{% else %}Create Customer{% endif %}
         </button>
         {% if customer %}
         <a href="{{ url_for('customers.profile', id=customer.id) }}"
-           class="btn-press inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-600 transition-colors min-h-[44px]">
+           class="btn-press theme-btn-secondary rounded-lg min-h-[44px] px-4 py-2">
           Cancel
         </a>
         {% else %}
         <a href="{{ url_for('customers.index') }}"
-           class="btn-press inline-flex items-center px-4 py-2 bg-gray-700 border border-gray-600 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-600 transition-colors min-h-[44px]">
+           class="btn-press theme-btn-secondary rounded-lg min-h-[44px] px-4 py-2">
           Cancel
         </a>
         {% endif %}

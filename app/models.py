@@ -7,6 +7,7 @@ from app import db
 
 VALID_CUSTOMER_STATUSES = ("active", "inactive", "lead")
 VALID_ROLES = ("owner", "admin", "bookkeeper", "demo")
+VALID_PAYMENT_TYPES = ("cash", "cheque", "credit", "debit", "etransfer", "scholtens", "other")
 
 
 class User(UserMixin, db.Model):
@@ -58,6 +59,7 @@ class Customer(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False, index=True)
+    customer_code = db.Column(db.String(50), nullable=True, index=True)
     address = db.Column(db.String(300), nullable=True)
     city = db.Column(db.String(100), nullable=True, index=True)
     phone = db.Column(db.String(30), nullable=True)
@@ -82,6 +84,7 @@ class RouteStop(db.Model):
     __table_args__ = (
         db.Index("ix_route_stops_date_customer", "route_date", "customer_id"),
         db.Index("ix_route_stops_date_completed", "route_date", "completed"),
+        db.Index("ix_route_stops_customer_completed", "customer_id", "completed"),
     )
 
     id = db.Column(db.Integer, primary_key=True)
@@ -99,6 +102,9 @@ class RouteStop(db.Model):
 
 class Invoice(db.Model):
     __tablename__ = "invoices"
+    __table_args__ = (
+        db.Index("ix_invoices_customer_status", "customer_id", "status"),
+    )
 
     id = db.Column(db.Integer, primary_key=True)
     customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=False, index=True)
@@ -157,6 +163,7 @@ class Payment(db.Model):
     __table_args__ = (
         db.Index("ix_payments_customer_date", "customer_id", "payment_date"),
         db.Index("ix_payments_date_amount", "payment_date", "amount"),
+        db.Index("ix_payments_payment_type", "payment_type"),
     )
 
     id = db.Column(db.Integer, primary_key=True)

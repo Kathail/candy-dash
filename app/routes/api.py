@@ -51,10 +51,13 @@ def customer_search():
                 "date": format_date(p.payment_date),
             })
 
-    # Always search customers by name
+    # Always search customers by name or customer code
     customers = (
         Customer.query
-        .filter(Customer.name.ilike(f"%{q}%"))
+        .filter(db.or_(
+            Customer.name.ilike(f"%{q}%"),
+            Customer.customer_code.ilike(f"%{q}%"),
+        ))
         .order_by(Customer.name)
         .limit(20)
         .all()
@@ -64,6 +67,7 @@ def customer_search():
             "type": "customer",
             "id": c.id,
             "name": c.name,
+            "customer_code": c.customer_code,
             "city": c.city,
             "balance": float(c.balance) if c.balance else 0.0,
             "phone": c.phone,

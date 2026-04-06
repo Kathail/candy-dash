@@ -306,13 +306,13 @@ def import_csv():
             raw_bal = row.get(col_map.get("balance", ""), "").strip()
             if raw_bal:
                 try:
-                    balance = Decimal(raw_bal.replace(",", "").replace("$", ""))
+                    balance = max(Decimal(raw_bal.replace(",", "").replace("$", "")), Decimal("0"))
                 except (InvalidOperation, ValueError):
                     pass
 
             if norm in existing:
                 if mode == "update":
-                    c = existing[norm]
+                    c = db.session.query(Customer).filter_by(id=existing[norm].id).with_for_update().one()
                     if address: c.address = address
                     if city_val: c.city = city_val
                     if phone: c.phone = phone
@@ -335,6 +335,7 @@ def import_csv():
                 existing[norm] = customer
                 imported += 1
             except Exception:
+                logging.exception("CSV import: failed to import row '%s'", raw_name)
                 errors += 1
 
         parts = []

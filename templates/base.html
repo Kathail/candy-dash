@@ -81,7 +81,7 @@
                                @input.debounce.300ms="search()" @focus="open = query.length > 0"
                                @keydown.escape="open = false"
                                x-ref="searchInput" aria-label="Search customers or invoices"
-                               class="theme-input text-sm rounded-lg" style="padding-left: 2.5rem;" />
+                               class="theme-input text-sm rounded-lg min-h-[44px]" style="padding-left: 2.5rem;" />
                     </div>
                     <div x-show="open && results.length > 0" @click.outside="open = false" x-transition x-cloak
                          class="absolute top-full mt-1 w-full theme-card max-h-72 overflow-y-auto z-50 shadow-lg">
@@ -92,7 +92,7 @@
                                     <div class="text-sm font-medium" :class="c.type === 'receipt' ? 'font-mono text-emerald-400' : ''"
                                          x-text="c.type === 'receipt' ? c.receipt_number : c.name"></div>
                                     <div class="text-xs text-muted"
-                                         x-text="c.type === 'receipt' ? (c.name + ' · ' + c.date) : (c.city || 'No city')"></div>
+                                         x-text="c.type === 'receipt' ? (c.name + ' · ' + c.date) : ((c.customer_code ? c.customer_code + ' · ' : '') + (c.city || 'No city'))"></div>
                                 </div>
                                 <span class="text-sm font-semibold"
                                       :class="c.type === 'receipt' ? 'text-green-400' : (c.balance > 0 ? 'text-amber-400' : 'text-green-400')"
@@ -131,7 +131,7 @@
                                 <div class="text-sm font-medium" :class="c.type === 'receipt' ? 'font-mono text-emerald-400' : ''"
                                      x-text="c.type === 'receipt' ? c.receipt_number : c.name"></div>
                                 <div class="text-xs text-muted"
-                                     x-text="c.type === 'receipt' ? (c.name + ' · ' + c.date) : (c.city || 'No city')"></div>
+                                     x-text="c.type === 'receipt' ? (c.name + ' · ' + c.date) : ((c.customer_code ? c.customer_code + ' · ' : '') + (c.city || 'No city'))"></div>
                             </div>
                             <span class="text-sm font-semibold"
                                   :class="c.type === 'receipt' ? 'text-green-400' : (c.balance > 0 ? 'text-amber-400' : 'text-green-400')"

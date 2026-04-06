@@ -37,7 +37,7 @@
       </svg>
       <input type="search" name="q" value="{{ q }}"
              aria-label="Search customers"
-             placeholder="Search..."
+             placeholder="Search name, code, phone..."
              onchange="this.form.submit()"
              class="w-full py-2.5 rounded-xl border border-app bg-panel text-sm text-gray-200 focus:border-indigo-500 focus:ring-indigo-500 placeholder:text-gray-500 min-h-[44px]" style="padding-left: 2.25rem;">
       {% if status_filter %}<input type="hidden" name="status" value="{{ status_filter }}">{% endif %}
@@ -112,6 +112,9 @@
       </div>
       <div class="flex-1 min-w-0">
         <p class="text-sm font-semibold text-gray-100 truncate group-hover:text-white transition-colors">{{ customer.name }}</p>
+        {% if customer.customer_code %}
+        <p class="text-2xs text-gray-500 font-mono truncate">{{ customer.customer_code }}</p>
+        {% endif %}
       </div>
       {# Pills #}
       {% if last_visit %}

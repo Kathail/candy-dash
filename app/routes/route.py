@@ -15,7 +15,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 
 from app import db
-from app.models import Customer, Invoice, RouteStop, Payment, ActivityLog
+from app.models import Customer, Invoice, RouteStop, Payment, ActivityLog, VALID_PAYMENT_TYPES
 from app.helpers import generate_receipt_pdf, generate_receipt_number, audit
 import logging
 
@@ -139,6 +139,8 @@ def complete_stop(id):
     amount_str = request.form.get("amount", "").strip()
     amount_sold_str = request.form.get("amount_sold", "").strip()
     payment_type = request.form.get("payment_type", "cash").strip() or "cash"
+    if payment_type not in VALID_PAYMENT_TYPES:
+        payment_type = "other"
     receipt_number = None
 
     try:

@@ -8,7 +8,7 @@ from flask_login import login_required
 from sqlalchemy import case, func
 
 from app import db
-from app.models import Customer, Payment
+from app.models import Customer, Payment, VALID_PAYMENT_TYPES
 
 bp = Blueprint("balances", __name__, url_prefix="/balances")
 
@@ -27,6 +27,9 @@ def index():
     sort = request.args.get("sort", "balance_desc")
     bucket_filter = request.args.get("bucket", "").strip()
     q = request.args.get("q", "").strip()
+    payment_type_filter = request.args.get("payment_type", "").strip()
+    if payment_type_filter and payment_type_filter not in VALID_PAYMENT_TYPES:
+        payment_type_filter = ""
 
     # Subquery: last payment date per customer
     last_pay = (
@@ -49,12 +52,26 @@ def index():
         else_="0-30",
     )
 
+    # Subquery: customers who have at least one payment of a given type
+    if payment_type_filter:
+        customers_with_ptype = (
+            db.session.query(Payment.customer_id)
+            .filter(Payment.payment_type == payment_type_filter)
+            .distinct()
+            .subquery()
+        )
+
     # Base filters (applied to both summary and list)
     base_filters = [Customer.balance > 0, Customer.status != "deleted"]
     if city_filter:
         base_filters.append(Customer.city == city_filter)
     if q:
-        base_filters.append(Customer.name.ilike(f"%{q}%"))
+        base_filters.append(db.or_(
+            Customer.name.ilike(f"%{q}%"),
+            Customer.customer_code.ilike(f"%{q}%"),
+        ))
+    if payment_type_filter:
+        base_filters.append(Customer.id.in_(db.session.query(customers_with_ptype.c.customer_id)))
 
     # Bucket summary (unfiltered by bucket so all buckets always show totals)
     bucket_rows = (
@@ -118,6 +135,8 @@ def index():
     if request.headers.get("HX-Request"):
         template = "partials/balance_rows.html"
 
+    payment_types = ["cash", "cheque", "debit", "credit", "etransfer", "scholtens", "other"]
+
     return render_template(
         template,
         customers=customers_with_aging,
@@ -127,6 +146,8 @@ def index():
         cities=cities,
         city_filter=city_filter,
         bucket_filter=bucket_filter,
+        payment_type_filter=payment_type_filter,
+        payment_types=payment_types,
         sort=sort,
         q=q,
         page=page,

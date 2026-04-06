@@ -14,7 +14,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 
 from app import db, limiter
-from app.models import Customer, Payment, Invoice, InvoiceItem, Note, ActivityLog, RouteStop, VALID_CUSTOMER_STATUSES
+from app.models import Customer, Payment, Invoice, InvoiceItem, Note, ActivityLog, RouteStop, VALID_CUSTOMER_STATUSES, VALID_PAYMENT_TYPES
 from app.helpers import admin_required, staff_required, generate_receipt_number, generate_receipt_pdf, audit, safe_redirect
 import logging
 
@@ -54,6 +54,7 @@ def index():
                 Customer.name.ilike(like),
                 Customer.phone.ilike(like),
                 Customer.address.ilike(like),
+                Customer.customer_code.ilike(like),
             )
         )
 
@@ -195,8 +196,10 @@ def profile(id):
 
     invoices = (
         Invoice.query
+        .options(joinedload(Invoice.items))
         .filter_by(customer_id=customer.id)
         .order_by(Invoice.invoice_date.desc())
+        .limit(500)
         .all()
     )
 
@@ -289,6 +292,7 @@ def new():
 
         customer = Customer(
             name=name,
+            customer_code=request.form.get("customer_code", "").strip() or None,
             address=request.form.get("address", "").strip(),
             city=request.form.get("city", "").strip(),
             phone=request.form.get("phone", "").strip(),
@@ -301,13 +305,16 @@ def new():
         db.session.add(customer)
         db.session.flush()
 
+        desc = f"Customer '{customer.name}' created."
+        if balance > 0:
+            desc = f"Customer '{customer.name}' created with initial balance ${balance:,.2f}."
         db.session.add(ActivityLog(
             customer_id=customer.id,
             user_id=current_user.id,
             action="customer_created",
-            description=f"Customer '{customer.name}' created.",
+            description=desc,
         ))
-        audit("customer_created", f"Created customer '{customer.name}' (status: {status})")
+        audit("customer_created", f"Created customer '{customer.name}' (status: {status})" + (f" Balance: ${balance:,.2f}" if balance > 0 else ""))
         db.session.commit()
 
         flash(f"Customer '{customer.name}' created.", "success")
@@ -327,6 +334,8 @@ def edit(id):
     customer = Customer.query.get_or_404(id)
 
     if request.method == "POST":
+        # Re-fetch with row lock for safe balance update
+        customer = db.session.query(Customer).filter_by(id=id).with_for_update().one()
         name = request.form.get("name", "").strip()
         if not name:
             flash("Customer name is required.", "error")
@@ -345,6 +354,7 @@ def edit(id):
 
         old_balance = customer.balance
         customer.name = name
+        customer.customer_code = request.form.get("customer_code", "").strip() or None
         customer.address = request.form.get("address", "").strip()
         customer.city = request.form.get("city", "").strip()
         customer.phone = request.form.get("phone", "").strip()
@@ -417,6 +427,8 @@ def record_payment(id):
 
     notes = request.form.get("notes", "").strip() or None
     payment_type = request.form.get("payment_type", "cash").strip() or "cash"
+    if payment_type not in VALID_PAYMENT_TYPES:
+        payment_type = "other"
 
     try:
         customer = db.session.query(Customer).filter_by(id=id).with_for_update().one()
@@ -689,7 +701,7 @@ def add_invoice(id):
         amount=amount,
         invoice_date=invoice_date,
         description=request.form.get("description", "").strip() or None,
-        payment_type=request.form.get("payment_type", "").strip() or None,
+        payment_type=request.form.get("payment_type", "").strip() if request.form.get("payment_type", "").strip() in VALID_PAYMENT_TYPES else None,
         status="unpaid",
         created_by=current_user.id,
     )
@@ -794,6 +806,8 @@ def mark_invoice_paid(id, invoice_id):
             return redirect(url_for("customers.profile", id=id))
         previous_balance = customer.balance
         pay_type = request.form.get("payment_type", "cash")
+        if pay_type not in VALID_PAYMENT_TYPES:
+            pay_type = "other"
 
         # Check if this invoice was auto-created from a payment (shares receipt number).
         # If so, the original payment already partially reduced the balance — only the

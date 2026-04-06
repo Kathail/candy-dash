@@ -34,7 +34,7 @@
     <div class="flex flex-wrap gap-1.5">
       {% for key, label in [('today', 'Today'), ('week', 'Week'), ('month', 'Month'), ('lastMonth', 'Last Month'), ('quarter', 'Quarter')] %}
       <button type="button" @click="setPreset('{{ key }}')"
-              class="px-2.5 py-1.5 text-2xs font-semibold rounded-lg border border-gray-700 bg-gray-800 text-gray-400 hover:bg-gray-700 transition-colors btn-press min-h-[36px]">
+              class="px-2.5 py-1.5 text-2xs font-semibold rounded-lg border border-gray-700 bg-gray-800 text-gray-400 hover:bg-gray-700 transition-colors btn-press min-h-[44px]">
         {{ label }}
       </button>
       {% endfor %}
@@ -43,14 +43,14 @@
       <div class="flex-1">
         <label class="block text-2xs text-gray-500 mb-0.5">From</label>
         <input type="date" x-model="startDate" :max="endDate || todayStr"
-               class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 text-xs min-h-[36px] focus:border-indigo-500 focus:ring-indigo-500">
+               class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 text-xs min-h-[44px] focus:border-indigo-500 focus:ring-indigo-500">
       </div>
       <div class="flex-1">
         <label class="block text-2xs text-gray-500 mb-0.5">To</label>
         <input type="date" x-model="endDate" :min="startDate" :max="todayStr"
-               class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 text-xs min-h-[36px] focus:border-indigo-500 focus:ring-indigo-500">
+               class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 text-xs min-h-[44px] focus:border-indigo-500 focus:ring-indigo-500">
       </div>
-      <button @click="go()" class="px-3 min-h-[36px] bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-500 transition-colors btn-press">
+      <button @click="go()" class="px-3 min-h-[44px] bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-500 transition-colors btn-press">
         Go
       </button>
     </div>

@@ -8,7 +8,7 @@ from flask_login import login_required, current_user
 from sqlalchemy import func
 
 from app import db
-from app.models import Purchase
+from app.models import Purchase, VALID_PAYMENT_TYPES
 from app.helpers import audit
 
 bp = Blueprint("purchases", __name__, url_prefix="/purchases")
@@ -127,13 +127,17 @@ def add():
         except ValueError:
             purchase_date = date.today()
 
+        payment_type = request.form.get("payment_type", "cash").strip() or "cash"
+        if payment_type not in VALID_PAYMENT_TYPES:
+            payment_type = "other"
+
         purchase = Purchase(
             supplier=supplier,
             amount=amount,
             purchase_date=purchase_date,
             invoice_number=request.form.get("invoice_number", "").strip() or None,
             description=request.form.get("description", "").strip() or None,
-            payment_type=request.form.get("payment_type", "cash").strip() or "cash",
+            payment_type=payment_type,
             created_by=current_user.id,
         )
         db.session.add(purchase)
@@ -187,7 +191,8 @@ def edit(id):
         purchase.amount = amount
         purchase.invoice_number = request.form.get("invoice_number", "").strip() or None
         purchase.description = request.form.get("description", "").strip() or None
-        purchase.payment_type = request.form.get("payment_type", "cash").strip() or "cash"
+        pt = request.form.get("payment_type", "cash").strip() or "cash"
+        purchase.payment_type = pt if pt in VALID_PAYMENT_TYPES else "other"
 
         audit("purchase_edited", f"Edited purchase #{purchase.id} from '{supplier}'")
         db.session.commit()

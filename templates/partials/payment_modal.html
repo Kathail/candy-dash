@@ -15,7 +15,7 @@
     <div x-show="isOpen"
          x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
          x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
-         class="relative theme-card rounded-xl shadow-2xl w-full max-w-md p-6">
+         class="relative theme-card rounded-xl shadow-2xl w-full max-w-md p-4 sm:p-6">
 
         <h2 class="text-lg font-bold mb-4">Record Transaction</h2>
 
@@ -70,6 +70,7 @@
                     <option value="debit">Debit</option>
                     <option value="credit">Credit</option>
                     <option value="etransfer">E-Transfer</option>
+                    <option value="scholtens">Scholtens</option>
                     <option value="other">Other</option>
                 </select>
             </div>
