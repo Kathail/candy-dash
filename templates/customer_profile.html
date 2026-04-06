@@ -314,7 +314,7 @@
             <form method="POST" action="{{ url_for('customers.delete_payment', id=customer.id, payment_id=payment.id) }}">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <button type="submit" class="p-2 text-gray-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors btn-press" aria-label="Delete payment"
-                      onclick="return confirm({{ ('Delete payment ' ~ payment.receipt_number ~ ' ($' ~ '%.2f'|format(payment.amount|float) ~ ')? The customer\\'s balance will be restored.')|tojson }})">
+                      onclick="return confirm({{ ('Delete payment ' ~ payment.receipt_number ~ ' ($' ~ '%.2f'|format(payment.amount|float) ~ ')? The customer balance will be restored.')|tojson }})">
                 <svg class="w-4 h-4" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                 </svg>
