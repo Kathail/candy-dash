@@ -41,8 +41,8 @@
       <input type="search" name="q" value="{{ q }}"
              aria-label="Search leads"
              placeholder="Search..."
-             onchange="this.form.submit()"
-             class="w-full py-2.5 rounded-xl border border-app bg-panel text-sm text-gray-200 focus:border-indigo-500 focus:ring-indigo-500 placeholder:text-gray-500 min-h-[44px]" style="padding-left: 2.25rem;">
+             oninput="clearTimeout(this._t);this._t=setTimeout(()=>this.form.submit(),400)"
+             class="w-full theme-input rounded-xl text-sm min-h-[44px]" style="padding-left: 2.25rem;">
       {% if lead_source_filter %}<input type="hidden" name="lead_source" value="{{ lead_source_filter }}">{% endif %}
       {% if city_filter %}<input type="hidden" name="city" value="{{ city_filter }}">{% endif %}
     </form>

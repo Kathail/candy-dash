@@ -192,6 +192,14 @@ def add_stop():
 
     customer = Customer.query.get_or_404(customer_id)
 
+    # Prevent duplicate stops on the same date
+    existing = RouteStop.query.filter_by(customer_id=customer_id, route_date=route_date).first()
+    if existing:
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return jsonify({"error": f"{customer.name} is already on this route."}), 409
+        flash(f"{customer.name} is already on this route.", "warning")
+        return redirect(url_for("planner.index", date=route_date.isoformat()))
+
     # Auto-sequence if none provided
     if sequence == 0:
         max_seq = (
@@ -471,29 +479,24 @@ def recurring_delete(id):
 @bp.route("/all-stops")
 @login_required
 def all_stops():
-    """Return JSON of all stops, grouped by date, for calendar rendering."""
+    """Return JSON of stop counts per date for calendar rendering."""
     cutoff = date.today() - timedelta(days=90)
-    stops = (
-        RouteStop.query
-        .options(joinedload(RouteStop.customer))
-        .join(Customer)
+    rows = (
+        db.session.query(
+            RouteStop.route_date,
+            func.count(RouteStop.id).label("total"),
+            func.sum(db.case((RouteStop.completed.is_(True), 1), else_=0)).label("done"),
+        )
         .filter(RouteStop.route_date >= cutoff)
-        .order_by(RouteStop.route_date, RouteStop.sequence)
+        .group_by(RouteStop.route_date)
         .all()
     )
 
     result = {}
-    for stop in stops:
-        key = stop.route_date.isoformat()
-        if key not in result:
-            result[key] = []
-        result[key].append({
-            "id": stop.id,
-            "customer_id": stop.customer_id,
-            "customer_name": stop.customer.name,
-            "city": stop.customer.city,
-            "sequence": stop.sequence,
-            "completed": stop.completed,
-        })
+    for r in rows:
+        result[r.route_date.isoformat()] = {
+            "total": r.total,
+            "done": int(r.done or 0),
+        }
 
     return jsonify(result)

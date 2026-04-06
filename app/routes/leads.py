@@ -223,26 +223,67 @@ def import_csv():
         flash("Uploaded file must be a .csv file.", "error")
         return redirect(url_for("leads.index"))
 
+    # Limit CSV file size to 2 MB
+    MAX_CSV_BYTES = 2 * 1024 * 1024
+    csv_file.seek(0, 2)
+    file_size = csv_file.tell()
+    csv_file.seek(0)
+    if file_size > MAX_CSV_BYTES:
+        flash("CSV file is too large (max 2 MB).", "error")
+        return redirect(url_for("leads.index"))
+
     try:
+        import re
         stream = io.TextIOWrapper(csv_file.stream, encoding="utf-8-sig")
         reader = csv.DictReader(stream)
 
+        # Build set of existing lead names for duplicate detection
+        existing_names = {
+            re.sub(r"\s+", " ", c.name.strip().lower())
+            for c in Customer.query.filter(Customer.status == "lead").all()
+        }
+
+        # Flexible column mapping
+        raw_headers = [h.strip() for h in (reader.fieldnames or [])]
+        col_map = {}
+        for h in raw_headers:
+            hl = h.lower()
+            if hl in ("name", "business", "store"):
+                col_map["name"] = h
+            elif hl in ("address", "street", "location"):
+                col_map["address"] = h
+            elif hl in ("city", "town"):
+                col_map["city"] = h
+            elif hl in ("phone", "telephone", "tel", "phone number"):
+                col_map["phone"] = h
+            elif hl in ("notes", "note", "comments"):
+                col_map["notes"] = h
+            elif hl in ("source", "lead_source", "lead source", "origin"):
+                col_map["lead_source"] = h
+
         imported = 0
+        skipped = 0
         for row in reader:
-            name = row.get("name", "").strip()
+            name = row.get(col_map.get("name", "name"), "").strip()
             if not name:
+                continue
+
+            norm = re.sub(r"\s+", " ", name.strip().lower())
+            if norm in existing_names:
+                skipped += 1
                 continue
 
             lead = Customer(
                 name=name,
-                address=row.get("address", "").strip() or None,
-                city=row.get("city", "").strip() or None,
-                phone=row.get("phone", "").strip() or None,
-                notes=row.get("notes", "").strip() or None,
-                lead_source=row.get("lead_source", "").strip() or None,
+                address=row.get(col_map.get("address", "address"), "").strip() or None,
+                city=row.get(col_map.get("city", "city"), "").strip() or None,
+                phone=row.get(col_map.get("phone", "phone"), "").strip() or None,
+                notes=row.get(col_map.get("notes", "notes"), "").strip() or None,
+                lead_source=row.get(col_map.get("lead_source", "lead_source"), "").strip() or None,
                 status="lead",
             )
             db.session.add(lead)
+            existing_names.add(norm)
             imported += 1
 
         db.session.commit()
@@ -265,7 +306,12 @@ def import_csv():
                 db.session.add(log)
                 db.session.commit()
 
-        flash(f"Successfully imported {imported} leads.", "success")
+        parts = []
+        if imported:
+            parts.append(f"{imported} imported")
+        if skipped:
+            parts.append(f"{skipped} skipped (duplicates)")
+        flash(f"Lead import: {', '.join(parts) or 'no new leads found'}.", "success" if imported else "warning")
 
     except Exception:
         logging.exception("Operation failed")

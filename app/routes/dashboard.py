@@ -26,11 +26,13 @@ def index():
     yest_start = datetime(yesterday.year, yesterday.month, yesterday.day, tzinfo=timezone.utc)
     yest_end = datetime(yesterday.year, yesterday.month, yesterday.day, 23, 59, 59, 999999, tzinfo=timezone.utc)
 
-    # Route-stop KPIs
-    total_stops = RouteStop.query.filter(RouteStop.route_date == today).count()
-    completed_stops = RouteStop.query.filter(
-        RouteStop.route_date == today, RouteStop.completed.is_(True)
-    ).count()
+    # Route-stop KPIs (combined into single query)
+    stop_stats = db.session.query(
+        func.count(RouteStop.id),
+        func.sum(db.case((RouteStop.completed.is_(True), 1), else_=0)),
+    ).filter(RouteStop.route_date == today).first()
+    total_stops = stop_stats[0] or 0
+    completed_stops = int(stop_stats[1] or 0)
 
     # Payment KPIs (today) — count, sum, and max in a single query
     payment_stats = db.session.query(
@@ -63,9 +65,15 @@ def index():
     # Outstanding today — sold today minus collected today
     total_outstanding = max(sales_sum - payment_sum, Decimal("0"))
 
-    # Customer counts
-    active_customers = Customer.query.filter(Customer.status == "active").count()
-    lead_count = Customer.query.filter(Customer.status == "lead").count()
+    # Customer counts (combined into single query)
+    cust_counts = dict(
+        db.session.query(Customer.status, func.count(Customer.id))
+        .filter(Customer.status.in_(("active", "lead")))
+        .group_by(Customer.status)
+        .all()
+    )
+    active_customers = cust_counts.get("active", 0)
+    lead_count = cust_counts.get("lead", 0)
 
     # Customers sold to today who still owe (amount_sold > amount_paid)
     overdue_count = db.session.query(

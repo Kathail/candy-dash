@@ -9,7 +9,7 @@ from sqlalchemy import func
 
 from app import db
 from app.models import Purchase, VALID_PAYMENT_TYPES
-from app.helpers import audit
+from app.helpers import audit, staff_required, admin_required
 
 bp = Blueprint("purchases", __name__, url_prefix="/purchases")
 
@@ -46,21 +46,9 @@ def index():
     else:
         query = query.order_by(Purchase.purchase_date.desc())
 
-    # Total across all matching (separate query with same filters, before pagination)
-    total_query = Purchase.query
-    if supplier_filter:
-        total_query = total_query.filter(Purchase.supplier == supplier_filter)
-    if month_filter:
-        try:
-            year, month = month_filter.split("-")
-            total_query = total_query.filter(
-                db.extract("year", Purchase.purchase_date) == int(year),
-                db.extract("month", Purchase.purchase_date) == int(month),
-            )
-        except (ValueError, AttributeError):
-            pass
-    total = db.session.query(func.coalesce(func.sum(Purchase.amount), 0)).filter(
-        Purchase.id.in_(total_query.with_entities(Purchase.id))
+    # Total across all matching (reuse base query before pagination)
+    total = db.session.query(func.coalesce(func.sum(Purchase.amount), 0)).select_from(
+        query.with_entities(Purchase.amount).subquery()
     ).scalar()
 
     page = request.args.get("page", 1, type=int)
@@ -103,6 +91,7 @@ def index():
 
 @bp.route("/add", methods=["GET", "POST"])
 @login_required
+@staff_required
 def add():
     """Add a new purchase."""
     if request.method == "POST":
@@ -161,6 +150,7 @@ def add():
 
 @bp.route("/<int:id>/edit", methods=["GET", "POST"])
 @login_required
+@staff_required
 def edit(id):
     """Edit a purchase."""
     purchase = Purchase.query.get_or_404(id)
@@ -327,6 +317,7 @@ def pdf(id):
 
 @bp.route("/<int:id>/delete", methods=["POST"])
 @login_required
+@admin_required
 def delete(id):
     """Delete a purchase."""
     purchase = Purchase.query.get_or_404(id)
