@@ -393,9 +393,12 @@ function plannerApp() {
     },
 
     updateCalendarDot(delta) {
-      if (!this.allStops[this.selectedDate]) this.allStops[this.selectedDate] = [];
-      if (delta > 0) this.allStops[this.selectedDate].push({});
-      else this.allStops[this.selectedDate].pop();
+      const cur = this.allStops[this.selectedDate];
+      if (!cur || !Array.isArray(cur)) {
+        const count = cur ? (cur.total || 0) : 0;
+        this.allStops[this.selectedDate] = { total: Math.max(0, count + delta) };
+      } else if (delta > 0) { cur.push({}); }
+      else { cur.pop(); }
     },
 
     toast(msg, cat) {
@@ -417,7 +420,8 @@ function plannerApp() {
       // Count how many recurring schedules match this date
       // that aren't already materialized in allStops
       const target = new Date(dateStr + 'T00:00:00');
-      const existingCustomerIds = new Set((this.allStops[dateStr] || []).map(s => s.customer_id));
+      const stopData = this.allStops[dateStr] || [];
+      const existingCustomerIds = new Set(Array.isArray(stopData) ? stopData.map(s => s.customer_id) : []);
       let count = 0;
       for (const r of this.recurring) {
         if (existingCustomerIds.has(r.customer_id)) continue;
@@ -439,7 +443,8 @@ function plannerApp() {
       for (let i = 0; i < firstDay; i++) cells.push({ key: 'empty-' + i, day: '', date: null, stopCount: 0 });
       for (let d = 1; d <= daysInMonth; d++) {
         const ds = `${this.currentYear}-${String(this.currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-        const materializedCount = this.allStops[ds] ? this.allStops[ds].length : 0;
+        const sd = this.allStops[ds];
+        const materializedCount = sd ? (Array.isArray(sd) ? sd.length : (sd.total || 0)) : 0;
         const recurringCount = this.recurringCountForDate(ds);
         cells.push({ key: ds, day: d, date: ds, isToday: ds === todayStr, stopCount: materializedCount + recurringCount });
       }
