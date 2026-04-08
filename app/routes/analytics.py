@@ -47,7 +47,7 @@ def index():
         db.session.query(
             extract("year", Payment.payment_date).label("year"),
             extract("month", Payment.payment_date).label("month"),
-            func.coalesce(func.sum(Payment.amount), Decimal("0")).label("total"),
+            func.coalesce(func.sum(Payment.amount_sold), Decimal("0")).label("total"),
         )
         .filter(Payment.payment_date >= range_start)
         .group_by("year", "month")
@@ -67,7 +67,7 @@ def index():
         db.session.query(
             extract("year", Payment.payment_date).label("year"),
             extract("month", Payment.payment_date).label("month"),
-            func.coalesce(func.sum(Payment.amount), Decimal("0")).label("total"),
+            func.coalesce(func.sum(Payment.amount_sold), Decimal("0")).label("total"),
         )
         .filter(
             Payment.payment_date >= prev_range_start,
@@ -79,16 +79,16 @@ def index():
     )
     prev_revenue_data = [float(row.total) for row in prev_revenue_rows]
 
-    # --- Collections by city ---
+    # --- Sales by city ---
     collections_by_city = (
         db.session.query(
             Customer.city,
-            func.coalesce(func.sum(Payment.amount), Decimal("0")).label("total"),
+            func.coalesce(func.sum(Payment.amount_sold), Decimal("0")).label("total"),
         )
         .join(Payment, Payment.customer_id == Customer.id)
         .filter(Payment.payment_date >= range_start)
         .group_by(Customer.city)
-        .order_by(func.sum(Payment.amount).desc())
+        .order_by(func.sum(Payment.amount_sold).desc())
         .all()
     )
     city_labels = [row.city or "Unknown" for row in collections_by_city]
@@ -165,14 +165,14 @@ def index():
             Customer.id,
             Customer.name,
             Customer.city,
-            func.sum(Payment.amount).label("revenue"),
+            func.sum(Payment.amount_sold).label("revenue"),
             func.count(Payment.id).label("payment_count"),
-            func.avg(Payment.amount).label("avg_payment"),
+            func.avg(Payment.amount_sold).label("avg_payment"),
         )
         .join(Payment, Payment.customer_id == Customer.id)
         .filter(Payment.payment_date >= range_start)
         .group_by(Customer.id, Customer.name, Customer.city)
-        .order_by(func.sum(Payment.amount).desc())
+        .order_by(func.sum(Payment.amount_sold).desc())
         .limit(10)
         .all()
     )
@@ -218,7 +218,7 @@ def index():
         dow_rows = (
             db.session.query(
                 extract("isodow", Payment.payment_date).label("dow"),
-                func.avg(Payment.amount).label("avg_amount"),
+                func.avg(Payment.amount_sold).label("avg_amount"),
                 func.count(Payment.id).label("count"),
             )
             .filter(Payment.payment_date >= range_start)

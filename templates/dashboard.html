@@ -42,8 +42,8 @@
         <span class="text-indigo-200 text-xs">
           {% if completed_stops == total_stops %}
           All done!
-          {% elif yest_payment > 0 and payment_sum > 0 %}
-          {{ '+' if payment_sum >= yest_payment else '' }}{{ ((payment_sum - yest_payment) / yest_payment * 100)|int }}% vs yesterday
+          {% elif yest_sales > 0 and sales_sum > 0 %}
+          {{ '+' if sales_sum >= yest_sales else '' }}{{ ((sales_sum - yest_sales) / yest_sales * 100)|int }}% vs yesterday
           {% else %}
           {{ total_stops - completed_stops }} remaining
           {% endif %}

@@ -53,11 +53,11 @@ def index():
     sales_count = int(payment_stats[5] or 0)
 
     # Today's avg order value
-    avg_order_today = round(float(payment_sum) / collection_count, 2) if collection_count else 0
+    avg_order_today = round(float(sales_sum) / sales_count, 2) if sales_count else 0
 
-    # Yesterday's payments for comparison
-    yest_payment = db.session.query(
-        func.coalesce(func.sum(Payment.amount), Decimal("0")),
+    # Yesterday's sales for comparison
+    yest_sales = db.session.query(
+        func.coalesce(func.sum(Payment.amount_sold), Decimal("0")),
     ).filter(
         Payment.payment_date >= yest_start, Payment.payment_date <= yest_end
     ).scalar() or Decimal("0")
@@ -149,7 +149,7 @@ def index():
     daily_totals_rows = (
         db.session.query(
             func.date(Payment.payment_date).label("pay_date"),
-            func.coalesce(func.sum(Payment.amount), Decimal("0")).label("total"),
+            func.coalesce(func.sum(Payment.amount_sold), Decimal("0")).label("total"),
         )
         .filter(Payment.payment_date >= week_start_dt)
         .group_by(func.date(Payment.payment_date))
@@ -188,7 +188,7 @@ def index():
         sales_count=sales_count,
         highest_today=highest_today,
         avg_order_today=avg_order_today,
-        yest_payment=yest_payment,
+        yest_sales=yest_sales,
         total_outstanding=total_outstanding,
         active_customers=active_customers,
         lead_count=lead_count,

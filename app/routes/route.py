@@ -65,6 +65,14 @@ def index():
         Payment.payment_date <= day_end,
     ).scalar() or Decimal("0")
 
+    # Today's actual sales (goods delivered)
+    sales_today = db.session.query(
+        func.coalesce(func.sum(Payment.amount_sold), Decimal("0"))
+    ).filter(
+        Payment.payment_date >= day_start,
+        Payment.payment_date <= day_end,
+    ).scalar() or Decimal("0")
+
     # Last visit info per customer (single query instead of N+1)
     last_visits = {}
     if customer_ids:
@@ -114,6 +122,7 @@ def index():
         route_date=route_date,
         collection_target=collection_target,
         collected_today=collected_today,
+        sales_today=sales_today,
         last_visits=last_visits,
         last_payments=last_payments,
         prev_date=prev_date,
