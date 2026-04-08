@@ -62,7 +62,7 @@ def daily_sales():
     if fmt in ("csv", "xlsx", "pdf"):
         rows = query.all()
         headers = ["Date", "Sales Count", "Total"]
-        export_rows = [(str(r.invoice_date), r.count, str(r.total)) for r in rows]
+        export_rows = [(str(r.invoice_date), r.count, f"{r.total:.2f}") for r in rows]
         filename = f"daily_sales_{start.strftime('%Y%m%d')}_{end.strftime('%Y%m%d')}"
         return export_response(export_rows, headers, filename, fmt, title="Daily Sales")
 
@@ -147,7 +147,7 @@ def financial():
         by_customer = by_customer_query.limit(500).all()
         headers = ["Customer", "City", "Sales Count", "Total"]
         rows = [
-            (row.name, row.city or "", row.count, str(row.total))
+            (row.name, row.city or "", row.count, f"{row.total:.2f}")
             for row in by_customer
         ]
         filename = f"sales_report_{start.strftime('%Y%m%d')}_{end.strftime('%Y%m%d')}"
@@ -204,7 +204,7 @@ def tax():
         )
         headers = ["Customer", "City", "Tax Exempt", "Sales Count", "Total"]
         export_rows = [
-            (r.name, r.city or "", "Yes" if r.tax_exempt else "No", r.count, str(r.total))
+            (r.name, r.city or "", "Yes" if r.tax_exempt else "No", r.count, f"{r.total:.2f}")
             for r in all_rows
         ]
         filename = f"tax_report_{start.strftime('%Y%m%d')}_{end.strftime('%Y%m%d')}"
@@ -261,7 +261,7 @@ def collections():
 
     if fmt in ("csv", "xlsx", "pdf"):
         headers = ["Sales Rep", "Sales Count", "Total"]
-        export_rows = [(r.username, r.count, str(r.total)) for r in rows]
+        export_rows = [(r.username, r.count, f"{r.total:.2f}") for r in rows]
         filename = f"sales_by_rep_{start.strftime('%Y%m%d')}_{end.strftime('%Y%m%d')}"
         return export_response(export_rows, headers, filename, fmt, title="Sales by Rep")
 

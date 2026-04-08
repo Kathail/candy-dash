@@ -6,8 +6,22 @@ from flask_login import login_required
 from sqlalchemy.orm import joinedload
 
 from app import db
-from app.helpers import admin_required, export_response, parse_date_range_optional
+from app.helpers import admin_required, export_response, parse_date_range_optional, format_date
 from app.models import Customer, Invoice, Payment, RouteStop
+
+
+def _money(val):
+    """Format a Decimal as '1234.56' (always 2 decimals, no $ sign for exports)."""
+    if val is None:
+        return "0.00"
+    return f"{val:.2f}"
+
+
+def _dt(val, fmt="%Y-%m-%d %I:%M %p"):
+    """Format a datetime for export. Returns empty string for None."""
+    if val is None:
+        return ""
+    return format_date(val, fmt)
 
 bp = Blueprint("exports", __name__, url_prefix="/exports")
 
@@ -39,11 +53,11 @@ def customers():
             c.city or "",
             c.phone or "",
             c.status,
-            str(c.balance) if c.balance else "0",
+            _money(c.balance),
             "Yes" if c.tax_exempt else "No",
             c.lead_source or "",
             c.notes or "",
-            c.created_at.isoformat() if c.created_at else "",
+            _dt(c.created_at),
         )
         for c in all_customers
     ]
@@ -84,11 +98,11 @@ def payments():
             p.id,
             p.receipt_number,
             customer.name if customer else "",
-            str(p.amount_sold or 0),
-            str(p.amount),
+            _money(p.amount_sold),
+            _money(p.amount),
             p.payment_type or "",
-            str(p.previous_balance),
-            p.payment_date.isoformat() if p.payment_date else "",
+            _money(p.previous_balance),
+            _dt(p.payment_date),
             p.notes or "",
             recorder.username if recorder else "",
         ))
@@ -133,12 +147,12 @@ def route_history():
         creator = s.creator
         rows.append((
             s.id,
-            s.route_date.isoformat() if s.route_date else "",
+            s.route_date.strftime("%Y-%m-%d") if s.route_date else "",
             s.sequence,
             customer.name if customer else "",
             customer.city if customer else "",
             "Yes" if s.completed else "No",
-            s.completed_at.isoformat() if s.completed_at else "",
+            _dt(s.completed_at),
             s.notes or "",
             creator.username if creator else "",
         ))
@@ -183,9 +197,9 @@ def invoices():
             inv.id,
             inv.invoice_number or "",
             inv.customer.name if inv.customer else "",
-            str(inv.amount),
+            _money(inv.amount),
             inv.status,
-            inv.invoice_date.isoformat() if inv.invoice_date else "",
+            inv.invoice_date.strftime("%Y-%m-%d") if inv.invoice_date else "",
             inv.payment_type or "",
             inv.description or "",
             inv.creator.username if inv.creator else "",

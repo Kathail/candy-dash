@@ -234,7 +234,18 @@ def xlsx_response(rows, headers, filename):
     ws = wb.active
     ws.append(headers)
     for row in rows:
-        ws.append([sanitize_csv_value(cell) for cell in row])
+        typed_row = []
+        for cell in row:
+            val = sanitize_csv_value(cell)
+            # Try to store numeric strings as actual numbers for Excel formulas/sorting
+            if isinstance(val, str):
+                try:
+                    typed_row.append(float(val) if "." in val else int(val))
+                    continue
+                except (ValueError, TypeError):
+                    pass
+            typed_row.append(val)
+        ws.append(typed_row)
     wb.save(buf)
     buf.seek(0)
     safe_filename = filename.replace('"', "").replace("\r", "").replace("\n", "")
@@ -248,8 +259,16 @@ def xlsx_response(rows, headers, filename):
 
 def pdf_table_response(rows, headers, filename, title=None):
     """Build a PDF table download using reportlab."""
+    from reportlab.lib.pagesizes import landscape
+
     buf = io.BytesIO()
-    doc = SimpleDocTemplate(buf, pagesize=letter, topMargin=0.5 * inch)
+    ncols = len(headers)
+
+    # Use landscape for wide tables (7+ columns)
+    use_landscape = ncols > 6
+    page = landscape(letter) if use_landscape else letter
+    doc = SimpleDocTemplate(buf, pagesize=page, topMargin=0.5 * inch,
+                            leftMargin=0.4 * inch, rightMargin=0.4 * inch)
     styles = getSampleStyleSheet()
     elements = []
 
@@ -258,25 +277,42 @@ def pdf_table_response(rows, headers, filename, title=None):
         elements.append(Paragraph(title, title_style))
         elements.append(Spacer(1, 0.3 * inch))
 
-    # Build table data with header row
-    table_data = [headers]
-    for row in rows:
-        table_data.append([str(sanitize_csv_value(cell)) for cell in row])
+    # Cell style for word-wrapping
+    cell_style = ParagraphStyle("Cell", parent=styles["Normal"], fontSize=7, leading=9)
+    header_style = ParagraphStyle("HeaderCell", parent=styles["Normal"], fontSize=7,
+                                  leading=9, fontName="Helvetica-Bold", textColor=colors.white)
 
-    # Auto column widths (evenly distributed)
-    ncols = len(headers)
-    col_width = 7.0 * inch / max(ncols, 1)
-    table = Table(table_data, colWidths=[col_width] * ncols)
+    # Build table data with Paragraph-wrapped cells for word-wrapping
+    table_data = [[Paragraph(str(h), header_style) for h in headers]]
+    for row in rows:
+        table_data.append([Paragraph(str(sanitize_csv_value(cell)), cell_style) for cell in row])
+
+    # Calculate proportional column widths based on max content length
+    usable_width = page[0] - 0.8 * inch  # page width minus margins
+    col_max_len = []
+    for col_idx in range(ncols):
+        max_len = len(str(headers[col_idx]))
+        for row in rows[:50]:  # sample first 50 rows
+            cell_len = len(str(row[col_idx])) if col_idx < len(row) else 0
+            max_len = max(max_len, cell_len)
+        col_max_len.append(max(max_len, 3))  # minimum 3 chars wide
+
+    total_len = sum(col_max_len)
+    col_widths = [max(usable_width * (cl / total_len), 0.4 * inch) for cl in col_max_len]
+    # Scale to fit exactly
+    scale = usable_width / sum(col_widths)
+    col_widths = [w * scale for w in col_widths]
+
+    table = Table(table_data, colWidths=col_widths, repeatRows=1)
     table.setStyle(TableStyle([
-        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-        ("FONTSIZE", (0, 0), (-1, 0), 9),
-        ("FONTSIZE", (0, 1), (-1, -1), 8),
         ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#374151")),
-        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
         ("LINEBELOW", (0, 0), (-1, 0), 1, colors.HexColor("#4b5563")),
-        ("TOPPADDING", (0, 0), (-1, -1), 4),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+        ("TOPPADDING", (0, 0), (-1, -1), 3),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+        ("LEFTPADDING", (0, 0), (-1, -1), 4),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 4),
         ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f3f4f6")]),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
     ]))
     elements.append(table)
 
