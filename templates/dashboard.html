@@ -19,7 +19,7 @@
     <div class="relative z-10">
       <div class="text-center">
         <p class="text-indigo-200 text-2xs font-semibold uppercase tracking-wider">{{ today.strftime('%A') }} · Total Sales</p>
-        <p class="text-3xl font-bold mt-0.5">{{ (sales_sum + payment_sum)|currency }}</p>
+        <p class="text-3xl font-bold mt-0.5">{{ sales_sum|currency }}</p>
       </div>
 
       <div class="flex items-center justify-between mt-3">
