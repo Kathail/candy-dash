@@ -389,7 +389,8 @@ def generate_receipt_pdf(payment, customer):
     elements.append(Spacer(1, 0.3 * inch))
 
     amount_sold = getattr(payment, "amount_sold", None) or Decimal("0")
-    new_balance = max(payment.previous_balance + amount_sold - payment.amount, Decimal("0"))
+    previous_balance = payment.previous_balance if payment.previous_balance is not None else Decimal("0")
+    new_balance = max(previous_balance + amount_sold - payment.amount, Decimal("0"))
 
     data = [
         ["Invoice #:", payment.receipt_number],
@@ -397,7 +398,7 @@ def generate_receipt_pdf(payment, customer):
         ["Customer:", customer.name],
         ["Payment Type:", (payment.payment_type or "cash").capitalize()],
         ["", ""],
-        ["Previous Balance:", format_currency(payment.previous_balance)],
+        ["Previous Balance:", format_currency(previous_balance)],
     ]
     if amount_sold > 0:
         data.append(["Sale Amount:", format_currency(amount_sold)])
@@ -406,7 +407,9 @@ def generate_receipt_pdf(payment, customer):
     data.append(["New Balance:", format_currency(new_balance)])
 
     if payment.notes:
-        data.append(["Notes:", payment.notes])
+        from xml.sax.saxutils import escape as xml_escape
+        note_style = ParagraphStyle("NoteWrap", parent=styles["Normal"], fontSize=11)
+        data.append(["Notes:", Paragraph(xml_escape(payment.notes), note_style)])
 
     # Find the separator row (the empty row) dynamically
     separator_row = next(i for i, row in enumerate(data) if row == ["", ""])

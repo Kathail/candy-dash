@@ -117,7 +117,7 @@ class Invoice(db.Model):
     status = db.Column(db.String(20), nullable=False, default="unpaid")  # unpaid, paid, void
     payment_type = db.Column(db.String(20), nullable=True)  # set when paid
     paid_by_payment_id = db.Column(db.Integer, db.ForeignKey("payments.id"), nullable=True)  # tracks which payment FIFO-marked this paid
-    created_by = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    created_by = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True, index=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     customer = db.relationship("Customer", backref=db.backref("invoices", lazy="dynamic", order_by="Invoice.invoice_date.desc()"))

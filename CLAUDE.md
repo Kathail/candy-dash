@@ -10,7 +10,7 @@ Route planning and customer management system for Northern Sweet Supply, a candy
 - **Database**: PostgreSQL (Railway production), SQLite (local dev)
 - **Frontend**: Tailwind CSS 4.x, Alpine.js, HTMX, Chart.js — all vendored in `static/vendor/`
 - **PDF**: ReportLab for receipt/invoice/PO generation
-- **Deploy**: Gunicorn on Railway, `build.sh` runs Alembic migrations
+- **Deploy**: Gunicorn on Railway, Nixpacks start command runs `flask db upgrade` then gunicorn. `build.sh` only installs pip dependencies.
 
 ## Project Structure
 ```
@@ -33,6 +33,7 @@ migrations/versions/   # 3 Alembic migrations
 - FIFO invoice marking stores `paid_by_payment_id` FK on Invoice for precise reversal
 - Payment deletion restores `previous_balance` directly (not arithmetic reconstruction)
 - Receipt numbers: `INV-YYYYMMDD-XXXX` with UUID fallback for collisions
+- **Sales vs Collections**: `Payment.amount_sold` = goods delivered (sales). `Payment.amount` = money received (collections). Any metric labeled "sales", "revenue", or "Total Sales" must use `amount_sold` (or `Invoice.amount`). Only bookkeeper/collections views should use `Payment.amount`. Never sum the two together.
 
 ### Authorization
 - Roles: owner, admin, bookkeeper, demo
@@ -62,10 +63,10 @@ Database auto-creates on first request via `init_db.py`. Default admin: `admin` 
 ### Alembic Migrations
 Local SQLite may be ahead of Alembic's version tracking because `init_db.py` auto-creates columns via `db.create_all()`. If `flask db upgrade` fails with "duplicate column", stamp to the last known version first:
 ```bash
-flask db stamp a1b2c3d4e5f6   # or whatever the last applied revision is
+flask db stamp b2c3d4e5f6a7   # or whatever the last applied revision is
 flask db upgrade
 ```
-Production (Railway PostgreSQL) tracks Alembic properly — `build.sh` runs migrations on deploy.
+Production (Railway PostgreSQL) tracks Alembic properly — Nixpacks start command runs `flask db upgrade` before gunicorn on every deploy. If a migration file is missing but its version is stamped in the DB, the app will fail to start.
 
 ### Smoke Test
 After changes, verify all pages return 200:
@@ -76,5 +77,6 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:5000/health
 
 ## Before Pushing
 1. Run the app locally, verify no import errors
-2. Test the page you changed in browser
-3. Ask the user before pushing — the app is live
+2. Test the page you changed in browser — **especially templates** (Jinja2 syntax errors only surface at render time)
+3. If you added/removed a migration file, verify the Alembic version chain is intact
+4. Ask the user before pushing — the app is live

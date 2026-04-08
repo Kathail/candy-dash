@@ -457,6 +457,7 @@ def record_payment(id):
         )
         db.session.add(payment)
         db.session.flush()  # get payment.id for FIFO tracking
+        assert payment.id is not None, "Payment flush failed to generate ID"
 
         # Auto-create invoice when a sale is recorded
         if amount_sold > 0:
@@ -485,7 +486,7 @@ def record_payment(id):
                     if remaining_credit >= inv.amount:
                         inv.status = "paid"
                         inv.payment_type = payment_type
-                        inv.paid_by_payment_id = payment.id if payment.id else None
+                        inv.paid_by_payment_id = payment.id
                         remaining_credit -= inv.amount
                     else:
                         break
@@ -993,6 +994,8 @@ def invoice_pdf(id, invoice_id):
     from reportlab.lib import colors
     import os
 
+    from xml.sax.saxutils import escape as xml_escape
+
     invoice = Invoice.query.get_or_404(invoice_id)
     if invoice.customer_id != id:
         abort(404)
@@ -1008,6 +1011,7 @@ def invoice_pdf(id, invoice_id):
     if os.path.exists(logo_path):
         try:
             logo = Image(logo_path, width=1.2 * inch, height=1.2 * inch)
+            logo.hAlign = "CENTER"
             elements.append(logo)
             elements.append(Spacer(1, 12))
         except Exception:
@@ -1022,8 +1026,8 @@ def invoice_pdf(id, invoice_id):
     detail_style = ParagraphStyle("Detail", parent=styles["Normal"], fontSize=11, spaceAfter=4)
     normal_center = ParagraphStyle("NormalCenter", parent=styles["Normal"], alignment=1)
     if invoice.invoice_number:
-        elements.append(Paragraph(f"<b>Invoice #:</b> {invoice.invoice_number}", detail_style))
-    elements.append(Paragraph(f"<b>Date:</b> {invoice.invoice_date}", detail_style))
+        elements.append(Paragraph(f"<b>Invoice #:</b> {xml_escape(invoice.invoice_number)}", detail_style))
+    elements.append(Paragraph(f"<b>Date:</b> {invoice.invoice_date.strftime('%B %d, %Y')}", detail_style))
     elements.append(Paragraph(f"<b>Status:</b> {invoice.status.upper()}", detail_style))
     if invoice.payment_type:
         elements.append(Paragraph(f"<b>Payment Type:</b> {invoice.payment_type.capitalize()}", detail_style))
@@ -1031,13 +1035,13 @@ def invoice_pdf(id, invoice_id):
 
     # Customer info
     elements.append(Paragraph("<b>Bill To:</b>", detail_style))
-    elements.append(Paragraph(customer.name, detail_style))
+    elements.append(Paragraph(xml_escape(customer.name), detail_style))
     if customer.address:
-        elements.append(Paragraph(customer.address, detail_style))
+        elements.append(Paragraph(xml_escape(customer.address), detail_style))
     if customer.city:
-        elements.append(Paragraph(customer.city, detail_style))
+        elements.append(Paragraph(xml_escape(customer.city), detail_style))
     if customer.phone:
-        elements.append(Paragraph(customer.phone, detail_style))
+        elements.append(Paragraph(xml_escape(customer.phone), detail_style))
     elements.append(Spacer(1, 20))
 
     # Line items table
@@ -1058,7 +1062,7 @@ def invoice_pdf(id, invoice_id):
             ])
             subtotal += item.amount or Dec("0")
 
-        total = subtotal
+        total = invoice.amount
 
         data.append(["", "", "", "", "Total:", f"${total:,.2f}"])
 
@@ -1103,7 +1107,12 @@ def invoice_pdf(id, invoice_id):
     elements.append(t)
     elements.append(Spacer(1, 0.5 * inch))
 
-    if invoice.status == "unpaid":
+    if invoice.status == "void":
+        elements.append(Paragraph("THIS INVOICE HAS BEEN VOIDED", ParagraphStyle(
+            "Void", parent=normal_center, fontSize=14, textColor=colors.red,
+            fontName="Helvetica-Bold",
+        )))
+    elif invoice.status == "unpaid":
         elements.append(Paragraph(
             f"Balance owing: ${total:,.2f}. Please remit payment at your earliest convenience.",
             normal_center,

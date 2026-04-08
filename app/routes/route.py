@@ -203,6 +203,7 @@ def complete_stop(id):
                 db.session.add(invoice)
 
             db.session.flush()  # get payment.id for FIFO tracking
+            assert payment.id is not None, "Payment flush failed to generate ID"
 
             # Mark old unpaid invoices paid FIFO if excess payment
             if amount_paid > 0:

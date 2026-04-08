@@ -25,7 +25,7 @@
     {# Payment form #}
     <div x-show="showPay" x-transition.duration.200ms x-cloak class="px-4 pb-4 pt-1 border-t border-app">
       <form method="post" action="{{ url_for('customers.record_payment', id=customer.id) }}"
-            class="flex flex-col gap-2">
+            class="flex flex-col gap-2" x-data="{ submitting: false }" @submit="submitting = true">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="next" value="{{ url_for('balances.index') }}">
         <div class="flex gap-2">
@@ -46,12 +46,12 @@
         </div>
         <input type="text" name="notes" placeholder="Notes (optional)" aria-label="Payment notes"
                class="w-full theme-input rounded-xl text-sm min-h-[44px]">
-        <button type="submit"
-                class="w-full inline-flex items-center justify-center gap-2 px-3 py-2.5 bg-green-600 text-white text-sm font-semibold rounded-xl hover:bg-green-500 transition-colors min-h-[44px] btn-press">
+        <button type="submit" :disabled="submitting"
+                class="w-full inline-flex items-center justify-center gap-2 px-3 py-2.5 bg-green-600 text-white text-sm font-semibold rounded-xl hover:bg-green-500 transition-colors min-h-[44px] btn-press disabled:opacity-50">
           <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
           </svg>
-          Record Payment
+          <span x-text="submitting ? 'Saving...' : 'Record Payment'">Record Payment</span>
         </button>
       </form>
     </div>

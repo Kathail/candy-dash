@@ -1,5 +1,6 @@
 """Purchases blueprint – track supplier purchases."""
 
+import re
 from datetime import date, datetime, timezone
 from decimal import Decimal, InvalidOperation
 
@@ -253,6 +254,7 @@ def pdf(id):
     data.append(["", ""])
     data.append(["Total Amount:", format_currency(purchase.amount)])
 
+    separator_row = next(i for i, row in enumerate(data) if row == ["", ""])
     table = Table(data, colWidths=[2.5 * inch, 4 * inch])
     table.setStyle(TableStyle([
         ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
@@ -260,7 +262,7 @@ def pdf(id):
         ("FONTSIZE", (0, 0), (-1, -1), 11),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
         ("TOPPADDING", (0, 0), (-1, -1), 4),
-        ("LINEBELOW", (0, -3), (-1, -3), 1, colors.grey),
+        ("LINEBELOW", (0, separator_row), (-1, separator_row), 1, colors.grey),
         ("LINEBELOW", (0, -1), (-1, -1), 1, colors.grey),
         ("LINEABOVE", (0, 0), (-1, 0), 1, colors.grey),
     ]))
@@ -311,7 +313,7 @@ def pdf(id):
         buf,
         mimetype="application/pdf",
         as_attachment=True,
-        download_name=f"PO-{purchase.id:04d}-{purchase.supplier.replace(' ', '_')}.pdf",
+        download_name=f"PO-{purchase.id:04d}-{re.sub(r'[^\w-]', '_', purchase.supplier)}.pdf",
     )
 
 
