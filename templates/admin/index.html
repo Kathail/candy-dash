@@ -85,7 +85,7 @@
                   <label class="block text-xs font-medium text-gray-500 mb-1">New password for {{ user.username }}</label>
                   <input type="password" name="new_password" required minlength="12"
                          placeholder="Min 12 characters"
-                         class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                         class="block w-full theme-input rounded-lg text-sm">
                 </div>
                 <button type="submit"
                         class="btn-press px-4 py-2 min-h-[44px] bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-500 transition-colors">
@@ -137,7 +137,7 @@
               <label class="block text-xs font-medium text-gray-500 mb-1">New password for {{ user.username }}</label>
               <input type="password" name="new_password" required minlength="12"
                      placeholder="Min 12 characters"
-                     class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm min-h-[44px]">
+                     class="block w-full theme-input rounded-lg text-sm min-h-[44px]">
             </div>
             <button type="submit"
                     class="btn-press px-4 py-2 min-h-[44px] bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-500 transition-colors">
@@ -161,13 +161,13 @@
         <h2 class="text-base font-semibold text-gray-100">Audit Log</h2>
         <!-- Filters -->
         <form method="get" action="{{ url_for('admin.index') }}" class="flex flex-wrap gap-2 items-center">
-          <select name="action" aria-label="Filter by action" class="text-xs rounded-lg border-gray-600 bg-gray-700 text-gray-300 py-1.5 px-2 focus:border-indigo-500 focus:ring-indigo-500">
+          <select name="action" aria-label="Filter by action" class="text-xs theme-input rounded-lg py-1.5 px-2">
             <option value="">All Actions</option>
             {% for at in action_types %}
             <option value="{{ at }}" {{ 'selected' if filter_action == at }}>{{ at|replace('_', ' ')|title }}</option>
             {% endfor %}
           </select>
-          <select name="user" aria-label="Filter by user" class="text-xs rounded-lg border-gray-600 bg-gray-700 text-gray-300 py-1.5 px-2 focus:border-indigo-500 focus:ring-indigo-500">
+          <select name="user" aria-label="Filter by user" class="text-xs theme-input rounded-lg py-1.5 px-2">
             <option value="">All Users</option>
             {% for u in users %}
             <option value="{{ u.username }}" {{ 'selected' if filter_user == u.username }}>{{ u.username }}</option>

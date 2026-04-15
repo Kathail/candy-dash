@@ -38,7 +38,11 @@ def create_app():
             "SECRET_KEY environment variable is required in production. "
             "Set FLASK_ENV=development to use the dev fallback."
         )
-    app.config["SECRET_KEY"] = secret_key or "dev-secret-key-change-in-production"
+    if not secret_key:
+        import secrets as _secrets
+        secret_key = _secrets.token_hex(16)
+        app.logger.warning("Using auto-generated SECRET_KEY — sessions won't survive restarts. Set SECRET_KEY env var.")
+    app.config["SECRET_KEY"] = secret_key
 
     database_url = os.environ.get("DATABASE_URL", "sqlite:///candy_route.db")
     # Render provides postgres:// but SQLAlchemy needs postgresql://

@@ -43,12 +43,12 @@
       <div class="flex-1">
         <label class="block text-2xs text-gray-500 mb-0.5">From</label>
         <input type="date" x-model="startDate" :max="endDate || todayStr"
-               class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 text-xs min-h-[44px] focus:border-indigo-500 focus:ring-indigo-500">
+               class="block w-full theme-input rounded-lg text-xs min-h-[44px]">
       </div>
       <div class="flex-1">
         <label class="block text-2xs text-gray-500 mb-0.5">To</label>
         <input type="date" x-model="endDate" :min="startDate" :max="todayStr"
-               class="block w-full rounded-lg border-gray-600 bg-gray-700 text-gray-200 text-xs min-h-[44px] focus:border-indigo-500 focus:ring-indigo-500">
+               class="block w-full theme-input rounded-lg text-xs min-h-[44px]">
       </div>
       <button @click="go()" class="px-3 min-h-[44px] bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-500 transition-colors btn-press">
         Go

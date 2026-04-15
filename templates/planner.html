@@ -157,7 +157,7 @@
               </div>
               <div x-show="recurringInterval === ''" x-collapse class="flex gap-2 items-center">
                 <span class="text-2xs text-gray-500 shrink-0">Every</span>
-                <input type="number" x-model="recurringCustomInterval" min="1" max="365" placeholder="N"
+                <input type="number" x-model="recurringCustomInterval" min="1" max="365" placeholder="N" inputmode="numeric"
                        class="w-16 theme-input rounded-lg text-sm min-h-[44px] text-center">
                 <span class="text-2xs text-gray-500 shrink-0">days</span>
               </div>

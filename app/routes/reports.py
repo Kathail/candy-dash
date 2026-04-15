@@ -62,7 +62,7 @@ def daily_sales():
     if fmt in ("csv", "xlsx", "pdf"):
         rows = query.all()
         headers = ["Date", "Sales Count", "Total"]
-        export_rows = [(str(r.invoice_date), r.count, f"{r.total:.2f}") for r in rows]
+        export_rows = [(r.invoice_date.strftime("%Y-%m-%d"), r.count, f"{r.total:.2f}") for r in rows]
         filename = f"daily_sales_{start.strftime('%Y%m%d')}_{end.strftime('%Y%m%d')}"
         return export_response(export_rows, headers, filename, fmt, title="Daily Sales")
 

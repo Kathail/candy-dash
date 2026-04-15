@@ -104,6 +104,7 @@ def profile():
 
 @bp.route("/change-password", methods=["GET", "POST"])
 @login_required
+@limiter.limit("5 per minute", methods=["POST"])
 def change_password():
     """Allow the logged-in user to change their own password."""
     if request.method == "POST":

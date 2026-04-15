@@ -21,7 +21,10 @@ def index():
     """List purchases with filtering."""
     supplier_filter = request.args.get("supplier", "").strip()
     month_filter = request.args.get("month", "").strip()
+    VALID_SORTS = {"date_asc", "date_desc", "amount_asc", "amount_desc"}
     sort = request.args.get("sort", "date_desc")
+    if sort not in VALID_SORTS:
+        sort = "date_desc"
 
     query = Purchase.query
 

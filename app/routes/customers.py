@@ -205,7 +205,7 @@ def profile(id):
 
     # Build unified transaction timeline: payments + standalone invoices (not auto-created from payments)
     payment_receipt_numbers = {p.receipt_number for p in payments if p.receipt_number}
-    standalone_invoices = [inv for inv in invoices if inv.invoice_number not in payment_receipt_numbers]
+    standalone_invoices = [inv for inv in invoices if inv.invoice_number not in payment_receipt_numbers and inv.status != "void"]
 
     # Merge into a single list sorted by date descending
     # Compute running balance backwards from current balance (ground truth)
@@ -514,7 +514,7 @@ def record_payment(id):
         return _error("An error occurred while recording the transaction.")
 
     if is_fetch:
-        return jsonify({"ok": True, "receipt_number": receipt_number, "new_balance": float(new_balance)})
+        return jsonify({"ok": True, "receipt_number": receipt_number, "new_balance": str(new_balance)})
 
     if amount_sold > 0:
         flash(f"Transaction recorded. Invoice #{receipt_number}. Sale ${amount_sold:,.2f}.", "success")
@@ -799,17 +799,21 @@ def void_invoice(id, invoice_id):
     invoice = Invoice.query.get_or_404(invoice_id)
     if invoice.customer_id != id:
         abort(404)
-    if invoice.status == "void":
-        flash("Invoice is already void.", "warning")
-        return redirect(url_for("customers.profile", id=id))
-
     try:
         customer = db.session.query(Customer).filter_by(id=id).with_for_update().one()
+        db.session.refresh(invoice)
+        if invoice.status == "void":
+            flash("Invoice is already void.", "warning")
+            return redirect(url_for("customers.profile", id=id))
         old_status = invoice.status
 
         # Only reverse balance for unpaid invoices (paid ones already settled)
         if old_status == "unpaid":
             customer.balance = max(customer.balance - invoice.amount, Decimal("0"))
+
+        # Unlink FIFO payment reference so payment deletion won't resurrect this invoice
+        if invoice.paid_by_payment_id:
+            invoice.paid_by_payment_id = None
 
         invoice.status = "void"
 
@@ -892,23 +896,6 @@ def mark_invoice_paid(id, invoice_id):
             )
             db.session.add(new_payment)
             db.session.flush()
-
-            # FIFO: mark other unpaid invoices paid if payment exceeds this invoice
-            excess = payment_amount - invoice.amount
-            if excess > 0:
-                other_unpaid = Invoice.query.filter(
-                    Invoice.customer_id == customer.id,
-                    Invoice.status == "unpaid",
-                    Invoice.id != invoice.id,
-                ).order_by(Invoice.invoice_date.asc()).all()
-                for inv in other_unpaid:
-                    if excess >= inv.amount:
-                        inv.status = "paid"
-                        inv.payment_type = pay_type
-                        inv.paid_by_payment_id = new_payment.id
-                        excess -= inv.amount
-                    else:
-                        break
         else:
             receipt_number = invoice.invoice_number or str(invoice.id)
 
@@ -1027,7 +1014,7 @@ def invoice_pdf(id, invoice_id):
     normal_center = ParagraphStyle("NormalCenter", parent=styles["Normal"], alignment=1)
     if invoice.invoice_number:
         elements.append(Paragraph(f"<b>Invoice #:</b> {xml_escape(invoice.invoice_number)}", detail_style))
-    elements.append(Paragraph(f"<b>Date:</b> {invoice.invoice_date.strftime('%B %d, %Y')}", detail_style))
+    elements.append(Paragraph(f"<b>Date:</b> {format_date(invoice.invoice_date, '%B %d, %Y')}", detail_style))
     elements.append(Paragraph(f"<b>Status:</b> {invoice.status.upper()}", detail_style))
     if invoice.payment_type:
         elements.append(Paragraph(f"<b>Payment Type:</b> {invoice.payment_type.capitalize()}", detail_style))
@@ -1066,7 +1053,7 @@ def invoice_pdf(id, invoice_id):
 
         data.append(["", "", "", "", "Total:", f"${total:,.2f}"])
 
-        t = Table(data, colWidths=[0.8 * inch, 1.8 * inch, 0.6 * inch, 0.8 * inch, 1 * inch, 1 * inch])
+        t = Table(data, colWidths=[0.8 * inch, 1.8 * inch, 0.6 * inch, 0.8 * inch, 1 * inch, 1 * inch], repeatRows=1)
         t.setStyle(TableStyle([
             ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
             ("FONTSIZE", (0, 0), (-1, -1), 10),

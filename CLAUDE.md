@@ -33,7 +33,19 @@ migrations/versions/   # 3 Alembic migrations
 - FIFO invoice marking stores `paid_by_payment_id` FK on Invoice for precise reversal
 - Payment deletion restores `previous_balance` directly (not arithmetic reconstruction)
 - Receipt numbers: `INV-YYYYMMDD-XXXX` with UUID fallback for collisions
+- After `db.session.flush()`, always assert `payment.id is not None` before using it for FIFO FK tracking
 - **Sales vs Collections**: `Payment.amount_sold` = goods delivered (sales). `Payment.amount` = money received (collections). Any metric labeled "sales", "revenue", or "Total Sales" must use `amount_sold` (or `Invoice.amount`). Only bookkeeper/collections views should use `Payment.amount`. Never sum the two together.
+
+### PDF Generation
+- User data in ReportLab `Paragraph()` must be XML-escaped (`xml.sax.saxutils.escape`) — `&` in customer names crashes PDFs
+- `pdf_table_response` auto-switches to landscape for 7+ columns with proportional widths
+- Invoice PDFs use `invoice.amount` as total (not sum of line items), handle void status separately
+- PO PDFs find separator rows dynamically (not hardcoded offsets), sanitize filenames with `re.sub`
+
+### Exports (CSV/Excel/PDF)
+- Money values: always format with 2 decimals (`f"{val:.2f}"`), never `str(decimal)` which drops trailing zeros
+- Dates: use readable format (`format_date` or `strftime`), never raw `.isoformat()` with timezone offsets
+- Excel: `xlsx_response` converts numeric strings to actual numbers so formulas/sorting work
 
 ### Authorization
 - Roles: owner, admin, bookkeeper, demo
@@ -44,10 +56,11 @@ migrations/versions/   # 3 Alembic migrations
 
 ### Frontend
 - Dark theme with CSS custom properties (`--bg-app`, `--bg-panel`, `--text-muted`, etc.)
-- Inputs should always use `theme-input` class (defined in app.css)
-- Currency inputs must have `inputmode="decimal"` for mobile
+- Inputs should always use `theme-input` class (defined in app.css). Never hardcode `bg-gray-700 border-gray-600` — use theme classes (`bg-panel`, `border-app`, `text-muted`).
+- Currency inputs must have `inputmode="decimal"`, phone inputs must have `inputmode="tel"`
 - HTMX for partial updates; `HX-Request` header skips nav badge queries
 - All destructive actions need `confirm()` dialogs
+- Payment submit buttons must disable on click to prevent double-submission (HTMX: `hx-disabled-elt`, forms: Alpine `@submit="submitting = true"` + `:disabled="submitting"`)
 
 ### Database
 - Composite indexes on hot query paths (invoices date, payments date, route_stops)

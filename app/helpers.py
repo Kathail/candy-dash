@@ -238,7 +238,8 @@ def xlsx_response(rows, headers, filename):
         for cell in row:
             val = sanitize_csv_value(cell)
             # Try to store numeric strings as actual numbers for Excel formulas/sorting
-            if isinstance(val, str):
+            # Skip date-like strings (YYYY-MM-DD) to avoid mangling them
+            if isinstance(val, str) and not (len(val) >= 10 and val[4:5] == "-" and val[7:8] == "-"):
                 try:
                     typed_row.append(float(val) if "." in val else int(val))
                     continue
@@ -283,9 +284,10 @@ def pdf_table_response(rows, headers, filename, title=None):
                                   leading=9, fontName="Helvetica-Bold", textColor=colors.white)
 
     # Build table data with Paragraph-wrapped cells for word-wrapping
-    table_data = [[Paragraph(str(h), header_style) for h in headers]]
+    from xml.sax.saxutils import escape as _xml_escape
+    table_data = [[Paragraph(_xml_escape(str(h)), header_style) for h in headers]]
     for row in rows:
-        table_data.append([Paragraph(str(sanitize_csv_value(cell)), cell_style) for cell in row])
+        table_data.append([Paragraph(_xml_escape(str(sanitize_csv_value(cell))), cell_style) for cell in row])
 
     # Calculate proportional column widths based on max content length
     usable_width = page[0] - 0.8 * inch  # page width minus margins
