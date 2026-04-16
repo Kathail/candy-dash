@@ -203,34 +203,17 @@
 
   {# -- Pagination -- #}
   {% if pagination.pages > 1 %}
-  <nav aria-label="Customer list pages" class="flex items-center justify-center gap-2 pt-2 animate-fade-in-up">
+  <div class="flex items-center justify-center gap-2 pt-1 animate-fade-in-up">
     {% if pagination.has_prev %}
     <a href="{{ url_for('customers.index', page=pagination.prev_num, q=q, status=status_filter, city=city_filter, sort=sort ~ ('_' ~ direction if direction != 'asc' else '')) }}"
-       class="inline-flex items-center gap-1 px-4 py-2.5 min-h-[44px] rounded-xl bg-panel border border-app text-sm text-gray-300 hover:bg-panel-hover transition-colors btn-press">
-      <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-      Prev
-    </a>
+       class="px-3 py-1.5 text-xs font-medium text-indigo-400 hover:text-indigo-300 bg-panel border border-app rounded-lg btn-press">&larr; Prev</a>
     {% endif %}
-
-    {% for p in range(1, pagination.pages + 1) %}
-      {% if p == pagination.page %}
-      <span class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-indigo-600 text-white text-sm font-bold">{{ p }}</span>
-      {% elif p == 1 or p == pagination.pages or (p >= pagination.page - 1 and p <= pagination.page + 1) %}
-      <a href="{{ url_for('customers.index', page=p, q=q, status=status_filter, city=city_filter, sort=sort ~ ('_' ~ direction if direction != 'asc' else '')) }}"
-         class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-panel border border-app text-sm text-gray-400 hover:bg-panel-hover transition-colors btn-press">{{ p }}</a>
-      {% elif p == 2 or p == pagination.pages - 1 %}
-      <span class="text-gray-600 text-sm">&hellip;</span>
-      {% endif %}
-    {% endfor %}
-
+    <span class="text-2xs text-faint">Page {{ pagination.page }} of {{ pagination.pages }}</span>
     {% if pagination.has_next %}
     <a href="{{ url_for('customers.index', page=pagination.next_num, q=q, status=status_filter, city=city_filter, sort=sort ~ ('_' ~ direction if direction != 'asc' else '')) }}"
-       class="inline-flex items-center gap-1 px-4 py-2.5 min-h-[44px] rounded-xl bg-panel border border-app text-sm text-gray-300 hover:bg-panel-hover transition-colors btn-press">
-      Next
-      <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-    </a>
+       class="px-3 py-1.5 text-xs font-medium text-indigo-400 hover:text-indigo-300 bg-panel border border-app rounded-lg btn-press">Next &rarr;</a>
     {% endif %}
-  </nav>
+  </div>
   {% endif %}
 
   {% else %}

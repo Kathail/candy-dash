@@ -107,19 +107,15 @@
 
   {# -- Pagination -- #}
   {% if total_pages > 1 %}
-  <div class="flex items-center justify-center gap-3">
+  <div class="flex items-center justify-center gap-2 pt-1">
     {% if page > 1 %}
     <a href="{{ url_for('reports.tax_exempt', start_date=start.strftime('%Y-%m-%d'), end_date=end.strftime('%Y-%m-%d'), page=page-1) }}"
-       class="px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 border border-gray-600 rounded-lg hover:bg-gray-600 transition-colors btn-press min-h-[44px]">
-      Prev
-    </a>
+       class="px-3 py-1.5 text-xs font-medium text-indigo-400 hover:text-indigo-300 bg-panel border border-app rounded-lg btn-press">&larr; Prev</a>
     {% endif %}
-    <span class="text-sm text-gray-500">Page {{ page }} of {{ total_pages }}</span>
+    <span class="text-2xs text-faint">Page {{ page }} of {{ total_pages }}</span>
     {% if page < total_pages %}
     <a href="{{ url_for('reports.tax_exempt', start_date=start.strftime('%Y-%m-%d'), end_date=end.strftime('%Y-%m-%d'), page=page+1) }}"
-       class="px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 border border-gray-600 rounded-lg hover:bg-gray-600 transition-colors btn-press min-h-[44px]">
-      Next
-    </a>
+       class="px-3 py-1.5 text-xs font-medium text-indigo-400 hover:text-indigo-300 bg-panel border border-app rounded-lg btn-press">Next &rarr;</a>
     {% endif %}
   </div>
   {% endif %}
