@@ -1,39 +1,39 @@
 {% extends "base.html" %}
 
-{% block title %}Tax Report - Candy Dash{% endblock %}
-{% block page_title %}Tax Report{% endblock %}
+{% block title %}Tax Exempt Sales - Candy Dash{% endblock %}
+{% block page_title %}Tax Exempt Sales{% endblock %}
 
 {% block content %}
 <div class="max-w-4xl mx-auto space-y-6">
 
-  {# ── Header ── #}
+  {# -- Header -- #}
   <div class="animate-fade-in-up">
     <nav class="flex items-center gap-1.5 text-sm mb-2" aria-label="Breadcrumb">
       <a href="{{ url_for('reports.index') }}" class="text-indigo-400 hover:text-indigo-300">Reports</a>
       <svg class="w-3.5 h-3.5 text-gray-600" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
       </svg>
-      <span class="text-muted">Tax</span>
+      <span class="text-muted">Tax Exempt Sales</span>
     </nav>
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
       <div>
-        <h1 class="text-2xl font-bold text-gray-100">Tax Report</h1>
+        <h1 class="text-2xl font-bold text-gray-100">Tax Exempt Sales</h1>
         <p class="text-xs text-gray-500 mt-0.5">{{ start|dateformat }} &ndash; {{ end|dateformat }}</p>
       </div>
       <div class="flex gap-1.5">
-        <a href="{{ url_for('reports.tax', start_date=start.strftime('%Y-%m-%d'), end_date=end.strftime('%Y-%m-%d'), format='csv') }}"
-           aria-label="Download tax report as CSV"
+        <a href="{{ url_for('reports.tax_exempt', start_date=start.strftime('%Y-%m-%d'), end_date=end.strftime('%Y-%m-%d'), format='csv') }}"
+           aria-label="Download as CSV"
            class="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-700 border border-gray-600 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-600 transition-colors btn-press min-h-[44px]">
           <svg class="w-3.5 h-3.5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
           CSV
         </a>
-        <a href="{{ url_for('reports.tax', start_date=start.strftime('%Y-%m-%d'), end_date=end.strftime('%Y-%m-%d'), format='xlsx') }}"
-           aria-label="Download tax report as Excel"
+        <a href="{{ url_for('reports.tax_exempt', start_date=start.strftime('%Y-%m-%d'), end_date=end.strftime('%Y-%m-%d'), format='xlsx') }}"
+           aria-label="Download as Excel"
            class="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-700 border border-gray-600 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-600 transition-colors btn-press min-h-[44px]">
           <svg class="w-3.5 h-3.5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
           Excel
         </a>
-        <a href="{{ url_for('reports.tax', start_date=start.strftime('%Y-%m-%d'), end_date=end.strftime('%Y-%m-%d'), format='pdf') }}"
+        <a href="{{ url_for('reports.tax_exempt', start_date=start.strftime('%Y-%m-%d'), end_date=end.strftime('%Y-%m-%d'), format='pdf') }}"
            class="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-700 border border-gray-600 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-600 transition-colors btn-press min-h-[44px]">
           <svg class="w-3.5 h-3.5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
           PDF
@@ -46,93 +46,83 @@
     </div>
   </div>
 
-  {# ── Date Controls ── #}
-  {% set current_url = url_for('reports.tax') %}
+  {# -- Date Controls -- #}
+  {% set current_url = url_for('reports.tax_exempt') %}
   {% include "reports/_date_controls.html" %}
 
-  {# ── KPI Cards ── #}
+  {# -- KPI Cards -- #}
   <div class="grid grid-cols-3 gap-3">
     <div class="bg-panel rounded-xl border border-app p-4 animate-fade-in-up stagger-1">
-      <p class="text-2xs font-semibold text-gray-500 uppercase tracking-wider">Taxable</p>
-      <p class="text-xl font-bold text-indigo-400 mt-1">{{ taxable_total|currency }}</p>
+      <p class="text-2xs font-semibold text-gray-500 uppercase tracking-wider">Total Exempt Sales</p>
+      <p class="text-xl font-bold text-blue-400 mt-1">{{ summary.total|currency }}</p>
     </div>
     <div class="bg-panel rounded-xl border border-app p-4 animate-fade-in-up stagger-2">
-      <p class="text-2xs font-semibold text-gray-500 uppercase tracking-wider">Exempt</p>
-      <p class="text-xl font-bold text-blue-400 mt-1">{{ exempt_total|currency }}</p>
+      <p class="text-2xs font-semibold text-gray-500 uppercase tracking-wider">Invoices</p>
+      <p class="text-xl font-bold text-gray-100 mt-1">{{ summary.count }}</p>
     </div>
     <div class="bg-panel rounded-xl border border-app p-4 animate-fade-in-up stagger-3">
-      <p class="text-2xs font-semibold text-gray-500 uppercase tracking-wider">Total</p>
-      <p class="text-xl font-bold text-gray-100 mt-1">{{ (taxable_total + exempt_total)|currency }}</p>
+      <p class="text-2xs font-semibold text-gray-500 uppercase tracking-wider">Customers</p>
+      <p class="text-xl font-bold text-gray-100 mt-1">{{ customer_count }}</p>
     </div>
   </div>
 
-  {# ── Taxable Customers ── #}
+  {# -- Sales List -- #}
   <div class="bg-panel rounded-xl border border-app overflow-hidden animate-fade-in-up stagger-4">
-    <div class="px-5 py-4 border-b border-app flex items-center gap-2">
-      <div class="w-2 h-2 rounded-full bg-indigo-500" aria-hidden="true"></div>
-      <h2 class="text-sm font-semibold text-gray-100">Taxable</h2>
-      <span class="text-2xs text-gray-500 ml-auto">{{ taxable_total|currency }}</span>
-    </div>
-    {% if taxable_rows %}
-    <div class="divide-y divide-gray-700">
-      {% for row in taxable_rows %}
-      <div class="flex items-center justify-between px-5 py-3 hover:bg-gray-700/50 transition">
-        <div class="flex items-center gap-3">
-          {% set colors = ['bg-indigo-500/20 text-indigo-400', 'bg-purple-500/20 text-purple-400', 'bg-blue-500/20 text-blue-400', 'bg-emerald-500/20 text-emerald-400', 'bg-amber-500/20 text-amber-400', 'bg-rose-500/20 text-rose-400'] %}
-          <div class="avatar-initials {{ colors[loop.index0 % 6] }}">
-            {{ (row.name or '?')[:2] }}
-          </div>
-          <div>
-            <p class="text-sm font-medium text-gray-100">{{ row.name or 'Unknown' }}</p>
-            <p class="text-2xs text-gray-500">{{ row.city or 'No city' }} &middot; {{ row.count }} sale{{ 's' if row.count != 1 else '' }}</p>
-          </div>
-        </div>
-        <span class="text-sm font-bold text-gray-100">{{ row.total|currency }}</span>
-      </div>
-      {% endfor %}
-    </div>
-    {% else %}
-    <div class="px-5 py-8 text-center">
-      <p class="text-sm text-gray-500">No taxable sales.</p>
-    </div>
-    {% endif %}
-  </div>
-
-  {# ── Exempt Customers ── #}
-  <div class="bg-panel rounded-xl border border-app overflow-hidden animate-fade-in-up stagger-5">
     <div class="px-5 py-4 border-b border-app flex items-center gap-2">
       <div class="w-4 h-4 flex items-center justify-center text-blue-400" aria-hidden="true">
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
         </svg>
       </div>
-      <h2 class="text-sm font-semibold text-gray-100">Tax Exempt</h2>
-      <span class="text-2xs text-gray-500 ml-auto">{{ exempt_total|currency }}</span>
+      <h2 class="text-sm font-semibold text-gray-100">Tax Exempt Invoices</h2>
+      <span class="text-2xs text-gray-500 ml-auto">{{ summary.total|currency }}</span>
     </div>
-    {% if exempt_rows %}
+    {% if rows %}
     <div class="divide-y divide-gray-700">
-      {% for row in exempt_rows %}
+      {% for row in rows %}
       <div class="flex items-center justify-between px-5 py-3 hover:bg-gray-700/50 transition">
         <div class="flex items-center gap-3">
           {% set colors = ['bg-blue-500/20 text-blue-400', 'bg-cyan-500/20 text-cyan-400', 'bg-indigo-500/20 text-indigo-400', 'bg-purple-500/20 text-purple-400', 'bg-emerald-500/20 text-emerald-400', 'bg-amber-500/20 text-amber-400'] %}
           <div class="avatar-initials {{ colors[loop.index0 % 6] }}">
-            {{ (row.name or '?')[:2] }}
+            {{ (row.customer_name or '?')[:2] }}
           </div>
           <div>
-            <p class="text-sm font-medium text-gray-100">{{ row.name or 'Unknown' }}</p>
-            <p class="text-2xs text-gray-500">{{ row.city or 'No city' }} &middot; {{ row.count }} sale{{ 's' if row.count != 1 else '' }}</p>
+            <p class="text-sm font-medium text-gray-100">{{ row.customer_name or 'Unknown' }}</p>
+            <p class="text-2xs text-gray-500">
+              {{ row.invoice_date|dateformat }} &middot; {{ row.city or 'No city' }}
+              {% if row.invoice_number %} &middot; {{ row.invoice_number }}{% endif %}
+            </p>
           </div>
         </div>
-        <span class="text-sm font-bold text-gray-100">{{ row.total|currency }}</span>
+        <span class="text-sm font-bold text-gray-100">{{ row.amount|currency }}</span>
       </div>
       {% endfor %}
     </div>
     {% else %}
     <div class="px-5 py-8 text-center">
-      <p class="text-sm text-gray-500">No tax-exempt sales.</p>
+      <p class="text-sm text-gray-500">No tax-exempt sales for this period.</p>
     </div>
     {% endif %}
   </div>
+
+  {# -- Pagination -- #}
+  {% if total_pages > 1 %}
+  <div class="flex items-center justify-center gap-3">
+    {% if page > 1 %}
+    <a href="{{ url_for('reports.tax_exempt', start_date=start.strftime('%Y-%m-%d'), end_date=end.strftime('%Y-%m-%d'), page=page-1) }}"
+       class="px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 border border-gray-600 rounded-lg hover:bg-gray-600 transition-colors btn-press min-h-[44px]">
+      Prev
+    </a>
+    {% endif %}
+    <span class="text-sm text-gray-500">Page {{ page }} of {{ total_pages }}</span>
+    {% if page < total_pages %}
+    <a href="{{ url_for('reports.tax_exempt', start_date=start.strftime('%Y-%m-%d'), end_date=end.strftime('%Y-%m-%d'), page=page+1) }}"
+       class="px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 border border-gray-600 rounded-lg hover:bg-gray-600 transition-colors btn-press min-h-[44px]">
+      Next
+    </a>
+    {% endif %}
+  </div>
+  {% endif %}
 
 </div>
 {% endblock %}

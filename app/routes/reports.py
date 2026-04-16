@@ -9,7 +9,7 @@ from sqlalchemy import func
 
 from app import db
 from app.helpers import staff_required, export_response, parse_date_range
-from app.models import Customer, Invoice, User
+from app.models import Customer, Invoice
 
 bp = Blueprint("reports", __name__, url_prefix="/reports")
 
@@ -237,37 +237,95 @@ def tax():
     )
 
 
-@bp.route("/collections")
-def collections():
-    """Sales report by rep for date range."""
+@bp.route("/tax-exempt")
+def tax_exempt():
+    """Tax-exempt sales: individual invoices from tax-exempt customers."""
     start, end = _parse_date_range()
     fmt = request.args.get("format", "").lower()
 
     start_date = start.date() if hasattr(start, 'date') else start
     end_date = end.date() if hasattr(end, 'date') else end
 
-    rows = (
+    base_query = (
         db.session.query(
-            User.username,
+            Invoice.invoice_date,
+            Invoice.invoice_number,
+            Invoice.amount,
+            Invoice.status,
+            Customer.name.label("customer_name"),
+            Customer.city,
+        )
+        .join(Customer, Invoice.customer_id == Customer.id)
+        .filter(
+            Customer.tax_exempt.is_(True),
+            Invoice.invoice_date >= start_date,
+            Invoice.invoice_date <= end_date,
+            Invoice.status != "void",
+        )
+        .order_by(Invoice.invoice_date.desc(), Customer.name)
+    )
+
+    # Summary KPIs
+    summary = (
+        db.session.query(
             func.count(Invoice.id).label("count"),
             func.coalesce(func.sum(Invoice.amount), Decimal("0")).label("total"),
         )
-        .join(Invoice, Invoice.created_by == User.id)
-        .filter(Invoice.invoice_date >= start_date, Invoice.invoice_date <= end_date, Invoice.status != "void")
-        .group_by(User.id, User.username)
-        .order_by(func.sum(Invoice.amount).desc())
-        .all()
+        .join(Customer, Invoice.customer_id == Customer.id)
+        .filter(
+            Customer.tax_exempt.is_(True),
+            Invoice.invoice_date >= start_date,
+            Invoice.invoice_date <= end_date,
+            Invoice.status != "void",
+        )
+        .first()
+    )
+
+    customer_count = (
+        db.session.query(func.count(func.distinct(Customer.id)))
+        .join(Invoice, Invoice.customer_id == Customer.id)
+        .filter(
+            Customer.tax_exempt.is_(True),
+            Invoice.invoice_date >= start_date,
+            Invoice.invoice_date <= end_date,
+            Invoice.status != "void",
+        )
+        .scalar()
     )
 
     if fmt in ("csv", "xlsx", "pdf"):
-        headers = ["Sales Rep", "Sales Count", "Total"]
-        export_rows = [(r.username, r.count, f"{r.total:.2f}") for r in rows]
-        filename = f"sales_by_rep_{start.strftime('%Y%m%d')}_{end.strftime('%Y%m%d')}"
-        return export_response(export_rows, headers, filename, fmt, title="Sales by Rep")
+        rows = base_query.limit(500).all()
+        headers = ["Date", "Invoice #", "Customer", "City", "Amount"]
+        export_rows = [
+            (
+                r.invoice_date.strftime("%Y-%m-%d"),
+                r.invoice_number or "",
+                r.customer_name or "",
+                r.city or "",
+                f"{r.amount:.2f}",
+            )
+            for r in rows
+        ]
+        filename = f"tax_exempt_sales_{start.strftime('%Y%m%d')}_{end.strftime('%Y%m%d')}"
+        return export_response(export_rows, headers, filename, fmt, title="Tax Exempt Sales")
+
+    # Paginate
+    page = request.args.get("page", 1, type=int)
+    per_page = 15
+    total_count = base_query.count()
+    total_pages = max(1, (total_count + per_page - 1) // per_page)
+    page = min(page, total_pages)
+    rows = base_query.offset((page - 1) * per_page).limit(per_page).all()
 
     return render_template(
-        "reports/collections.html",
+        "reports/tax_exempt.html",
         rows=rows,
+        summary=summary,
+        customer_count=customer_count,
         start=start,
         end=end,
+        page=page,
+        total_pages=total_pages,
     )
+
+
