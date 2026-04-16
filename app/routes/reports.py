@@ -154,7 +154,7 @@ def financial():
         return export_response(rows, headers, filename, fmt, title="Sales Report")
 
     # Paginate for display (SQL-level)
-    page = request.args.get("page", 1, type=int)
+    page = max(1, request.args.get("page", 1, type=int))
     per_page = 10
     total_count = by_customer_query.count()
     total_pages = max(1, (total_count + per_page - 1) // per_page)
@@ -265,7 +265,23 @@ def tax_exempt():
         .order_by(Invoice.invoice_date.desc(), Customer.name)
     )
 
-    # Summary KPIs
+    if fmt in ("csv", "xlsx", "pdf"):
+        rows = base_query.limit(500).all()
+        headers = ["Date", "Invoice #", "Customer", "City", "Amount"]
+        export_rows = [
+            (
+                r.invoice_date.strftime("%Y-%m-%d"),
+                r.invoice_number or "",
+                r.customer_name or "",
+                r.city or "",
+                f"{r.amount:.2f}",
+            )
+            for r in rows
+        ]
+        filename = f"tax_exempt_sales_{start.strftime('%Y%m%d')}_{end.strftime('%Y%m%d')}"
+        return export_response(export_rows, headers, filename, fmt, title="Tax Exempt Sales")
+
+    # Summary KPIs (after export early-return to avoid unnecessary queries)
     summary = (
         db.session.query(
             func.count(Invoice.id).label("count"),
@@ -293,24 +309,8 @@ def tax_exempt():
         .scalar()
     )
 
-    if fmt in ("csv", "xlsx", "pdf"):
-        rows = base_query.limit(500).all()
-        headers = ["Date", "Invoice #", "Customer", "City", "Amount"]
-        export_rows = [
-            (
-                r.invoice_date.strftime("%Y-%m-%d"),
-                r.invoice_number or "",
-                r.customer_name or "",
-                r.city or "",
-                f"{r.amount:.2f}",
-            )
-            for r in rows
-        ]
-        filename = f"tax_exempt_sales_{start.strftime('%Y%m%d')}_{end.strftime('%Y%m%d')}"
-        return export_response(export_rows, headers, filename, fmt, title="Tax Exempt Sales")
-
     # Paginate
-    page = request.args.get("page", 1, type=int)
+    page = max(1, request.args.get("page", 1, type=int))
     per_page = 15
     total_count = base_query.count()
     total_pages = max(1, (total_count + per_page - 1) // per_page)

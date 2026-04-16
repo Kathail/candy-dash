@@ -26,7 +26,7 @@
                     <input type="text" id="payment-customer" x-ref="custSearch" x-model="customerQuery" @input.debounce.300ms="searchCustomers()"
                            @focus="custDropdown = customerQuery.length > 0"
                            :placeholder="selectedCustomer ? selectedCustomer.name : 'Search customer...'"
-                           class="theme-input rounded-lg min-h-[44px]" />
+                           class="w-full theme-input rounded-lg min-h-[44px]" />
                     <div x-show="custDropdown && custResults.length > 0" @click.outside="custDropdown = false" x-cloak
                          class="absolute top-full mt-1 w-full theme-card max-h-48 overflow-y-auto z-10 shadow-lg">
                         <template x-for="c in custResults" :key="c.id">
@@ -52,19 +52,19 @@
                     <label for="payment-sold" class="block text-sm font-medium text-muted mb-1">Amount Sold ($)</label>
                     <input type="number" id="payment-sold" step="0.01" min="0" inputmode="decimal" x-model="amountSold"
                            placeholder="0.00"
-                           class="theme-input rounded-lg min-h-[44px]" />
+                           class="w-full theme-input rounded-lg min-h-[44px]" />
                 </div>
                 <div>
                     <label for="payment-paid" class="block text-sm font-medium text-muted mb-1">Amount Paid ($)</label>
                     <input type="number" id="payment-paid" step="0.01" min="0" inputmode="decimal" x-model="amountPaid"
                            placeholder="0.00"
-                           class="theme-input rounded-lg min-h-[44px]" />
+                           class="w-full theme-input rounded-lg min-h-[44px]" />
                 </div>
             </div>
 
             <div class="mb-4">
                 <label for="payment-type" class="block text-sm font-medium text-muted mb-1">Payment Type</label>
-                <select id="payment-type" x-model="paymentType" class="theme-input rounded-lg min-h-[44px]">
+                <select id="payment-type" x-model="paymentType" class="w-full theme-input rounded-lg min-h-[44px]">
                     <option value="cash">Cash</option>
                     <option value="cheque">Cheque</option>
                     <option value="debit">Debit</option>

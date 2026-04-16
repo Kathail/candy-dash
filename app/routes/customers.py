@@ -15,7 +15,7 @@ from sqlalchemy.orm import joinedload
 
 from app import db, limiter
 from app.models import Customer, Payment, Invoice, InvoiceItem, Note, ActivityLog, RouteStop, VALID_CUSTOMER_STATUSES, VALID_PAYMENT_TYPES
-from app.helpers import admin_required, staff_required, generate_receipt_number, generate_receipt_pdf, audit, safe_redirect
+from app.helpers import admin_required, staff_required, generate_receipt_number, generate_receipt_pdf, audit, safe_redirect, format_date
 import logging
 
 bp = Blueprint("customers", __name__, url_prefix="/customers")
@@ -616,7 +616,7 @@ def toggle_status(id):
 
 @bp.route("/<int:id>/delete", methods=["POST"])
 @login_required
-@staff_required
+@admin_required
 def delete_customer(id):
     """Soft-delete a customer by setting status to 'deleted'."""
     customer = Customer.query.get_or_404(id)
@@ -896,6 +896,8 @@ def mark_invoice_paid(id, invoice_id):
             )
             db.session.add(new_payment)
             db.session.flush()
+            assert new_payment.id is not None, "Payment flush failed to generate ID"
+            invoice.paid_by_payment_id = new_payment.id
         else:
             receipt_number = invoice.invoice_number or str(invoice.id)
 

@@ -50,7 +50,7 @@
       <!-- Phone -->
       <div>
         <label for="phone" class="block text-sm font-medium text-gray-300 mb-1">Phone</label>
-        <input type="tel" name="phone" id="phone"
+        <input type="tel" name="phone" id="phone" inputmode="tel"
                value="{{ lead.phone if lead and lead.phone else '' }}"
                class="block w-full theme-input rounded-lg text-sm min-h-[44px]"
                placeholder="Phone number">

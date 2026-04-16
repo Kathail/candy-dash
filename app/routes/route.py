@@ -16,7 +16,7 @@ from sqlalchemy.orm import joinedload
 
 from app import db
 from app.models import Customer, Invoice, RouteStop, Payment, ActivityLog, VALID_PAYMENT_TYPES
-from app.helpers import generate_receipt_pdf, generate_receipt_number, audit
+from app.helpers import generate_receipt_pdf, generate_receipt_number, audit, staff_required
 import logging
 
 bp = Blueprint("route", __name__, url_prefix="/route")
@@ -137,6 +137,7 @@ def index():
 
 @bp.route("/stop/<int:id>/complete", methods=["POST"])
 @login_required
+@staff_required
 def complete_stop(id):
     """Mark a route stop as completed. Optionally record a payment."""
     stop = RouteStop.query.get_or_404(id)
@@ -265,6 +266,7 @@ def complete_stop(id):
 
 @bp.route("/stop/<int:id>/uncomplete", methods=["POST"])
 @login_required
+@staff_required
 def uncomplete_stop(id):
     """Unmark a route stop."""
     stop = RouteStop.query.get_or_404(id)
@@ -288,6 +290,7 @@ def uncomplete_stop(id):
 
 @bp.route("/stop/<int:id>/notes", methods=["POST"])
 @login_required
+@staff_required
 def update_stop_notes(id):
     """Update notes on a route stop."""
     stop = RouteStop.query.get_or_404(id)

@@ -174,6 +174,7 @@ def index():
 
 @bp.route("/add-stop", methods=["POST"])
 @login_required
+@staff_required
 def add_stop():
     """Add a customer to a route date."""
     customer_id = request.form.get("customer_id", type=int)
@@ -238,6 +239,7 @@ def add_stop():
 
 @bp.route("/add-city", methods=["POST"])
 @login_required
+@staff_required
 def add_city():
     """Add all active customers in a city to a route date."""
     city = request.form.get("city", "").strip()
@@ -317,6 +319,7 @@ def add_city():
 
 @bp.route("/remove-stop/<int:id>", methods=["POST"])
 @login_required
+@staff_required
 def remove_stop(id):
     """Remove a stop from the route. If it came from a recurring schedule, skip that date."""
     stop = RouteStop.query.get_or_404(id)
@@ -410,6 +413,7 @@ def recurring_list():
 
 @bp.route("/recurring/add", methods=["POST"])
 @login_required
+@staff_required
 def recurring_add():
     """Create a recurring schedule for a customer."""
     customer_id = request.form.get("customer_id", type=int)
@@ -464,6 +468,7 @@ def recurring_add():
 
 @bp.route("/recurring/<int:id>/delete", methods=["POST"])
 @login_required
+@staff_required
 def recurring_delete(id):
     """Deactivate a recurring schedule."""
     r = RecurringStop.query.get_or_404(id)

@@ -120,6 +120,7 @@ def index():
 
 
 @bp.route("/new", methods=["GET", "POST"])
+@login_required
 @staff_required
 def new():
     """Create a new lead."""
@@ -157,6 +158,7 @@ def new():
 
 
 @bp.route("/<int:id>/edit", methods=["GET", "POST"])
+@login_required
 @staff_required
 def edit(id):
     """Edit an existing lead."""
@@ -186,6 +188,7 @@ def edit(id):
 
 
 @bp.route("/<int:id>/convert", methods=["POST"])
+@login_required
 @staff_required
 def convert(id):
     """Convert a lead to an active customer."""

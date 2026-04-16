@@ -380,6 +380,7 @@ function plannerApp() {
     },
 
     async deleteRecurring(id) {
+      if(!confirm('Remove this recurring schedule?')) return;
       try {
         const resp = await fetch('{{ url_for("planner.recurring_delete", id=0) }}'.replace('0', id), {
           method: 'POST',
