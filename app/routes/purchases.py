@@ -55,7 +55,7 @@ def index():
         query.with_entities(Purchase.amount).subquery()
     ).scalar()
 
-    page = request.args.get("page", 1, type=int)
+    page = max(1, request.args.get("page", 1, type=int))
     pagination = query.paginate(page=page, per_page=10, error_out=False)
     purchases = pagination.items
 

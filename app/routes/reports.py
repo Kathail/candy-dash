@@ -75,7 +75,7 @@ def daily_sales():
     chart_data = [float(r.total) for r in reversed(rows)]
 
     # Paginate for display
-    page = request.args.get("page", 1, type=int)
+    page = max(1, request.args.get("page", 1, type=int))
     per_page = 10
     total_pages = max(1, (len(rows) + per_page - 1) // per_page)
     page = min(page, total_pages)

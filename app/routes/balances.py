@@ -126,7 +126,7 @@ def index():
         query = query.order_by(Customer.balance.desc())
 
     # Paginate (SQL-level)
-    page = request.args.get("page", 1, type=int)
+    page = max(1, request.args.get("page", 1, type=int))
     per_page = 10
     total_pages = max(1, (total_items + per_page - 1) // per_page)
     page = min(page, total_pages)

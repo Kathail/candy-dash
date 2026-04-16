@@ -84,7 +84,7 @@ def index():
     today_total = today_payments.total or Decimal("0")
 
     # --- Paginated transactions ---
-    page = request.args.get("page", 1, type=int)
+    page = max(1, request.args.get("page", 1, type=int))
     per_page = 10
     payments_paginated = (
         Payment.query
@@ -95,7 +95,7 @@ def index():
     )
 
     # --- Top balances (paginated) ---
-    bal_page = request.args.get("bal_page", 1, type=int)
+    bal_page = max(1, request.args.get("bal_page", 1, type=int))
     balances_paginated = (
         Customer.query
         .filter(Customer.status == "active", Customer.balance > 0)
