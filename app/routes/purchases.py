@@ -1,7 +1,7 @@
 """Purchases blueprint – track supplier purchases."""
 
 import re
-from datetime import date, datetime, timezone
+from datetime import date
 from decimal import Decimal, InvalidOperation
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash
@@ -10,48 +10,95 @@ from sqlalchemy import func
 
 from app import db
 from app.models import Purchase, VALID_PAYMENT_TYPES
-from app.helpers import audit, staff_required, admin_required
+from app.helpers import audit, staff_required, admin_required, export_response
 
 bp = Blueprint("purchases", __name__, url_prefix="/purchases")
+
+VALID_SORTS = {"date_asc", "date_desc", "amount_asc", "amount_desc"}
+VALID_EXPORT_FORMATS = {"csv", "xlsx", "pdf"}
+
+
+def _parse_date_params():
+    """Parse start_date and end_date from query params as plain dates."""
+    start_str = request.args.get("start_date", "").strip()
+    end_str = request.args.get("end_date", "").strip()
+    start = end = None
+    try:
+        start = date.fromisoformat(start_str) if start_str else None
+    except ValueError:
+        start = None
+    try:
+        end = date.fromisoformat(end_str) if end_str else None
+    except ValueError:
+        end = None
+    if start and end and start > end:
+        start, end = end, start
+    return start, end
+
+
+def _build_query(supplier_filter, start_date, end_date, sort):
+    """Build the filtered, sorted Purchase query."""
+    query = Purchase.query
+    if supplier_filter:
+        query = query.filter(Purchase.supplier == supplier_filter)
+    if start_date:
+        query = query.filter(Purchase.purchase_date >= start_date)
+    if end_date:
+        query = query.filter(Purchase.purchase_date <= end_date)
+    if sort == "date_asc":
+        query = query.order_by(Purchase.purchase_date.asc(), Purchase.id.asc())
+    elif sort == "amount_desc":
+        query = query.order_by(Purchase.amount.desc(), Purchase.id.desc())
+    elif sort == "amount_asc":
+        query = query.order_by(Purchase.amount.asc(), Purchase.id.asc())
+    else:
+        query = query.order_by(Purchase.purchase_date.desc(), Purchase.id.desc())
+    return query
 
 
 @bp.route("/")
 @login_required
 def index():
-    """List purchases with filtering."""
+    """List purchases with filtering, sorting, and optional export."""
     supplier_filter = request.args.get("supplier", "").strip()
-    month_filter = request.args.get("month", "").strip()
-    VALID_SORTS = {"date_asc", "date_desc", "amount_asc", "amount_desc"}
     sort = request.args.get("sort", "date_desc")
     if sort not in VALID_SORTS:
         sort = "date_desc"
+    start_date, end_date = _parse_date_params()
 
-    query = Purchase.query
+    query = _build_query(supplier_filter, start_date, end_date, sort)
 
-    if supplier_filter:
-        query = query.filter(Purchase.supplier == supplier_filter)
-
-    if month_filter:
-        try:
-            year, month = month_filter.split("-")
-            query = query.filter(
-                db.extract("year", Purchase.purchase_date) == int(year),
-                db.extract("month", Purchase.purchase_date) == int(month),
+    fmt = request.args.get("format", "").lower()
+    if fmt in VALID_EXPORT_FORMATS:
+        all_rows = query.all()
+        headers = ["Date", "Supplier", "Amount", "Payment Type", "Invoice #", "Description"]
+        export_rows = [
+            (
+                p.purchase_date.strftime("%Y-%m-%d"),
+                p.supplier,
+                f"{p.amount:.2f}",
+                (p.payment_type or "").capitalize(),
+                p.invoice_number or "",
+                p.description or "",
             )
-        except (ValueError, AttributeError):
-            pass
+            for p in all_rows
+        ]
+        filename = "purchases_export"
+        if start_date:
+            filename += f"_from_{start_date.strftime('%Y%m%d')}"
+        if end_date:
+            filename += f"_to_{end_date.strftime('%Y%m%d')}"
+        if supplier_filter:
+            safe_supplier = re.sub(r"[^\w-]", "_", supplier_filter)[:40]
+            filename += f"_{safe_supplier}"
+        return export_response(export_rows, headers, filename, fmt, title="Purchases")
 
-    if sort == "date_asc":
-        query = query.order_by(Purchase.purchase_date.asc())
-    elif sort == "amount_desc":
-        query = query.order_by(Purchase.amount.desc())
-    elif sort == "amount_asc":
-        query = query.order_by(Purchase.amount.asc())
-    else:
-        query = query.order_by(Purchase.purchase_date.desc())
-
-    # Total across all matching (reuse base query before pagination)
-    total = query.with_entities(func.coalesce(func.sum(Purchase.amount), 0)).order_by(None).scalar()
+    # Aggregates across all matching rows (single round-trip)
+    agg = query.with_entities(
+        func.coalesce(func.sum(Purchase.amount), 0),
+        func.count(Purchase.id),
+    ).order_by(None).one()
+    total, total_count = agg
 
     page = max(1, request.args.get("page", 1, type=int))
     pagination = query.paginate(page=page, per_page=10, error_out=False)
@@ -66,26 +113,15 @@ def index():
     )
     suppliers = [s[0] for s in suppliers]
 
-    # Available months for filter
-    months = (
-        db.session.query(
-            db.extract("year", Purchase.purchase_date).label("y"),
-            db.extract("month", Purchase.purchase_date).label("m"),
-        )
-        .distinct()
-        .order_by(db.text("y DESC, m DESC"))
-        .all()
-    )
-    month_options = [f"{int(r.y)}-{int(r.m):02d}" for r in months]
-
     return render_template(
         "purchases.html",
         purchases=purchases,
         total=total,
+        total_count=total_count,
         suppliers=suppliers,
         supplier_filter=supplier_filter,
-        month_filter=month_filter,
-        month_options=month_options,
+        start_date=start_date,
+        end_date=end_date,
         sort=sort,
         pagination=pagination,
     )

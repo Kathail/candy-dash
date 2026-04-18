@@ -3,16 +3,34 @@
 {% block title %}Purchases - Candy Dash{% endblock %}
 {% block page_title %}Purchases{% endblock %}
 
+{% set sort_labels = {
+  'date_desc': 'Newest first',
+  'date_asc': 'Oldest first',
+  'amount_desc': 'Largest first',
+  'amount_asc': 'Smallest first',
+} %}
+{% set has_filters = supplier_filter or start_date or end_date %}
+{% set start_str = start_date.isoformat() if start_date else '' %}
+{% set end_str = end_date.isoformat() if end_date else '' %}
+{% set avg_amount = (total / total_count) if total_count else 0 %}
+
 {% block content %}
-<div class="max-w-2xl mx-auto space-y-3" x-data="{ showFilters: false }">
+<div class="max-w-2xl mx-auto space-y-3"
+     x-data="purchasesPage({
+       initialStart: {{ start_str|tojson }},
+       initialEnd: {{ end_str|tojson }},
+       initialSupplier: {{ supplier_filter|tojson }},
+       initialSort: {{ sort|tojson }},
+       hasFilters: {{ has_filters|tojson }},
+     })">
 
   {# -- Header -- #}
   <div class="flex items-center justify-between animate-fade-in-up">
     <div>
       <h1 class="text-xl font-bold text-gray-100">Purchases</h1>
-      {% if purchases %}
-      <p class="text-xs text-gray-500 mt-0.5">{{ purchases|length }} purchase{{ 's' if purchases|length != 1 else '' }}{% if supplier_filter %} from {{ supplier_filter }}{% endif %}</p>
-      {% endif %}
+      <p class="text-xs text-gray-500 mt-0.5">
+        {{ total_count }} purchase{{ 's' if total_count != 1 else '' }} total{% if has_filters %} (filtered){% endif %}
+      </p>
     </div>
     <a href="{{ url_for('purchases.add') }}"
        class="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-500 transition-colors btn-press min-h-[44px]">
@@ -23,49 +41,150 @@
     </a>
   </div>
 
-  {# -- Filter toggle -- #}
-  <div class="flex gap-2 animate-fade-in-up stagger-1">
-    <button @click="showFilters = !showFilters" aria-label="Toggle filters"
+  {# -- Toolbar: Filter / Sort / Export -- #}
+  <div class="flex flex-wrap items-center gap-2 animate-fade-in-up stagger-1">
+    <button type="button" @click="showFilters = !showFilters" aria-label="Toggle filters"
             :class="showFilters ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-gray-800 text-gray-400 border-gray-700'"
             class="flex items-center gap-1.5 px-3 min-h-[44px] rounded-xl border text-sm font-medium transition-colors btn-press">
       <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
       </svg>
       Filter
-      {% if supplier_filter or month_filter %}
+      {% if has_filters %}
       <span class="w-2 h-2 rounded-full bg-indigo-400"></span>
       {% endif %}
     </button>
-    {% if purchases %}
-    <div class="flex-1 flex items-center justify-end">
-      <span class="text-sm font-bold text-amber-400">Total: {{ total|currency }}</span>
+
+    <form method="get" action="{{ url_for('purchases.index') }}" class="contents">
+      {% if supplier_filter %}<input type="hidden" name="supplier" value="{{ supplier_filter }}">{% endif %}
+      {% if start_str %}<input type="hidden" name="start_date" value="{{ start_str }}">{% endif %}
+      {% if end_str %}<input type="hidden" name="end_date" value="{{ end_str }}">{% endif %}
+      <label class="sr-only" for="purchases-sort">Sort</label>
+      <select name="sort" id="purchases-sort" onchange="this.form.submit()"
+              class="theme-input rounded-xl text-sm min-h-[44px] px-3">
+        {% for key, label in sort_labels.items() %}
+        <option value="{{ key }}" {% if key == sort %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </form>
+
+    <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+      <button type="button" @click="open = !open"
+              class="flex items-center gap-1.5 px-3 min-h-[44px] rounded-xl border border-app bg-gray-800 text-gray-400 text-sm font-medium hover:text-gray-200 transition-colors btn-press">
+        <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+        </svg>
+        Export
+        <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </button>
+      <div x-show="open" x-transition x-cloak
+           class="absolute right-0 mt-1 w-36 bg-panel border border-app rounded-xl shadow-lg overflow-hidden z-10">
+        {% for fmt, label in [('csv', 'CSV'), ('xlsx', 'Excel'), ('pdf', 'PDF')] %}
+        <a :href="exportUrl('{{ fmt }}')"
+           class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 transition-colors">{{ label }}</a>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="flex-1"></div>
+
+    {% if total_count %}
+    <div class="text-right">
+      <div class="text-sm font-bold text-amber-400">{{ total|currency }}</div>
+      {% if total_count > 1 %}
+      <div class="text-2xs text-gray-500">avg {{ avg_amount|currency }} · {{ total_count }} items</div>
+      {% endif %}
     </div>
     {% endif %}
   </div>
 
-  {# -- Filters -- #}
-  <div x-show="showFilters" x-transition x-cloak
-       class="bg-panel rounded-xl border border-app p-4 animate-fade-in-up">
-    <form method="get" action="{{ url_for('purchases.index') }}" class="flex flex-wrap gap-2">
-      <select name="supplier" onchange="this.form.submit()"
-              aria-label="Filter by supplier"
-              class="theme-input rounded-xl text-sm min-h-[44px]">
-        <option value="">All Suppliers</option>
-        {% for s in suppliers %}
-        <option value="{{ s }}" {% if s == supplier_filter %}selected{% endif %}>{{ s }}</option>
-        {% endfor %}
-      </select>
-      <select name="month" onchange="this.form.submit()"
-              aria-label="Filter by month"
-              class="theme-input rounded-xl text-sm min-h-[44px]">
-        <option value="">All Months</option>
-        {% for m in month_options %}
-        <option value="{{ m }}" {% if m == month_filter %}selected{% endif %}>{{ m }}</option>
-        {% endfor %}
-      </select>
-      {% if supplier_filter or month_filter %}
-      <a href="{{ url_for('purchases.index') }}" class="inline-flex items-center px-3 min-h-[44px] text-sm text-gray-500 hover:text-gray-300 transition-colors btn-press">Clear</a>
+  {# -- Active filter chips -- #}
+  {% if has_filters %}
+  <div class="flex flex-wrap items-center gap-1.5 animate-fade-in-up">
+    {% if supplier_filter %}
+    <a href="{{ url_for('purchases.index', start_date=start_str or none, end_date=end_str or none, sort=sort) }}"
+       class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-500/15 border border-indigo-500/30 text-xs text-indigo-300 hover:bg-indigo-500/25 transition-colors">
+      <span class="font-semibold">Supplier:</span> {{ supplier_filter }}
+      <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+    </a>
+    {% endif %}
+    {% if start_date or end_date %}
+    <a href="{{ url_for('purchases.index', supplier=supplier_filter or none, sort=sort) }}"
+       class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-500/15 border border-indigo-500/30 text-xs text-indigo-300 hover:bg-indigo-500/25 transition-colors">
+      {% if start_date and end_date %}
+        {{ start_date|dateformat('%b %-d') }} – {{ end_date|dateformat('%b %-d, %Y') }}
+      {% elif start_date %}
+        From {{ start_date|dateformat('%b %-d, %Y') }}
+      {% else %}
+        Until {{ end_date|dateformat('%b %-d, %Y') }}
       {% endif %}
+      <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+    </a>
+    {% endif %}
+    <a href="{{ url_for('purchases.index', sort=sort) }}" class="text-2xs text-gray-500 hover:text-gray-300 px-2 py-1 transition-colors">Clear all</a>
+  </div>
+  {% endif %}
+
+  {# -- Filter panel -- #}
+  <div x-show="showFilters" x-transition x-cloak
+       class="bg-panel rounded-xl border border-app p-4 space-y-3 animate-fade-in-up">
+    <form method="get" action="{{ url_for('purchases.index') }}" class="space-y-3">
+      <input type="hidden" name="sort" value="{{ sort }}">
+
+      {# Supplier #}
+      <div>
+        <label for="supplier-filter" class="block text-2xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Supplier</label>
+        <select name="supplier" id="supplier-filter"
+                class="block w-full theme-input rounded-lg text-sm min-h-[44px]">
+          <option value="">All Suppliers</option>
+          {% for s in suppliers %}
+          <option value="{{ s }}" {% if s == supplier_filter %}selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      {# Date presets #}
+      <div>
+        <label class="block text-2xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Date range</label>
+        <div class="flex flex-wrap gap-1.5" role="group" aria-label="Date range presets">
+          {% for key, label in [('all','All'), ('month','This month'), ('lastMonth','Last month'), ('quarter','This quarter'), ('ytd','YTD')] %}
+          <button type="button" @click="setPreset('{{ key }}')"
+                  :class="activePreset === '{{ key }}' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-gray-800 text-gray-400 border-gray-700 hover:bg-gray-700'"
+                  class="px-3 py-2 text-xs font-semibold rounded-lg border transition-colors btn-press">{{ label }}</button>
+          {% endfor %}
+        </div>
+      </div>
+
+      {# Custom dates #}
+      <div class="flex gap-3">
+        <div class="flex-1">
+          <label for="purchases-start" class="block text-2xs font-semibold text-gray-500 uppercase tracking-wider mb-1">From</label>
+          <input type="date" id="purchases-start" name="start_date" x-model="startDate" @change="activePreset = 'custom'"
+                 :max="endDate || null"
+                 class="block w-full theme-input rounded-lg text-sm min-h-[44px]">
+        </div>
+        <div class="flex-1">
+          <label for="purchases-end" class="block text-2xs font-semibold text-gray-500 uppercase tracking-wider mb-1">To</label>
+          <input type="date" id="purchases-end" name="end_date" x-model="endDate" @change="activePreset = 'custom'"
+                 :min="startDate || null"
+                 class="block w-full theme-input rounded-lg text-sm min-h-[44px]">
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 pt-1">
+        <button type="submit"
+                class="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold rounded-xl transition-colors btn-press min-h-[44px]">Apply</button>
+        {% if has_filters %}
+        <a href="{{ url_for('purchases.index', sort=sort) }}"
+           class="inline-flex items-center justify-center px-4 min-h-[44px] text-sm text-gray-400 hover:text-gray-200 rounded-xl border border-app btn-press transition-colors">Reset</a>
+        {% endif %}
+      </div>
     </form>
   </div>
 
@@ -129,9 +248,9 @@
   <div class="bg-panel rounded-xl border border-app p-10 text-center animate-fade-in-up">
     <img src="{{ url_for('static', filename='img/logo.png') }}" alt="" class="w-12 h-12 mx-auto mb-3 rounded-lg object-contain opacity-50">
     <p class="text-sm text-gray-500 mb-3">
-      {% if supplier_filter or month_filter %}No purchases match.{% else %}No purchases recorded yet.{% endif %}
+      {% if has_filters %}No purchases match.{% else %}No purchases recorded yet.{% endif %}
     </p>
-    {% if not (supplier_filter or month_filter) %}
+    {% if not has_filters %}
     <a href="{{ url_for('purchases.add') }}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-500 btn-press transition-colors">Add Purchase</a>
     {% endif %}
   </div>
@@ -140,12 +259,12 @@
   {% if pagination.pages > 1 %}
   <div class="flex items-center justify-center gap-2 pt-1">
     {% if pagination.has_prev %}
-    <a href="{{ url_for('purchases.index', supplier=supplier_filter, month=month_filter, sort=sort, page=pagination.prev_num) }}"
+    <a href="{{ url_for('purchases.index', supplier=supplier_filter or none, start_date=start_str or none, end_date=end_str or none, sort=sort, page=pagination.prev_num) }}"
        class="px-3 py-1.5 text-xs font-medium text-indigo-400 hover:text-indigo-300 bg-panel border border-app rounded-lg btn-press">&larr; Prev</a>
     {% endif %}
     <span class="text-2xs text-faint">Page {{ pagination.page }} of {{ pagination.pages }}</span>
     {% if pagination.has_next %}
-    <a href="{{ url_for('purchases.index', supplier=supplier_filter, month=month_filter, sort=sort, page=pagination.next_num) }}"
+    <a href="{{ url_for('purchases.index', supplier=supplier_filter or none, start_date=start_str or none, end_date=end_str or none, sort=sort, page=pagination.next_num) }}"
        class="px-3 py-1.5 text-xs font-medium text-indigo-400 hover:text-indigo-300 bg-panel border border-app rounded-lg btn-press">Next &rarr;</a>
     {% endif %}
   </div>
@@ -153,4 +272,57 @@
 
   <div class="h-4"></div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function purchasesPage(opts) {
+  const fmt = (d) => d.toISOString().split('T')[0];
+  return {
+    showFilters: opts.hasFilters,
+    startDate: opts.initialStart || '',
+    endDate: opts.initialEnd || '',
+    supplier: opts.initialSupplier || '',
+    sort: opts.initialSort || 'date_desc',
+    activePreset: opts.initialStart || opts.initialEnd ? 'custom' : 'all',
+    setPreset(name) {
+      this.activePreset = name;
+      const t = new Date();
+      switch (name) {
+        case 'all': this.startDate = ''; this.endDate = ''; break;
+        case 'month':
+          this.startDate = fmt(new Date(t.getFullYear(), t.getMonth(), 1));
+          this.endDate = fmt(t);
+          break;
+        case 'lastMonth': {
+          const s = new Date(t.getFullYear(), t.getMonth() - 1, 1);
+          const e = new Date(t.getFullYear(), t.getMonth(), 0);
+          this.startDate = fmt(s);
+          this.endDate = fmt(e);
+          break;
+        }
+        case 'quarter': {
+          const qm = Math.floor(t.getMonth() / 3) * 3;
+          this.startDate = fmt(new Date(t.getFullYear(), qm, 1));
+          this.endDate = fmt(t);
+          break;
+        }
+        case 'ytd':
+          this.startDate = fmt(new Date(t.getFullYear(), 0, 1));
+          this.endDate = fmt(t);
+          break;
+      }
+    },
+    exportUrl(format) {
+      const p = new URLSearchParams();
+      p.set('format', format);
+      if (this.supplier) p.set('supplier', this.supplier);
+      if (this.startDate) p.set('start_date', this.startDate);
+      if (this.endDate) p.set('end_date', this.endDate);
+      if (this.sort && this.sort !== 'date_desc') p.set('sort', this.sort);
+      return '{{ url_for("purchases.index") }}?' + p.toString();
+    },
+  };
+}
+</script>
 {% endblock %}
