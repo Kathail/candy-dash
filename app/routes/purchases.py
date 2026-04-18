@@ -51,9 +51,7 @@ def index():
         query = query.order_by(Purchase.purchase_date.desc())
 
     # Total across all matching (reuse base query before pagination)
-    total = db.session.query(func.coalesce(func.sum(Purchase.amount), 0)).select_from(
-        query.with_entities(Purchase.amount).subquery()
-    ).scalar()
+    total = query.with_entities(func.coalesce(func.sum(Purchase.amount), 0)).order_by(None).scalar()
 
     page = max(1, request.args.get("page", 1, type=int))
     pagination = query.paginate(page=page, per_page=10, error_out=False)
