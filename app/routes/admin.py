@@ -8,12 +8,13 @@ from decimal import Decimal
 
 from flask import Blueprint, flash, redirect, render_template, request, url_for, Response
 from flask_login import login_required, current_user
+from werkzeug.utils import secure_filename
 from sqlalchemy import func
-from sqlalchemy.orm import joinedload
 
 from app import db, limiter
-from app.helpers import admin_required, audit, sanitize_csv_value, csv_response, format_date
+from app.helpers import admin_required, audit, sanitize_csv_value, csv_response, format_date, _CSVEcho
 from app.models import User, Customer, Payment, Invoice, Note, RouteStop, ActivityLog, AdminAuditLog, VALID_ROLES
+from flask import stream_with_context
 import logging
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
@@ -276,9 +277,12 @@ def import_csv():
             raw = (raw or "").strip()
             return raw.replace("Get directions", "").strip() or None
 
-        existing = {}
-        for c in Customer.query.all():
-            existing[normalize(c.name)] = c
+        # Preload (normalized_name -> id) only — avoids materializing full Customer
+        # rows while still letting us dedupe against existing data in one pass.
+        existing_ids = {
+            normalize(name): cid
+            for cid, name in db.session.query(Customer.id, Customer.name).yield_per(1000)
+        }
 
         imported = 0
         updated = 0
@@ -311,9 +315,9 @@ def import_csv():
                 except (InvalidOperation, ValueError):
                     pass
 
-            if norm in existing:
+            if norm in existing_ids:
                 if mode == "update":
-                    c = db.session.query(Customer).filter_by(id=existing[norm].id).with_for_update().one()
+                    c = db.session.query(Customer).filter_by(id=existing_ids[norm]).with_for_update().one()
                     if address: c.address = address
                     if city_val: c.city = city_val
                     if phone: c.phone = phone
@@ -333,7 +337,8 @@ def import_csv():
                     lead_source=lead_source if import_as == "lead" else None,
                 )
                 db.session.add(customer)
-                existing[norm] = customer
+                db.session.flush()  # populate id so duplicate names within the CSV dedupe correctly
+                existing_ids[norm] = customer.id
                 imported += 1
             except Exception:
                 logging.exception("CSV import: failed to import row '%s'", raw_name)
@@ -380,21 +385,97 @@ def backups():
     )
 
 
+@bp.route("/backups/full-archive")
+@admin_required
+def backup_full_archive():
+    """Download the full restorable backup zip."""
+    from app.backup import make_backup
+    zip_bytes = make_backup()
+    filename = f"candy_dash_backup_{datetime.now(timezone.utc).strftime('%Y-%m-%d_%H%M%S')}.zip"
+    return Response(
+        zip_bytes,
+        mimetype="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@bp.route("/backups/email-now", methods=["POST"])
+@admin_required
+def backup_email_now():
+    """Generate a backup and email it immediately."""
+    from app.backup import email_backup, make_backup, BackupError
+    try:
+        zip_bytes = make_backup()
+        msg_id = email_backup(zip_bytes)
+    except BackupError as exc:
+        flash(f"Email failed: {exc}", "error")
+        return redirect(url_for("admin.backups"))
+    except Exception as exc:
+        flash(f"Email failed: {exc}", "error")
+        return redirect(url_for("admin.backups"))
+    flash(f"Backup emailed (Resend id: {msg_id}).", "success")
+    return redirect(url_for("admin.backups"))
+
+
+@bp.route("/backups/restore", methods=["POST"])
+@admin_required
+def backup_restore():
+    """Restore the database from an uploaded backup zip."""
+    from app.backup import restore_backup, BackupError
+
+    confirm = request.form.get("confirm", "")
+    if confirm != "RESTORE":
+        flash("Restore aborted: confirmation phrase must be exactly RESTORE.", "warning")
+        return redirect(url_for("admin.backups"))
+
+    file = request.files.get("backup")
+    if not file or not file.filename:
+        flash("Restore aborted: no file uploaded.", "warning")
+        return redirect(url_for("admin.backups"))
+
+    safe = secure_filename(file.filename)
+    if not safe.endswith(".zip"):
+        flash("Restore aborted: file must be a .zip backup.", "warning")
+        return redirect(url_for("admin.backups"))
+
+    zip_bytes = file.read()
+    try:
+        result = restore_backup(zip_bytes)
+    except BackupError as exc:
+        flash(f"Restore failed: {exc}", "error")
+        return redirect(url_for("admin.backups"))
+    except Exception as exc:
+        flash(f"Restore failed: {exc}", "error")
+        return redirect(url_for("admin.backups"))
+
+    flash(
+        f"Restore complete: {result['rows']:,} rows across {result['tables']} tables. "
+        f"Snapshot saved at {result['snapshot']}. Please log in again.",
+        "success",
+    )
+    return redirect(url_for("admin.backups"))
 
 
 @bp.route("/backups/customers.csv")
 @admin_required
 def backup_customers():
     """Download all customers as CSV."""
-    customers = Customer.query.order_by(Customer.name).all()
-    rows = [
-        [c.id, c.name, c.address or "", c.city or "", c.phone or "",
-         f"{c.balance:.2f}", c.status, "Yes" if c.tax_exempt else "No", c.lead_source or "",
-         format_date(c.created_at, "%Y-%m-%d %H:%M"), format_date(c.updated_at, "%Y-%m-%d %H:%M")]
-        for c in customers
-    ]
+    q = (
+        db.session.query(
+            Customer.id, Customer.name, Customer.address, Customer.city, Customer.phone,
+            Customer.balance, Customer.status, Customer.tax_exempt, Customer.lead_source,
+            Customer.created_at, Customer.updated_at,
+        )
+        .order_by(Customer.name)
+        .yield_per(500)
+    )
+    def rows():
+        for r in q:
+            yield [r.id, r.name, r.address or "", r.city or "", r.phone or "",
+                   f"{r.balance:.2f}", r.status, "Yes" if r.tax_exempt else "No", r.lead_source or "",
+                   format_date(r.created_at, "%Y-%m-%d %H:%M"), format_date(r.updated_at, "%Y-%m-%d %H:%M")]
     return csv_response(
-        rows,
+        rows(),
         ["id", "name", "address", "city", "phone", "balance", "status", "tax_exempt", "lead_source", "created_at", "updated_at"],
         f"customers_{date.today().isoformat()}.csv",
     )
@@ -404,23 +485,25 @@ def backup_customers():
 @admin_required
 def backup_payments():
     """Download all payments as CSV."""
-    payments = (
-        Payment.query
-        .options(joinedload(Payment.customer), joinedload(Payment.recorder))
-        .join(Customer)
+    q = (
+        db.session.query(
+            Payment.id, Customer.name, Customer.city, Payment.amount, Payment.amount_sold,
+            Payment.payment_date, Payment.receipt_number, Payment.previous_balance, Payment.notes,
+            User.username,
+        )
+        .join(Customer, Payment.customer_id == Customer.id)
+        .outerjoin(User, Payment.recorded_by == User.id)
         .order_by(Payment.payment_date.desc())
-        .all()
+        .yield_per(500)
     )
-    rows = [
-        [p.id, p.customer.name, p.customer.city or "",
-         f"{p.amount:.2f}", f"{(p.amount_sold or 0):.2f}",
-         format_date(p.payment_date, "%Y-%m-%d %H:%M"), p.receipt_number,
-         f"{p.previous_balance:.2f}", p.notes or "",
-         p.recorder.username if p.recorder else ""]
-        for p in payments
-    ]
+    def rows():
+        for r in q:
+            yield [r.id, r.name, r.city or "",
+                   f"{r.amount:.2f}", f"{(r.amount_sold or 0):.2f}",
+                   format_date(r.payment_date, "%Y-%m-%d %H:%M"), r.receipt_number,
+                   f"{r.previous_balance:.2f}", r.notes or "", r.username or ""]
     return csv_response(
-        rows,
+        rows(),
         ["id", "customer", "city", "amount_paid", "amount_sold", "date", "receipt", "previous_balance", "notes", "recorded_by"],
         f"payments_{date.today().isoformat()}.csv",
     )
@@ -430,13 +513,17 @@ def backup_payments():
 @admin_required
 def backup_balances():
     """Download outstanding balances as CSV."""
-    customers = Customer.query.filter(Customer.balance > 0).order_by(Customer.balance.desc()).all()
-    rows = [
-        [c.name, c.city or "", c.phone or "", f"{c.balance:.2f}", "Yes" if c.tax_exempt else "No"]
-        for c in customers
-    ]
+    q = (
+        db.session.query(Customer.name, Customer.city, Customer.phone, Customer.balance, Customer.tax_exempt)
+        .filter(Customer.balance > 0)
+        .order_by(Customer.balance.desc())
+        .yield_per(500)
+    )
+    def rows():
+        for r in q:
+            yield [r.name, r.city or "", r.phone or "", f"{r.balance:.2f}", "Yes" if r.tax_exempt else "No"]
     return csv_response(
-        rows,
+        rows(),
         ["name", "city", "phone", "balance", "tax_exempt"],
         f"balances_{date.today().isoformat()}.csv",
     )
@@ -446,20 +533,23 @@ def backup_balances():
 @admin_required
 def backup_routes():
     """Download route history as CSV."""
-    stops = (
-        RouteStop.query
-        .options(joinedload(RouteStop.customer))
-        .join(Customer)
+    q = (
+        db.session.query(
+            RouteStop.route_date, Customer.name, Customer.city, RouteStop.sequence,
+            RouteStop.completed, RouteStop.completed_at, RouteStop.notes,
+        )
+        .join(Customer, RouteStop.customer_id == Customer.id)
         .order_by(RouteStop.route_date.desc())
-        .all()
+        .yield_per(500)
     )
-    rows = [
-        [s.route_date.strftime("%Y-%m-%d") if s.route_date else "", s.customer.name, s.customer.city or "",
-         s.sequence, "Yes" if s.completed else "No", format_date(s.completed_at, "%Y-%m-%d %H:%M"), s.notes or ""]
-        for s in stops
-    ]
+    def rows():
+        for r in q:
+            yield [r.route_date.strftime("%Y-%m-%d") if r.route_date else "",
+                   r.name, r.city or "", r.sequence,
+                   "Yes" if r.completed else "No",
+                   format_date(r.completed_at, "%Y-%m-%d %H:%M"), r.notes or ""]
     return csv_response(
-        rows,
+        rows(),
         ["date", "customer", "city", "sequence", "completed", "completed_at", "notes"],
         f"routes_{date.today().isoformat()}.csv",
     )
@@ -468,41 +558,96 @@ def backup_routes():
 @bp.route("/backups/full.csv")
 @admin_required
 def backup_full():
-    """Download everything in one combined CSV."""
-    output = io.StringIO()
-    writer = csv.writer(output)
+    """Stream a combined CSV of all core tables."""
+    writer = csv.writer(_CSVEcho())
 
-    writer.writerow(["=== CUSTOMERS ==="])
-    writer.writerow(["id", "name", "address", "city", "phone", "balance", "status", "tax_exempt"])
-    for c in Customer.query.order_by(Customer.name).all():
-        writer.writerow([c.id, sanitize_csv_value(c.name), sanitize_csv_value(c.address or ""), sanitize_csv_value(c.city or ""), sanitize_csv_value(c.phone or ""), f"{c.balance:.2f}", c.status, "Yes" if c.tax_exempt else "No"])
+    def safe_row(row):
+        return [sanitize_csv_value(cell) for cell in row]
 
-    writer.writerow([])
-    writer.writerow(["=== PAYMENTS ==="])
-    writer.writerow(["id", "customer", "city", "amount_paid", "amount_sold", "date", "receipt", "previous_balance", "notes"])
-    for p in Payment.query.options(joinedload(Payment.customer)).join(Customer).order_by(Payment.payment_date.desc()).all():
-        writer.writerow([p.id, sanitize_csv_value(p.customer.name), sanitize_csv_value(p.customer.city or ""), f"{p.amount:.2f}", f"{(p.amount_sold or 0):.2f}", format_date(p.payment_date, "%Y-%m-%d %H:%M"), p.receipt_number, f"{p.previous_balance:.2f}", sanitize_csv_value(p.notes or "")])
+    def generate():
+        yield writer.writerow(["=== CUSTOMERS ==="])
+        yield writer.writerow(["id", "name", "address", "city", "phone", "balance", "status", "tax_exempt"])
+        q = (
+            db.session.query(
+                Customer.id, Customer.name, Customer.address, Customer.city,
+                Customer.phone, Customer.balance, Customer.status, Customer.tax_exempt,
+            ).order_by(Customer.name).yield_per(500)
+        )
+        for r in q:
+            yield writer.writerow(safe_row([
+                r.id, r.name, r.address or "", r.city or "", r.phone or "",
+                f"{r.balance:.2f}", r.status, "Yes" if r.tax_exempt else "No",
+            ]))
 
-    writer.writerow([])
-    writer.writerow(["=== ROUTE HISTORY ==="])
-    writer.writerow(["date", "customer", "city", "completed", "completed_at"])
-    for s in RouteStop.query.options(joinedload(RouteStop.customer)).join(Customer).order_by(RouteStop.route_date.desc()).all():
-        writer.writerow([s.route_date.strftime("%Y-%m-%d") if s.route_date else "", sanitize_csv_value(s.customer.name), sanitize_csv_value(s.customer.city or ""), "Yes" if s.completed else "No", format_date(s.completed_at, "%Y-%m-%d %H:%M")])
+        yield writer.writerow([])
+        yield writer.writerow(["=== PAYMENTS ==="])
+        yield writer.writerow(["id", "customer", "city", "amount_paid", "amount_sold", "date", "receipt", "previous_balance", "notes"])
+        q = (
+            db.session.query(
+                Payment.id, Customer.name, Customer.city, Payment.amount, Payment.amount_sold,
+                Payment.payment_date, Payment.receipt_number, Payment.previous_balance, Payment.notes,
+            ).join(Customer, Payment.customer_id == Customer.id)
+             .order_by(Payment.payment_date.desc()).yield_per(500)
+        )
+        for r in q:
+            yield writer.writerow(safe_row([
+                r.id, r.name, r.city or "",
+                f"{r.amount:.2f}", f"{(r.amount_sold or 0):.2f}",
+                format_date(r.payment_date, "%Y-%m-%d %H:%M"),
+                r.receipt_number, f"{r.previous_balance:.2f}", r.notes or "",
+            ]))
 
-    writer.writerow([])
-    writer.writerow(["=== INVOICES ==="])
-    writer.writerow(["id", "customer", "city", "amount", "invoice_number", "date", "description", "status"])
-    for inv in Invoice.query.options(joinedload(Invoice.customer)).join(Customer).order_by(Invoice.invoice_date.desc()).all():
-        writer.writerow([inv.id, sanitize_csv_value(inv.customer.name), sanitize_csv_value(inv.customer.city or ""), f"{inv.amount:.2f}", sanitize_csv_value(inv.invoice_number or ""), inv.invoice_date.strftime("%Y-%m-%d") if inv.invoice_date else "", sanitize_csv_value(inv.description or ""), inv.status])
+        yield writer.writerow([])
+        yield writer.writerow(["=== ROUTE HISTORY ==="])
+        yield writer.writerow(["date", "customer", "city", "completed", "completed_at"])
+        q = (
+            db.session.query(
+                RouteStop.route_date, Customer.name, Customer.city,
+                RouteStop.completed, RouteStop.completed_at,
+            ).join(Customer, RouteStop.customer_id == Customer.id)
+             .order_by(RouteStop.route_date.desc()).yield_per(500)
+        )
+        for r in q:
+            yield writer.writerow(safe_row([
+                r.route_date.strftime("%Y-%m-%d") if r.route_date else "",
+                r.name, r.city or "",
+                "Yes" if r.completed else "No",
+                format_date(r.completed_at, "%Y-%m-%d %H:%M"),
+            ]))
 
-    writer.writerow([])
-    writer.writerow(["=== NOTES ==="])
-    writer.writerow(["customer", "note", "author", "date"])
-    for n in Note.query.options(joinedload(Note.customer), joinedload(Note.user)).join(Customer).order_by(Note.created_at.desc()).all():
-        writer.writerow([sanitize_csv_value(n.customer.name), sanitize_csv_value(n.text), sanitize_csv_value(n.user.username if n.user else ""), format_date(n.created_at, "%Y-%m-%d %H:%M")])
+        yield writer.writerow([])
+        yield writer.writerow(["=== INVOICES ==="])
+        yield writer.writerow(["id", "customer", "city", "amount", "invoice_number", "date", "description", "status"])
+        q = (
+            db.session.query(
+                Invoice.id, Customer.name, Customer.city, Invoice.amount,
+                Invoice.invoice_number, Invoice.invoice_date, Invoice.description, Invoice.status,
+            ).join(Customer, Invoice.customer_id == Customer.id)
+             .order_by(Invoice.invoice_date.desc()).yield_per(500)
+        )
+        for r in q:
+            yield writer.writerow(safe_row([
+                r.id, r.name, r.city or "", f"{r.amount:.2f}", r.invoice_number or "",
+                r.invoice_date.strftime("%Y-%m-%d") if r.invoice_date else "",
+                r.description or "", r.status,
+            ]))
+
+        yield writer.writerow([])
+        yield writer.writerow(["=== NOTES ==="])
+        yield writer.writerow(["customer", "note", "author", "date"])
+        q = (
+            db.session.query(Customer.name, Note.text, User.username, Note.created_at)
+            .join(Customer, Note.customer_id == Customer.id)
+            .outerjoin(User, Note.user_id == User.id)
+            .order_by(Note.created_at.desc()).yield_per(500)
+        )
+        for r in q:
+            yield writer.writerow(safe_row([
+                r.name, r.text, r.username or "", format_date(r.created_at, "%Y-%m-%d %H:%M"),
+            ]))
 
     return Response(
-        output.getvalue(),
+        stream_with_context(generate()),
         mimetype="text/csv",
         headers={"Content-Disposition": f"attachment; filename=candy_dash_backup_{date.today().isoformat()}.csv"},
     )
@@ -512,15 +657,23 @@ def backup_full():
 @admin_required
 def backup_invoices():
     """Download all invoices as CSV."""
-    invoices = Invoice.query.options(joinedload(Invoice.customer)).join(Customer).order_by(Invoice.invoice_date.desc()).all()
-    rows = [
-        [inv.id, inv.customer.name, inv.customer.city or "",
-         f"{inv.amount:.2f}", inv.invoice_number or "",
-         inv.invoice_date.strftime("%Y-%m-%d") if inv.invoice_date else "", inv.description or "", inv.status]
-        for inv in invoices
-    ]
+    q = (
+        db.session.query(
+            Invoice.id, Customer.name, Customer.city, Invoice.amount,
+            Invoice.invoice_number, Invoice.invoice_date, Invoice.description, Invoice.status,
+        )
+        .join(Customer, Invoice.customer_id == Customer.id)
+        .order_by(Invoice.invoice_date.desc())
+        .yield_per(500)
+    )
+    def rows():
+        for r in q:
+            yield [r.id, r.name, r.city or "",
+                   f"{r.amount:.2f}", r.invoice_number or "",
+                   r.invoice_date.strftime("%Y-%m-%d") if r.invoice_date else "",
+                   r.description or "", r.status]
     return csv_response(
-        rows,
+        rows(),
         ["id", "customer", "city", "amount", "invoice_number", "date", "description", "status"],
         f"invoices_{date.today().isoformat()}.csv",
     )
@@ -530,13 +683,18 @@ def backup_invoices():
 @admin_required
 def backup_notes():
     """Download all notes as CSV."""
-    notes = Note.query.options(joinedload(Note.customer), joinedload(Note.user)).join(Customer).order_by(Note.created_at.desc()).all()
-    rows = [
-        [n.customer.name, n.text, n.user.username if n.user else "", format_date(n.created_at, "%Y-%m-%d %H:%M")]
-        for n in notes
-    ]
+    q = (
+        db.session.query(Customer.name, Note.text, User.username, Note.created_at)
+        .join(Customer, Note.customer_id == Customer.id)
+        .outerjoin(User, Note.user_id == User.id)
+        .order_by(Note.created_at.desc())
+        .yield_per(500)
+    )
+    def rows():
+        for r in q:
+            yield [r.name, r.text, r.username or "", format_date(r.created_at, "%Y-%m-%d %H:%M")]
     return csv_response(
-        rows,
+        rows(),
         ["customer", "note", "author", "date"],
         f"notes_{date.today().isoformat()}.csv",
     )
