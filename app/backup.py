@@ -305,3 +305,49 @@ def _write_pre_restore_snapshot() -> Path:
     for old in snapshots[:-SNAPSHOT_RETENTION]:
         old.unlink()
     return path
+
+
+import os
+
+from app.mail import send_email
+
+
+def email_backup(zip_bytes: bytes) -> str:
+    """Email a backup zip via Resend. Returns the Resend message id."""
+    recipients_raw = os.environ.get("BACKUP_EMAIL_TO", "")
+    recipients = [r.strip() for r in recipients_raw.split(",") if r.strip()]
+    if not recipients:
+        raise BackupError("BACKUP_EMAIL_TO is not set")
+
+    today = datetime.now(timezone.utc).date().isoformat()
+
+    with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zf:
+        manifest = json.loads(zf.read("manifest.json"))
+    counts = {t["name"]: t["rows"] for t in manifest["tables"]}
+    headline_parts = []
+    for key in ("customers", "payments", "invoices"):
+        if key in counts:
+            headline_parts.append(f"{counts[key]} {key}")
+    headline = " — " + ", ".join(headline_parts) if headline_parts else ""
+    subject = f"[Candy Dash] Backup {today}{headline}"
+
+    rows_table = "\n".join(f"  {n:<20} {c:>7}" for n, c in counts.items())
+    body_text = (
+        f"Candy Dash backup\n"
+        f"Created: {manifest['created_at']}\n"
+        f"Schema: {manifest['alembic_version']}\n\n"
+        f"Tables:\n{rows_table}\n\n"
+        f"To restore: open /admin/backups in the app and upload the attached zip.\n"
+    )
+    body_html = f"<pre style='font-family:monospace'>{body_text}</pre>"
+
+    filename = f"candy_dash_backup_{datetime.now(timezone.utc).strftime('%Y-%m-%d_%H%M%S')}.zip"
+    target = recipients[0] if len(recipients) == 1 else recipients
+
+    return send_email(
+        to=target,
+        subject=subject,
+        html=body_html,
+        text=body_text,
+        attachments=[(filename, zip_bytes)],
+    )
