@@ -12,4 +12,5 @@ openpyxl>=3.1
 psycopg2>=2.9
 resend>=2.0
 python-dotenv>=1.0
+pytest>=8.0
 # Optional: install sentry-sdk[flask]>=2.0 and set SENTRY_DSN env var to enable error tracking
