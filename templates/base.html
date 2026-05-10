@@ -26,6 +26,12 @@
     {% block vendor_js %}{% endblock %}
 
     {% block head %}{% endblock %}
+
+    <style>
+        /* Width tokens not in the vendored tailwind.css */
+        .w-72 { width: 18rem; }
+        @media (min-width: 1024px) { .lg\:pl-72 { padding-left: 18rem; } }
+    </style>
 </head>
 
 <body class="bg-app text-app">
@@ -77,11 +83,12 @@
                         <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-faint" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                         </svg>
-                        <input type="search" placeholder="Search customers or invoices... (/)" x-model="query"
+                        <input type="search" placeholder="Search customers or invoices…" x-model="query"
                                @input.debounce.300ms="search()" @focus="open = query.length > 0"
                                @keydown.escape="open = false"
                                x-ref="searchInput" aria-label="Search customers or invoices"
-                               class="theme-input text-sm rounded-lg min-h-[44px]" style="padding-left: 2.5rem;" />
+                               class="theme-input text-sm rounded-lg min-h-[44px]" style="padding-left: 2.5rem; padding-right: 3.5rem;" />
+                        <kbd class="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-1 px-1.5 py-0.5 rounded border border-app bg-app text-2xs font-mono text-faint pointer-events-none">/</kbd>
                     </div>
                     <div x-show="open && results.length > 0" @click.outside="open = false" x-transition x-cloak
                          class="absolute top-full mt-1 w-full theme-card max-h-72 overflow-y-auto z-50 shadow-lg">
@@ -168,8 +175,30 @@
                 {% block content %}{% endblock %}
             </main>
 
-            <footer class="hidden lg:block shrink-0 border-t border-app bg-panel px-6 py-3 text-center text-xs text-faint">
-                Candy Dash &mdash; Candy Route Planner
+            <footer class="hidden lg:block shrink-0 border-t border-app bg-panel/60 backdrop-blur-sm">
+                <div class="px-6 py-3 flex items-center justify-between text-xs">
+                    <div class="flex items-center gap-3 text-faint">
+                        <span class="flex items-center gap-1.5">
+                            <span class="relative flex h-2 w-2">
+                                <span class="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping"></span>
+                                <span class="relative inline-flex h-2 w-2 rounded-full bg-emerald-400"></span>
+                            </span>
+                            <span class="text-emerald-400 font-medium">System healthy</span>
+                        </span>
+                        <span class="text-gray-700">·</span>
+                        <span>{{ ('Production' if config.get('FLASK_ENV') != 'development' else 'Local')|capitalize }}</span>
+                    </div>
+
+                    <div class="flex items-center gap-4 text-muted">
+                        {% if current_user.is_authenticated and (current_user.is_admin or current_user.role == 'owner') %}
+                        <a href="{{ url_for('admin.backups') }}" class="hover:text-gray-100 transition-colors">Backups</a>
+                        <span class="text-gray-700">·</span>
+                        {% endif %}
+                        <a href="{{ url_for('public.index', preview=1) }}" target="_blank" class="hover:text-gray-100 transition-colors">Website</a>
+                        <span class="text-gray-700">·</span>
+                        <span class="text-faint">© 2026 Northern Sweet Supply</span>
+                    </div>
+                </div>
             </footer>
         </div>
     </div>

@@ -4,330 +4,267 @@
 {% block page_title %}Dashboard{% endblock %}
 {% block vendor_js %}<script defer src="{{ url_for('static', filename='vendor/chart.min.js') }}"></script>{% endblock %}
 
+{% block head %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  .dash-inter { font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; font-feature-settings: 'cv11', 'ss01'; }
+  .dash-money { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+  .dash-card { transition: transform 140ms ease, border-color 140ms ease, box-shadow 140ms ease; }
+  .dash-card:hover { transform: translateY(-1px) scale(1.01); }
+  .grad-plan { background-image: linear-gradient(135deg, #6d28d9 0%, #2563eb 100%); }
+  .grad-plan:hover { background-image: linear-gradient(135deg, #7c3aed 0%, #3b82f6 100%); }
+  .grad-pay  { background-image: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+  .grad-pay:hover  { background-image: linear-gradient(135deg, #34d399 0%, #10b981 100%); }
+  .glow-gold  { text-shadow: 0 0 18px rgba(251, 191, 36, 0.35); }
+</style>
+{% endblock %}
+
 {% block content %}
 {% set pct = [(completed_stops / total_stops * 100)|int if total_stops else 0, 100]|min %}
-<div class="max-w-2xl mx-auto space-y-3">
+{% set total_to_collect = top_balances|sum(attribute='balance') if top_balances else 0 %}
+{% set avg_collection = (payment_sum / collection_count) if collection_count else 0 %}
+{% set week_total = week_data|sum(attribute='total') if week_data else 0 %}
+
+<div class="dash-inter max-w-3xl space-y-5">
 
   {# ═══════════════════════════════════════════════════
-     HERO — Matches route.html Collection Hero style
+     GREETING (no card — aligns with the page title above)
      ═══════════════════════════════════════════════════ #}
-
-  {% if total_stops > 0 %}
-  <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-700 p-5 text-white animate-fade-in-up">
-    <div class="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4"></div>
-
-    <div class="relative z-10">
-      <div class="text-center">
-        <p class="text-indigo-200 text-2xs font-semibold uppercase tracking-wider">{{ today.strftime('%A') }} · Total Sales</p>
-        <p class="text-3xl font-bold mt-0.5">{{ sales_sum|currency }}</p>
-      </div>
-
-      <div class="flex items-center justify-between mt-3">
-        <div>
-          <p class="text-indigo-200 text-2xs font-semibold uppercase tracking-wider">Collected</p>
-          <p class="text-sm font-semibold">{{ payment_sum|currency }}</p>
-        </div>
-        <div class="text-right">
-          <p class="text-indigo-200 text-2xs font-semibold uppercase tracking-wider">Sold</p>
-          <p class="text-sm font-semibold">{{ sales_sum|currency }}</p>
-        </div>
-      </div>
-
-      <div class="mt-3 bg-white/20 rounded-full h-2.5 overflow-hidden">
-        <div class="rounded-full h-2.5 transition-all duration-700 ease-out {{ 'bg-green-400' if pct == 100 else 'bg-white' }}" style="width: {{ pct }}%"></div>
-      </div>
-
-      <div class="flex items-center justify-between mt-2">
-        <span class="text-indigo-200 text-xs font-medium">{{ completed_stops }}/{{ total_stops }} stops · {{ pct }}%</span>
-        <span class="text-indigo-200 text-xs">
-          {% if completed_stops == total_stops %}
-          All done!
-          {% elif yest_sales > 0 and sales_sum > 0 %}
-          {{ '+' if sales_sum >= yest_sales else '' }}{{ ((sales_sum - yest_sales) / yest_sales * 100)|int }}% vs yesterday
-          {% else %}
-          {{ total_stops - completed_stops }} remaining
-          {% endif %}
-        </span>
-      </div>
-    </div>
-  </div>
-
-  {# Collected / Sold / Owing breakdown #}
-  <div class="grid grid-cols-3 gap-3 animate-fade-in-up stagger-1">
-    <a href="{{ url_for('bookkeeper.index', period='today') }}" class="bg-panel rounded-xl border border-app p-4 hover:bg-panel-hover transition-colors btn-press">
-      <div class="flex items-center gap-2.5">
-        <div class="w-9 h-9 rounded-lg bg-green-500/15 flex items-center justify-center flex-shrink-0">
-          <span class="text-sm font-black text-green-400">$</span>
-        </div>
-        <div>
-          <p class="text-lg font-bold text-green-400">{{ payment_sum|currency }}</p>
-          <p class="text-2xs text-faint">collected · {{ collection_count }}</p>
-        </div>
-      </div>
-    </a>
-    <a href="{{ url_for('bookkeeper.index', period='today') }}" class="bg-panel rounded-xl border border-app p-4 hover:bg-panel-hover transition-colors btn-press">
-      <div class="flex items-center gap-2.5">
-        <div class="w-9 h-9 rounded-lg bg-amber-500/15 flex items-center justify-center flex-shrink-0">
-          <span class="text-sm font-black text-amber-400">$</span>
-        </div>
-        <div>
-          <p class="text-lg font-bold text-amber-400">{{ sales_sum|currency }}</p>
-          <p class="text-2xs text-faint">sold · {{ sales_count }}</p>
-        </div>
-      </div>
-    </a>
-    <a href="{{ url_for('balances.index') }}" class="bg-panel rounded-xl border border-app p-4 hover:bg-panel-hover transition-colors btn-press">
-      <div class="flex items-center gap-2.5">
-        <div class="w-9 h-9 rounded-lg bg-orange-500/15 flex items-center justify-center flex-shrink-0">
-          <span class="text-sm font-black text-orange-400">$</span>
-        </div>
-        <div>
-          <p class="text-lg font-bold text-orange-400">{{ total_outstanding|currency }}</p>
-          <p class="text-2xs text-faint">owing · {{ overdue_count }}</p>
-        </div>
-      </div>
-    </a>
-  </div>
+  <header class="animate-fade-in-up">
+    <p class="text-sm text-muted">{{ greeting }}, {{ current_user.username|capitalize }}</p>
+    <p class="text-2xl font-semibold text-gray-100 mt-0.5 flex items-center gap-2">
+      <svg aria-hidden="true" class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+      </svg>
+      {{ today.strftime('%A, %B %-d, %Y') }}
+    </p>
+  </header>
 
   {# Action buttons #}
-  <div class="flex gap-2 animate-fade-in-up stagger-1">
-    <a href="{{ url_for('route.index') }}"
-       class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-500 transition-colors min-h-[48px] btn-press">
-      <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+  <div class="grid grid-cols-2 gap-3 animate-fade-in-up">
+    <a href="{{ url_for('route.index') if total_stops > 0 else url_for('planner.index') }}"
+       class="dash-card grad-plan rounded-xl px-4 py-3.5 text-white shadow-lg shadow-violet-900/30 flex items-center justify-center gap-2 font-semibold">
+      <svg aria-hidden="true" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
       </svg>
-      {% if completed_stops == total_stops %}View Summary{% else %}Continue Route{% endif %}
+      {% if total_stops > 0 and completed_stops < total_stops %}Continue Route{% elif total_stops > 0 %}View Summary{% else %}Plan Route{% endif %}
     </a>
     <button onclick="window.dispatchEvent(new CustomEvent('open-payment-modal', { detail: {} }))"
-            class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white text-sm font-semibold rounded-xl hover:bg-green-500 transition-colors min-h-[48px] btn-press">
-      <span aria-hidden="true" class="text-sm font-black ">$</span>
+            class="dash-card grad-pay rounded-xl px-4 py-3.5 text-white shadow-lg shadow-emerald-900/30 flex items-center justify-center gap-2 font-semibold">
+      <svg aria-hidden="true" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+        <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"/>
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 7.234 6 8.029 6 9c0 .97.602 1.766 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V17a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 15.766 14 14.971 14 14c0-.97-.602-1.766-1.324-2.246A4.535 4.535 0 0011 11.092V9.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V7z" clip-rule="evenodd"/>
+      </svg>
       Record Payment
     </button>
   </div>
 
-  {% else %}
-  {# No route — compact #}
-  <div class="bg-panel rounded-xl border border-app p-5 animate-fade-in-up">
-    <div class="flex items-center gap-3">
-      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="" class="w-10 h-10 rounded-lg object-contain flex-shrink-0">
-      <div>
-        <p class="text-muted text-sm">{% if greeting == 'Good morning' %}&#9728;{% elif greeting == 'Good afternoon' %}&#127774;{% else %}&#127769;{% endif %} {{ greeting }}, {{ current_user.username|capitalize }}!</p>
-        <p class="text-lg font-bold text-gray-100 mt-0.5">{{ today.strftime('%A, %B %d') }}</p>
-      </div>
-    </div>
-    <div class="flex gap-2 mt-4">
-      <a href="{{ url_for('planner.index') }}"
-         class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-500 transition-colors min-h-[44px] btn-press">
-        Plan Route
-      </a>
-      <button onclick="window.dispatchEvent(new CustomEvent('open-payment-modal', { detail: {} }))"
-              class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-xl text-sm font-semibold hover:bg-green-500 transition-colors min-h-[44px] btn-press">
-        Record Payment
-      </button>
-    </div>
-  </div>
-  {% endif %}
-
   {# ═══════════════════════════════════════════════════
-     TODAY'S ROUTE — Stop cards like route.html
+     QUICK STATS — gracefully degrades when values are 0
      ═══════════════════════════════════════════════════ #}
+  <div class="grid grid-cols-3 gap-3 animate-fade-in-up stagger-1">
 
-  {% if todays_stops %}
-  {% set ns = namespace(first_incomplete=true) %}
-  {% for stop in todays_stops %}
-
-    {# "Next" badge #}
-    {% if not stop.completed and ns.first_incomplete %}
-    {% set ns.first_incomplete = false %}
-    <div class="flex items-center gap-2 animate-fade-in-up">
-      <span class="text-2xs font-bold text-indigo-300 bg-indigo-500/20 px-2.5 py-1 rounded-full animate-pulse-glow flex items-center gap-1">
-        <svg aria-hidden="true" class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clip-rule="evenodd"/></svg>
-        NEXT
-      </span>
-    </div>
-    {% endif %}
-
-    {# Stop card #}
-    <div class="bg-panel rounded-xl border overflow-hidden animate-fade-in-up stagger-{{ loop.index0 % 8 + 1 }}
-                {{ 'border-green-700/40' if stop.completed else 'border-app' }}">
-      <a href="{{ url_for('customers.profile', id=stop.customer.id) }}" class="block p-4 hover:bg-gray-700/30 transition-colors btn-press">
-        <div class="flex items-center gap-2.5">
-          {% if stop.completed %}
-          <div class="w-7 h-7 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
-            <svg aria-hidden="true" class="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-            </svg>
-          </div>
-          {% else %}
-          <div class="w-7 h-7 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-xs font-bold flex-shrink-0">
-            {{ stop.sequence }}
-          </div>
-          {% endif %}
-          <div class="flex-1 min-w-0">
-            <p class="text-sm font-semibold {{ 'text-gray-500' if stop.completed else 'text-gray-100' }} truncate">{{ stop.customer.name }}</p>
-            <p class="text-2xs text-faint">{{ stop.customer.city or 'No city' }}</p>
-          </div>
-          {% if stop.customer.balance > 0 and not stop.completed %}
-          <span class="text-sm font-bold text-amber-400 flex-shrink-0">{{ stop.customer.balance|currency }}</span>
-          {% endif %}
-          <svg aria-hidden="true" class="w-4 h-4 text-gray-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-          </svg>
-        </div>
-      </a>
-    </div>
-  {% endfor %}
-
-  {% if total_stops > 5 %}
-  <a href="{{ url_for('route.index') }}" class="block text-center text-xs text-indigo-400 hover:text-indigo-300 font-medium py-2 btn-press">
-    + {{ total_stops - 5 }} more stops
-  </a>
-  {% endif %}
-  {% endif %}
-
-  {# ═══════════════════════════════════════════════════
-     COLLECT — with city group header style from route
-     ═══════════════════════════════════════════════════ #}
-
-  {% if top_balances %}
-  <div class="flex items-center gap-2 pt-2 animate-fade-in-up">
-    <div class="w-5 h-5 rounded-md bg-amber-500/15 flex items-center justify-center">
-      <span aria-hidden="true" class="text-xs font-black text-amber-400">$</span>
-    </div>
-    <h2 class="text-xs font-bold text-amber-400 uppercase tracking-wider">Collect</h2>
-    <div class="flex-1 h-px bg-gray-700"></div>
-    <a href="{{ url_for('balances.index') }}" class="text-2xs text-indigo-400 hover:text-indigo-300 font-medium btn-press">View all</a>
-  </div>
-  <div class="bg-panel rounded-xl border border-app overflow-hidden divide-y divide-gray-700/60 animate-fade-in-up">
-    {% for customer in top_balances %}
-    <a href="{{ url_for('customers.profile', id=customer.id) }}"
-       class="flex items-center gap-3 px-4 py-3 hover:bg-gray-700/50 transition-colors btn-press">
-      <div class="flex-1 min-w-0">
-        <p class="text-sm font-semibold text-gray-100 truncate">{{ customer.name }}</p>
-        <p class="text-2xs text-faint">{{ customer.city or '—' }}</p>
+    <a href="{{ url_for('balances.index') }}" class="dash-card bg-panel rounded-xl border border-app p-4 hover:border-amber-500/40 hover:shadow-lg hover:shadow-amber-900/10">
+      <div class="flex items-center justify-between">
+        <p class="text-2xs uppercase tracking-wider text-faint font-semibold">Total to Collect</p>
+        <span class="w-7 h-7 rounded-lg bg-amber-500/15 flex items-center justify-center">
+          <span aria-hidden="true" class="text-sm font-black text-amber-400">$</span>
+        </span>
       </div>
-      <span class="text-sm font-bold text-amber-400">{{ customer.balance|currency }}</span>
-      <svg aria-hidden="true" class="w-4 h-4 text-gray-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-      </svg>
-    </a>
-    {% endfor %}
-  </div>
-  {% endif %}
-
-  {# ═══════════════════════════════════════════════════
-     PLAN AHEAD
-     ═══════════════════════════════════════════════════ #}
-
-  {% if week_schedule %}
-  <div class="flex items-center gap-2 pt-2 animate-fade-in-up">
-    <div class="w-5 h-5 rounded-md bg-purple-500/15 flex items-center justify-center">
-      <svg aria-hidden="true" class="w-3 h-3 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-      </svg>
-    </div>
-    <h2 class="text-xs font-bold text-purple-400 uppercase tracking-wider">This Week</h2>
-    <div class="flex-1 h-px bg-gray-700"></div>
-    <a href="{{ url_for('planner.index') }}" class="text-2xs text-indigo-400 hover:text-indigo-300 font-medium btn-press">Planner</a>
-  </div>
-  <div class="bg-panel rounded-xl border border-app overflow-hidden divide-y divide-gray-700/60 animate-fade-in-up">
-    {% for day in week_schedule %}
-    <a href="{{ url_for('route.index', date=day.date.isoformat()) }}"
-       class="flex items-center gap-3 px-4 py-3 hover:bg-gray-700/50 transition-colors btn-press">
-      <div class="w-10 text-center flex-shrink-0">
-        <p class="text-xs font-bold {{ 'text-indigo-400' if day.is_today else 'text-gray-300' }}">{{ day.day }}</p>
-        <p class="text-2xs text-gray-600">{{ day.date.strftime('%d') }}</p>
-      </div>
-      <div class="flex-1">
-        <div class="h-2 bg-gray-700 rounded-full overflow-hidden">
-          <div class="h-full rounded-full transition-all duration-500 {{ 'bg-green-500' if day.completed == day.total else 'bg-indigo-500' }}"
-               style="width: {{ (day.completed / day.total * 100)|int if day.total else 0 }}%"></div>
-        </div>
-      </div>
-      <span class="text-xs font-medium {{ 'text-green-400' if day.completed == day.total else 'text-gray-400' }}">{{ day.completed }}/{{ day.total }}</span>
-      {% if day.is_today %}
-      <span class="text-2xs font-bold text-indigo-300 bg-indigo-500/20 px-2 py-0.5 rounded-full">NOW</span>
-      {% endif %}
-    </a>
-    {% endfor %}
-  </div>
-  {% endif %}
-
-  {# ═══════════════════════════════════════════════════
-     NEEDS A VISIT
-     ═══════════════════════════════════════════════════ #}
-
-  {% if attention_list %}
-  <div class="flex items-center gap-2 pt-2 animate-fade-in-up">
-    <div class="w-5 h-5 rounded-md bg-red-500/15 flex items-center justify-center">
-      <svg aria-hidden="true" class="w-3 h-3 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-      </svg>
-    </div>
-    <h2 class="text-xs font-bold text-red-400 uppercase tracking-wider">Needs a Visit</h2>
-    <div class="flex-1 h-px bg-gray-700"></div>
-    <span class="text-2xs text-gray-600">30+ days</span>
-  </div>
-  <div class="bg-panel rounded-xl border border-app overflow-hidden divide-y divide-gray-700/60 animate-fade-in-up">
-    {% for store in attention_list %}
-    <div class="flex items-center gap-3 px-4 py-3 hover:bg-gray-700/50 transition-colors">
-      <a href="{{ url_for('customers.profile', id=store.id) }}" class="flex-1 min-w-0 btn-press">
-        <p class="text-sm font-semibold text-gray-100 truncate">{{ store.name }}</p>
-        <p class="text-2xs text-faint">{{ store.city }}</p>
-      </a>
-      {% if store.days_since is not none %}
-      <span class="px-2 py-0.5 text-2xs font-semibold rounded-full
-                   {{ 'bg-yellow-500/20 text-yellow-400' if store.days_since <= 45
-                      else 'bg-orange-500/20 text-orange-400' if store.days_since <= 60
-                      else 'bg-red-500/20 text-red-400' }}">{{ store.days_since }}d</span>
+      {% if total_outstanding and total_outstanding > 0 %}
+      <p class="dash-money text-[34px] font-bold leading-none text-amber-300 mt-2 glow-gold">{{ total_outstanding|currency }}</p>
+      <p class="text-2xs text-faint mt-1">{{ overdue_count }} overdue accounts</p>
       {% else %}
-      <span class="px-2 py-0.5 text-2xs font-semibold rounded-full bg-red-500/20 text-red-400">never</span>
+      <p class="dash-money text-[34px] font-bold leading-none text-gray-500 mt-2">—</p>
+      <p class="text-2xs text-faint mt-1">all caught up</p>
       {% endif %}
-      <form method="post" action="{{ url_for('planner.add_stop') }}" x-data="{ added: false }"
-            @submit.prevent="fetch($el.action, { method: 'POST', body: new FormData($el), headers: { 'X-Requested-With': 'XMLHttpRequest' } }).then(r => { if (r.ok) { added = true; setTimeout(() => added = false, 2000) } })">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <input type="hidden" name="customer_id" value="{{ store.id }}">
-        <input type="hidden" name="route_date" value="{{ today.isoformat() }}">
-        <button type="submit" aria-label="Add to route" title="Add to today's route"
-                class="p-1.5 rounded-lg text-indigo-500/70 hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors btn-press min-h-[36px] min-w-[36px] flex items-center justify-center"
-                :class="added && 'text-green-400 bg-green-500/10'">
-          <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" x-show="!added">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+    </a>
+
+    <a href="{{ url_for('route.index') }}" class="dash-card bg-panel rounded-xl border border-app p-4 hover:border-indigo-500/40 hover:shadow-lg hover:shadow-indigo-900/10">
+      <div class="flex items-center justify-between">
+        <p class="text-2xs uppercase tracking-wider text-faint font-semibold">Stops Today</p>
+        <span class="w-7 h-7 rounded-lg bg-indigo-500/15 flex items-center justify-center">
+          <svg aria-hidden="true" class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
           </svg>
-          <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" x-show="added" x-cloak>
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+        </span>
+      </div>
+      {% if total_stops and total_stops > 0 %}
+      <p class="dash-money text-[34px] font-bold leading-none text-gray-100 mt-2">{{ total_stops }}</p>
+      <p class="text-2xs text-faint mt-1">
+        <span class="{{ 'text-emerald-400' if pct == 100 else 'text-indigo-400' }}">{{ completed_stops }} done</span> · {{ pct }}%
+      </p>
+      {% else %}
+      <p class="dash-money text-[34px] font-bold leading-none text-gray-500 mt-2">—</p>
+      <p class="text-2xs text-faint mt-1">no route today</p>
+      {% endif %}
+    </a>
+
+    <a href="{{ url_for('bookkeeper.index', period='today') }}" class="dash-card bg-panel rounded-xl border border-app p-4 hover:border-emerald-500/40 hover:shadow-lg hover:shadow-emerald-900/10">
+      <div class="flex items-center justify-between">
+        <p class="text-2xs uppercase tracking-wider text-faint font-semibold">Avg Collection</p>
+        <span class="w-7 h-7 rounded-lg bg-emerald-500/15 flex items-center justify-center">
+          <svg aria-hidden="true" class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
           </svg>
-        </button>
-      </form>
+        </span>
+      </div>
+      {% if collection_count and collection_count > 0 %}
+      <p class="dash-money text-[34px] font-bold leading-none text-emerald-300 mt-2">{{ avg_collection|currency }}</p>
+      <p class="text-2xs text-faint mt-1">across {{ collection_count }} payment{{ '' if collection_count == 1 else 's' }}</p>
+      {% else %}
+      <p class="dash-money text-[34px] font-bold leading-none text-gray-500 mt-2">—</p>
+      <p class="text-2xs text-faint mt-1">no payments yet</p>
+      {% endif %}
+    </a>
+  </div>
+
+  {# Today's progress bar — only when there's a route #}
+  {% if total_stops > 0 %}
+  <div class="bg-panel rounded-xl border border-app px-4 py-3 animate-fade-in-up">
+    <div class="flex items-center justify-between mb-2">
+      <span class="text-xs text-muted">Today's progress</span>
+      <span class="text-xs font-semibold text-gray-100">{{ completed_stops }}/{{ total_stops }} · {{ pct }}%</span>
     </div>
-    {% endfor %}
+    <div class="h-2 bg-gray-700/60 rounded-full overflow-hidden">
+      <div class="h-full rounded-full transition-all duration-700 ease-out {{ 'bg-gradient-to-r from-emerald-400 to-emerald-500' if pct == 100 else 'bg-gradient-to-r from-violet-500 to-blue-500' }}"
+           style="width: {{ pct }}%"></div>
+    </div>
   </div>
   {% endif %}
 
   {# ═══════════════════════════════════════════════════
-     WEEKLY CHART — Desktop, only if data exists
+     COLLECT
      ═══════════════════════════════════════════════════ #}
+  {% if top_balances %}
+  <section class="animate-fade-in-up">
+    <header class="flex items-baseline justify-between mb-2.5">
+      <div class="flex items-baseline gap-2.5">
+        <div class="w-7 h-7 rounded-md bg-amber-500/15 flex items-center justify-center self-center">
+          <span aria-hidden="true" class="text-sm font-black text-amber-400">$</span>
+        </div>
+        <h2 class="text-xs font-bold text-amber-400 uppercase tracking-wider">Collect</h2>
+        <span class="dash-money text-lg font-extrabold text-amber-300 glow-gold">{{ total_to_collect|currency }}</span>
+        <span class="text-xs text-faint">• Top {{ top_balances|length }}</span>
+      </div>
+      <a href="{{ url_for('balances.index') }}" class="text-xs font-semibold text-indigo-400 hover:text-indigo-300">View all →</a>
+    </header>
 
+    <div class="bg-panel rounded-xl border border-app overflow-hidden divide-y divide-gray-700/50">
+      {% for customer in top_balances %}
+      {% set tier = 'high' if customer.balance >= 2000 else ('mid' if customer.balance >= 1000 else 'low') %}
+      {% set display_name = customer.name|title if customer.name and customer.name == customer.name.lower() else customer.name %}
+      <a href="{{ url_for('customers.profile', id=customer.id) }}"
+         class="dash-card flex items-center gap-4 px-4 py-4 hover:bg-gray-700/40 hover:shadow-lg hover:shadow-amber-900/10 transition-all
+                {% if tier == 'high' %}border-l-[3px] border-amber-400{% elif tier == 'mid' %}border-l-[3px] border-amber-500/55{% else %}border-l-[3px] border-amber-600/30{% endif %}">
+        <div class="flex-1 min-w-0">
+          <p class="text-[17px] font-semibold text-gray-100 truncate leading-tight">{{ display_name }}</p>
+          <p class="text-[13px] text-faint mt-0.5">{{ (customer.city or '—')|title }}</p>
+        </div>
+        <div class="text-right flex-shrink-0">
+          <p class="dash-money text-[28px] font-extrabold leading-none {{ 'text-amber-300 glow-gold' if tier == 'high' else 'text-amber-300' }}">{{ customer.balance|currency }}</p>
+        </div>
+        <svg aria-hidden="true" class="w-4 h-4 text-gray-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {# ═══════════════════════════════════════════════════
+     NEVER VISITED / NEEDS A VISIT
+     ═══════════════════════════════════════════════════ #}
+  {% if attention_list %}
+  {% set never_count = attention_list|selectattr('days_since', 'none')|list|length %}
+  {% set is_all_never = never_count == attention_list|length %}
+  <section class="animate-fade-in-up">
+    <header class="flex items-center justify-between mb-2">
+      <div class="flex items-center gap-2">
+        <div class="w-6 h-6 rounded-md bg-rose-500/15 flex items-center justify-center">
+          <svg aria-hidden="true" class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+        </div>
+        <h2 class="text-xs font-bold text-rose-400 uppercase tracking-wider">{% if is_all_never %}Never Visited{% else %}Needs a Visit{% endif %}</h2>
+        <span class="text-xs text-muted">— {{ attention_list|length }}{% if not is_all_never and never_count %} · {{ never_count }} never{% endif %}</span>
+      </div>
+      <span class="text-xs text-faint">{% if is_all_never %}no visit history{% else %}stale customers{% endif %}</span>
+    </header>
+
+    <div class="bg-panel rounded-xl border border-app overflow-hidden divide-y divide-gray-700/50">
+      {% for store in attention_list %}
+      {% set urgency = 'never' if store.days_since is none else ('high' if store.days_since > 60 else ('mid' if store.days_since > 45 else 'low')) %}
+      <div class="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-gray-700/40
+                  {% if urgency == 'never' or urgency == 'high' %}border-l-[3px] border-rose-500/60{% elif urgency == 'mid' %}border-l-[3px] border-rose-500/40{% else %}border-l-[3px] border-amber-500/40{% endif %}">
+        <span class="w-7 h-7 rounded-md bg-gray-700/40 flex items-center justify-center flex-shrink-0">
+          <svg aria-hidden="true" class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
+          </svg>
+        </span>
+        <a href="{{ url_for('customers.profile', id=store.id) }}" class="flex-1 min-w-0">
+          <p class="text-base font-semibold text-gray-100 truncate leading-tight">{{ store.name }}</p>
+          <p class="text-xs text-faint mt-0.5">{{ (store.city or '—')|title }}</p>
+        </a>
+        {% if store.days_since is not none %}
+        <span class="text-xs font-semibold tabular-nums px-2 py-1 rounded ring-1
+                     {{ 'bg-amber-500/15 text-amber-300 ring-amber-500/30' if urgency == 'low'
+                        else 'bg-rose-500/15 text-rose-300 ring-rose-500/30' if urgency == 'mid'
+                        else 'bg-rose-500/20 text-rose-200 ring-rose-500/40' }}">{{ store.days_since }}d</span>
+        {% else %}
+        <span class="text-2xs font-bold uppercase tracking-wider px-2 py-1 rounded ring-1 bg-rose-500/20 text-rose-200 ring-rose-500/50">First Visit</span>
+        {% endif %}
+        <form method="post" action="{{ url_for('planner.add_stop') }}" x-data="{ added: false }"
+              @submit.prevent="fetch($el.action, { method: 'POST', body: new FormData($el), headers: { 'X-Requested-With': 'XMLHttpRequest' } }).then(r => { if (r.ok) { added = true; setTimeout(() => added = false, 2000) } })">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="customer_id" value="{{ store.id }}">
+          <input type="hidden" name="route_date" value="{{ today.isoformat() }}">
+          <button type="submit" aria-label="Add to today's route" title="Add to today's route"
+                  class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-indigo-500/40 text-indigo-300 hover:bg-indigo-500/15 transition-colors min-h-[32px]"
+                  :class="added && 'border-emerald-500/40 text-emerald-300 bg-emerald-500/15'">
+            <svg aria-hidden="true" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" x-show="!added">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
+            </svg>
+            <svg aria-hidden="true" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" x-show="added" x-cloak>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+            </svg>
+            <span x-text="added ? 'Added' : 'Add to Route'"></span>
+          </button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {# ═══════════════════════════════════════════════════
+     WEEKLY CHART
+     ═══════════════════════════════════════════════════ #}
   {% set has_week_data = week_data|selectattr('total', 'gt', 0)|list|length > 0 %}
   {% if has_week_data %}
-  <div class="hidden lg:block animate-fade-in-up">
-    <div class="flex items-center gap-2 pt-2">
-      <div class="w-5 h-5 rounded-md bg-blue-500/15 flex items-center justify-center">
-        <svg aria-hidden="true" class="w-3 h-3 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-        </svg>
+  <section class="hidden lg:block animate-fade-in-up">
+    <header class="flex items-center justify-between mb-2">
+      <div class="flex items-center gap-2">
+        <div class="w-6 h-6 rounded-md bg-blue-500/15 flex items-center justify-center">
+          <svg aria-hidden="true" class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+          </svg>
+        </div>
+        <h2 class="text-xs font-bold text-blue-400 uppercase tracking-wider">This Week's Sales</h2>
+        <span class="text-xs text-muted">— <span class="dash-money font-semibold text-gray-100">{{ week_total|currency }}</span></span>
       </div>
-      <h2 class="text-xs font-bold text-blue-400 uppercase tracking-wider">This Week</h2>
-      <div class="flex-1 h-px bg-gray-700"></div>
-      <a href="{{ url_for('analytics.index') }}" class="text-2xs text-indigo-400 hover:text-indigo-300 font-medium btn-press">Analytics</a>
+      <a href="{{ url_for('analytics.index') }}" class="text-xs font-medium text-indigo-400 hover:text-indigo-300">Analytics →</a>
+    </header>
+    <div class="bg-panel rounded-xl border border-app p-5">
+      <canvas id="weekChart" height="180"></canvas>
     </div>
-    <div class="bg-panel rounded-xl border border-app p-5 mt-2">
-      <canvas id="weekChart" height="140"></canvas>
-    </div>
-  </div>
+  </section>
   {% endif %}
 
-  {# Spacer for bottom nav #}
   <div class="h-4"></div>
 
 </div>
@@ -339,20 +276,49 @@ document.addEventListener('DOMContentLoaded', function() {
   var ctx = document.getElementById('weekChart');
   if (!ctx || typeof Chart === 'undefined') return;
   var data = {{ week_data|tojson }};
+  var todayIdx = data.length - 1;
   new Chart(ctx, {
     type: 'bar',
     data: {
       labels: data.map(function(d) { return d.day; }),
       datasets: [{
         data: data.map(function(d) { return d.total; }),
-        backgroundColor: data.map(function(d, i) { return i === data.length - 1 ? '#818cf8' : '#374151'; }),
-        borderRadius: 8, borderSkipped: false, barPercentage: 0.5
+        backgroundColor: data.map(function(d, i) { return i === todayIdx ? '#818cf8' : 'rgba(99, 102, 241, 0.35)'; }),
+        borderRadius: 6,
+        borderSkipped: false,
+        barPercentage: 0.55,
+        categoryPercentage: 0.85
       }]
     },
     options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1f2937', titleColor: '#e5e7eb', bodyColor: '#e5e7eb', borderColor: '#374151', borderWidth: 1, padding: 10, cornerRadius: 8, callbacks: { label: function(ctx) { return '$' + ctx.parsed.y.toFixed(2); } } } },
-      scales: { x: { grid: { display: false }, ticks: { color: '#6b7280', font: { size: 11 } }, border: { display: false } }, y: { grid: { color: '#1f2937' }, ticks: { color: '#6b7280', font: { size: 11 }, callback: function(v) { return '$' + v; } }, border: { display: false } } }
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#0f172a',
+          titleColor: '#f1f5f9',
+          bodyColor: '#cbd5e1',
+          borderColor: '#334155',
+          borderWidth: 1,
+          padding: 10,
+          cornerRadius: 6,
+          callbacks: { label: function(ctx) { return '$' + ctx.parsed.y.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); } }
+        }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: '#cbd5e1', font: { size: 12, family: 'Inter', weight: '500' } }, border: { display: false } },
+        y: {
+          grid: { color: 'rgba(51, 65, 85, 0.35)', drawBorder: false },
+          ticks: {
+            color: '#94a3b8',
+            font: { size: 12, family: 'Inter' },
+            padding: 8,
+            callback: function(v) { return v >= 1000 ? '$' + (v/1000).toFixed(v % 1000 === 0 ? 0 : 1) + 'K' : '$' + v; }
+          },
+          border: { display: false }
+        }
+      }
     }
   });
 });
