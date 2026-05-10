@@ -14,3 +14,4 @@ build/
 .DS_Store
 *.csv
 node_modules/
+.claude/settings.local.json

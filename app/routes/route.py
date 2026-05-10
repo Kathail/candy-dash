@@ -206,13 +206,14 @@ def complete_stop(id):
             db.session.flush()  # get payment.id for FIFO tracking
             assert payment.id is not None, "Payment flush failed to generate ID"
 
-            # Mark old unpaid invoices paid FIFO if excess payment
+            # Mark old unpaid invoices paid FIFO if excess payment.
+            # yield_per streams rows so we stop consuming once excess is exhausted.
             if amount_paid > 0:
                 excess = amount_paid - amount_sold
                 if excess > 0:
                     unpaid_invoices = Invoice.query.filter_by(
                         customer_id=customer.id, status="unpaid"
-                    ).order_by(Invoice.invoice_date.asc()).all()
+                    ).order_by(Invoice.invoice_date.asc()).yield_per(100)
                     for inv in unpaid_invoices:
                         if inv.invoice_number == receipt_number:
                             continue

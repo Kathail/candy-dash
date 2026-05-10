@@ -70,19 +70,23 @@ def index():
 
     fmt = request.args.get("format", "").lower()
     if fmt in VALID_EXPORT_FORMATS:
-        all_rows = query.all()
         headers = ["Date", "Supplier", "Amount", "Payment Type", "Invoice #", "Description"]
-        export_rows = [
-            (
-                p.purchase_date.strftime("%Y-%m-%d"),
-                p.supplier,
-                f"{p.amount:.2f}",
-                (p.payment_type or "").capitalize(),
-                p.invoice_number or "",
-                p.description or "",
-            )
-            for p in all_rows
-        ]
+        iter_rows = query.with_entities(
+            Purchase.purchase_date, Purchase.supplier, Purchase.amount,
+            Purchase.payment_type, Purchase.invoice_number, Purchase.description,
+        ).yield_per(500)
+
+        def export_rows():
+            for r in iter_rows:
+                yield (
+                    r.purchase_date.strftime("%Y-%m-%d"),
+                    r.supplier,
+                    f"{r.amount:.2f}",
+                    (r.payment_type or "").capitalize(),
+                    r.invoice_number or "",
+                    r.description or "",
+                )
+        export_rows = export_rows()
         filename = "purchases_export"
         if start_date:
             filename += f"_from_{start_date.strftime('%Y%m%d')}"

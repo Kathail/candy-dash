@@ -4,12 +4,12 @@
 {% block page_title %}Customers{% endblock %}
 
 {% block content %}
-<div class="max-w-2xl mx-auto space-y-3" x-data="{ showFilters: false }">
+<div class="max-w-3xl space-y-5" x-data="{ showFilters: false }">
 
   {# -- Header -- #}
   <div class="flex items-center justify-between animate-fade-in-up">
     <div>
-      <h1 class="text-xl font-bold text-gray-100">Customers</h1>
+      <h1 class="text-2xl font-semibold text-gray-100">Customers</h1>
       {% if pagination %}
       <p class="text-xs text-gray-500 mt-0.5">{{ pagination.total }} store{{ 's' if pagination.total != 1 else '' }}{% if city_filter %} in {{ city_filter }}{% endif %}{% if pagination.pages > 1 %} &middot; page {{ pagination.page }}/{{ pagination.pages }}{% endif %}</p>
       {% endif %}
@@ -44,7 +44,7 @@
       {% if city_filter %}<input type="hidden" name="city" value="{{ city_filter }}">{% endif %}
     </form>
     <button @click="showFilters = !showFilters" aria-label="Toggle filters"
-            :class="showFilters ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-gray-800 text-gray-400 border-gray-700'"
+            :class="showFilters ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-panel text-muted border-app'"
             class="flex items-center gap-1.5 px-3 min-h-[44px] rounded-xl border text-sm font-medium transition-colors btn-press">
       <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>

@@ -11,7 +11,7 @@ from flask import (
 from flask_login import login_required, current_user
 
 from sqlalchemy import func
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 
 from app import db, limiter
 from app.models import Customer, Payment, Invoice, InvoiceItem, Note, ActivityLog, RouteStop, VALID_CUSTOMER_STATUSES, VALID_PAYMENT_TYPES
@@ -196,7 +196,7 @@ def profile(id):
 
     invoices = (
         Invoice.query
-        .options(joinedload(Invoice.items))
+        .options(selectinload(Invoice.items))
         .filter_by(customer_id=customer.id)
         .order_by(Invoice.invoice_date.desc())
         .limit(500)
@@ -473,13 +473,14 @@ def record_payment(id):
             )
             db.session.add(invoice)
 
-        # Mark unpaid invoices as paid FIFO, only up to what this payment covers
+        # Mark unpaid invoices as paid FIFO, only up to what this payment covers.
+        # yield_per streams rows so we stop consuming once credit is exhausted.
         if amount_paid > 0:
-            unpaid_invoices = Invoice.query.filter_by(
-                customer_id=customer.id, status="unpaid"
-            ).order_by(Invoice.invoice_date.asc()).all()
             remaining_credit = amount_paid - amount_sold  # excess beyond the current sale
             if remaining_credit > 0:
+                unpaid_invoices = Invoice.query.filter_by(
+                    customer_id=customer.id, status="unpaid"
+                ).order_by(Invoice.invoice_date.asc()).yield_per(100)
                 for inv in unpaid_invoices:
                     if inv.invoice_number == receipt_number:
                         continue  # skip the invoice we just created above

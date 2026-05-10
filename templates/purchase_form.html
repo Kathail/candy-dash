@@ -4,7 +4,7 @@
 {% block page_title %}{{ 'Edit Purchase' if purchase else 'Add Purchase' }}{% endblock %}
 
 {% block content %}
-<div class="max-w-lg mx-auto animate-fade-in-up">
+<div class="max-w-lg animate-fade-in-up">
 
   <nav class="flex items-center gap-1.5 text-sm mb-4" aria-label="Breadcrumb">
     <a href="{{ url_for('purchases.index') }}" class="text-indigo-400 hover:text-indigo-300">Purchases</a>
@@ -15,7 +15,7 @@
   </nav>
 
   <div class="bg-panel rounded-xl border border-app p-5">
-    <form method="POST" class="space-y-4">
+    <form method="POST" class="space-y-4" x-data="{ submitting: false }" @submit="submitting = true">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
       <div>
@@ -122,11 +122,11 @@
                   <div class="flex items-center gap-1 flex-shrink-0">
                     <button type="button" @click="decr('{{ sku }}', '{{ name }} {{ size }}')"
                             x-show="getQty('{{ sku }}') > 0"
-                            class="w-8 h-8 rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 text-sm font-bold flex items-center justify-center">−</button>
+                            class="w-8 h-8 rounded-lg bg-panel border border-app text-gray-300 hover:bg-panel-hover text-sm font-bold flex items-center justify-center">−</button>
                     <span x-show="getQty('{{ sku }}') > 0"
                           class="text-sm font-bold text-indigo-300 w-6 text-center" x-text="getQty('{{ sku }}')"></span>
                     <button type="button" @click="incr('{{ sku }}', '{{ name }} {{ size }}')"
-                            class="w-8 h-8 rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 text-sm font-bold flex items-center justify-center">+</button>
+                            class="w-8 h-8 rounded-lg bg-panel border border-app text-gray-300 hover:bg-panel-hover text-sm font-bold flex items-center justify-center">+</button>
                   </div>
                 </div>
                 {% endfor %}
@@ -139,8 +139,9 @@
       {% endif %}
 
       <div class="flex items-center gap-3 pt-2">
-        <button type="submit"
-                class="btn-press inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-500 transition-colors min-h-[44px]">
+        <button type="submit" :disabled="submitting"
+                class="btn-press inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-500 transition-colors min-h-[44px] disabled:opacity-50"
+                x-text="submitting ? 'Saving...' : '{{ 'Update' if purchase else 'Add Purchase' }}'">
           {{ 'Update' if purchase else 'Add Purchase' }}
         </button>
         <a href="{{ url_for('purchases.index') }}"

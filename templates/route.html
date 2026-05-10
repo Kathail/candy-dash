@@ -8,7 +8,7 @@
 {% set total_count = stops|length %}
 {% set pct = [((completed_count / total_count * 100)|int) if total_count > 0 else 0, 100]|min %}
 
-<div class="max-w-2xl mx-auto space-y-3">
+<div class="max-w-3xl space-y-5">
 
   {# ── Date Selector ── #}
   <div class="flex items-center justify-between bg-panel rounded-xl border border-app px-3 py-2 animate-fade-in-up">
@@ -215,7 +215,7 @@
                   onsubmit="return confirm('Remove this stop?')">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <button type="submit" aria-label="Remove stop" title="Remove stop"
-                      class="inline-flex items-center justify-center p-2.5 bg-gray-700 text-red-400 rounded-xl hover:bg-red-500/10 hover:text-red-300 transition-colors min-h-[44px] min-w-[44px] btn-press">
+                      class="inline-flex items-center justify-center p-2.5 bg-red-500/10 text-red-400 rounded-xl hover:bg-red-500/20 hover:text-red-300 transition-colors min-h-[44px] min-w-[44px] btn-press">
                 <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                 </svg>
@@ -226,7 +226,7 @@
                     hx-target="#stop-{{ stop.id }}" hx-swap="outerHTML"
                     hx-disabled-elt="this"
                     hx-confirm="Undo this stop? Note: any payment recorded will NOT be reversed — you must delete it separately."
-                    class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 bg-gray-700 text-muted text-sm font-medium rounded-xl hover:bg-gray-600 transition-colors min-h-[44px] disabled:opacity-50 btn-press">
+                    class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 bg-panel border border-app text-muted text-sm font-medium rounded-xl hover:bg-panel-hover transition-colors min-h-[44px] disabled:opacity-50 btn-press">
               Undo
             </button>
             {% endif %}
@@ -294,7 +294,7 @@
 {# ── Sticky Bottom Bar ── #}
 {% if stops %}
 <div class="fixed bottom-16 lg:bottom-0 left-0 right-0 lg:pl-64 bg-app/95 backdrop-blur-sm border-t border-app px-4 py-2.5 z-30">
-  <div class="max-w-2xl mx-auto flex items-center gap-3">
+  <div class="max-w-2xl flex items-center gap-3">
     {# Mini progress #}
     <div class="flex-1 min-w-0">
       <div class="flex items-center gap-2">

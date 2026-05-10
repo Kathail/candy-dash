@@ -142,18 +142,27 @@ def format_date(value, fmt="%b %d, %Y"):
     return value.strftime(fmt)
 
 
+class _CSVEcho:
+    """Writer that just returns the formatted line instead of buffering."""
+    def write(self, value):
+        return value
+
+
 def csv_response(rows, headers, filename):
-    """Build a CSV download response with formula-injection protection."""
+    """Stream a CSV download response row-by-row to keep memory flat."""
     import csv
-    from flask import Response
-    output = io.StringIO()
-    writer = csv.writer(output)
-    writer.writerow(headers)
-    for row in rows:
-        writer.writerow([sanitize_csv_value(cell) for cell in row])
+    from flask import Response, stream_with_context
+
+    writer = csv.writer(_CSVEcho())
     safe_filename = filename.replace('"', "").replace("\r", "").replace("\n", "")
+
+    def generate():
+        yield writer.writerow(headers)
+        for row in rows:
+            yield writer.writerow([sanitize_csv_value(cell) for cell in row])
+
     return Response(
-        output.getvalue(),
+        stream_with_context(generate()),
         mimetype="text/csv",
         headers={"Content-Disposition": f'attachment; filename="{safe_filename}"'},
     )
@@ -222,16 +231,16 @@ def parse_date_range_optional():
 
 
 def xlsx_response(rows, headers, filename):
-    """Build an Excel download response using openpyxl."""
+    """Build an Excel download response using openpyxl in write-only mode."""
     try:
         from openpyxl import Workbook
     except ImportError:
         from flask import Response
         return Response("openpyxl is not installed.", status=500)
 
-    buf = io.BytesIO()
-    wb = Workbook()
-    ws = wb.active
+    # write_only mode streams cells to disk instead of holding the workbook in memory
+    wb = Workbook(write_only=True)
+    ws = wb.create_sheet()
     ws.append(headers)
     for row in rows:
         typed_row = []
@@ -247,12 +256,14 @@ def xlsx_response(rows, headers, filename):
                     pass
             typed_row.append(val)
         ws.append(typed_row)
+
+    buf = io.BytesIO()
     wb.save(buf)
-    buf.seek(0)
+    payload = buf.getvalue()
     safe_filename = filename.replace('"', "").replace("\r", "").replace("\n", "")
     from flask import Response
     return Response(
-        buf.getvalue(),
+        payload,
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f'attachment; filename="{safe_filename}"'},
     )
@@ -283,21 +294,25 @@ def pdf_table_response(rows, headers, filename, title=None):
     header_style = ParagraphStyle("HeaderCell", parent=styles["Normal"], fontSize=7,
                                   leading=9, fontName="Helvetica-Bold", textColor=colors.white)
 
-    # Build table data with Paragraph-wrapped cells for word-wrapping
+    # Build table data with Paragraph-wrapped cells for word-wrapping.
+    # Track raw string lengths as we go so we can size columns without
+    # re-iterating `rows` (which may be a generator that's now exhausted).
     from xml.sax.saxutils import escape as _xml_escape
     table_data = [[Paragraph(_xml_escape(str(h)), header_style) for h in headers]]
-    for row in rows:
-        table_data.append([Paragraph(_xml_escape(str(sanitize_csv_value(cell))), cell_style) for cell in row])
+    col_max_len = [len(str(h)) for h in headers]
+    sample_cap = 50  # only sample first 50 rows for width calc
+    for idx, row in enumerate(rows):
+        cells = []
+        for col_idx, cell in enumerate(row):
+            text = str(sanitize_csv_value(cell))
+            cells.append(Paragraph(_xml_escape(text), cell_style))
+            if idx < sample_cap and col_idx < ncols:
+                col_max_len[col_idx] = max(col_max_len[col_idx], len(text))
+        table_data.append(cells)
 
     # Calculate proportional column widths based on max content length
     usable_width = page[0] - 0.8 * inch  # page width minus margins
-    col_max_len = []
-    for col_idx in range(ncols):
-        max_len = len(str(headers[col_idx]))
-        for row in rows[:50]:  # sample first 50 rows
-            cell_len = len(str(row[col_idx])) if col_idx < len(row) else 0
-            max_len = max(max_len, cell_len)
-        col_max_len.append(max(max_len, 3))  # minimum 3 chars wide
+    col_max_len = [max(cl, 3) for cl in col_max_len]  # minimum 3 chars wide
 
     total_len = sum(col_max_len)
     col_widths = [max(usable_width * (cl / total_len), 0.4 * inch) for cl in col_max_len]

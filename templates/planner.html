@@ -4,12 +4,12 @@
 {% block page_title %}Planner{% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto space-y-6" x-data="plannerApp()">
+<div class="max-w-6xl space-y-6" x-data="plannerApp()">
 
   {# ── Header ── #}
   <div class="flex items-center justify-between animate-fade-in-up">
     <div>
-      <h1 class="text-xl font-bold text-gray-100">Route Planner</h1>
+      <h1 class="text-2xl font-semibold text-gray-100">Route Planner</h1>
       <p class="text-xs text-gray-500 mt-0.5">
         <span x-text="selectedDateFormatted" class="text-indigo-400 font-semibold"></span>
         &middot; <span x-text="stops.length + ' stop' + (stops.length !== 1 ? 's' : '')"></span>

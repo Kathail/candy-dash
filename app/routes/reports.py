@@ -67,8 +67,14 @@ def daily_sales():
         return export_response(export_rows, headers, filename, fmt, title="Daily Sales")
 
     rows = query.all()
-    grand_total = sum(r.total for r in rows)
-    grand_count = sum(r.count for r in rows)
+    grand_total, grand_count = db.session.query(
+        func.coalesce(func.sum(Invoice.amount), Decimal("0")),
+        func.count(Invoice.id),
+    ).filter(
+        Invoice.invoice_date >= start_date,
+        Invoice.invoice_date <= end_date,
+        Invoice.status != "void",
+    ).one()
 
     # Chart data (all rows, chronological order, as floats for JSON)
     chart_labels = [r.invoice_date.strftime('%b %d') for r in reversed(rows)]
@@ -223,8 +229,22 @@ def tax():
         .all()
     )
 
-    taxable_total = sum(r.total for r in taxable_rows)
-    exempt_total = sum(r.total for r in exempt_rows)
+    totals_query = (
+        db.session.query(
+            Customer.tax_exempt,
+            func.coalesce(func.sum(Invoice.amount), Decimal("0")).label("total"),
+        )
+        .join(Invoice, Invoice.customer_id == Customer.id)
+        .filter(Invoice.invoice_date >= start_date, Invoice.invoice_date <= end_date, Invoice.status != "void")
+        .group_by(Customer.tax_exempt)
+    )
+    taxable_total = Decimal("0")
+    exempt_total = Decimal("0")
+    for is_exempt, total in totals_query:
+        if is_exempt:
+            exempt_total = total
+        else:
+            taxable_total = total
 
     return render_template(
         "reports/tax.html",

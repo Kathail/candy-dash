@@ -6,7 +6,7 @@
 {% block content %}
 {% set pct = (completed_stops / total_stops * 100)|int if total_stops else 0 %}
 
-<div class="max-w-2xl mx-auto space-y-6">
+<div class="max-w-2xl space-y-6">
 
   {# ── Celebration / Header ── #}
   <img src="{{ url_for('static', filename='img/logo.png') }}" alt="" class="w-10 h-10 mx-auto mb-2 rounded-lg object-contain">
@@ -172,11 +172,11 @@
       Dashboard
     </a>
     <a href="{{ url_for('route.index', date=route_date.isoformat()) }}"
-       class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-panel border border-gray-600 text-sm font-medium rounded-xl text-gray-300 hover:bg-gray-700 transition min-h-[44px] btn-press">
+       class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-panel border border-app text-sm font-medium rounded-xl text-gray-300 hover:bg-panel-hover transition min-h-[44px] btn-press">
       &larr; Route
     </a>
     <a href="{{ url_for('planner.index', date=route_date.isoformat()) }}"
-       class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-panel border border-gray-600 text-sm font-medium rounded-xl text-gray-300 hover:bg-gray-700 transition min-h-[44px] btn-press">
+       class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-panel border border-app text-sm font-medium rounded-xl text-gray-300 hover:bg-panel-hover transition min-h-[44px] btn-press">
       Planner
     </a>
   </div>

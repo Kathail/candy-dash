@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.venv/bin/pytest *)",
+      "Bash(.venv/bin/pytest)",
+      "Bash(.venv/bin/pip install *)",
+      "Bash(.venv/bin/pip show *)",
+      "Bash(.venv/bin/flask mail *)",
+      "Bash(.venv/bin/flask backup *)",
+      "Bash(.venv/bin/flask db *)",
+      "Bash(.venv/bin/flask run *)",
+      "Bash(unzip -l *)",
+      "Bash(railway status)",
+      "Bash(railway logs)",
+      "Bash(railway variables)",
+      "Bash(lsof -i :*)",
+      "Bash(mkdir -p *)"
+    ]
+  }
+}

@@ -240,10 +240,12 @@ def import_csv():
         stream = io.TextIOWrapper(csv_file.stream, encoding="utf-8-sig")
         reader = csv.DictReader(stream)
 
-        # Build set of existing lead names for duplicate detection
+        # Build set of existing lead names for duplicate detection.
+        # Column-only + yield_per keeps this light even on 10k+ leads.
         existing_names = {
-            re.sub(r"\s+", " ", c.name.strip().lower())
-            for c in Customer.query.filter(Customer.status == "lead").all()
+            re.sub(r"\s+", " ", name.strip().lower())
+            for (name,) in db.session.query(Customer.name)
+                .filter(Customer.status == "lead").yield_per(1000)
         }
 
         # Flexible column mapping

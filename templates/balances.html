@@ -4,7 +4,7 @@
 {% block page_title %}Balances{% endblock %}
 
 {% block content %}
-<div class="max-w-2xl mx-auto space-y-3">
+<div class="max-w-3xl space-y-5">
 
   {# -- Hero: Total Outstanding -- #}
   {% if total_outstanding > 0 %}
@@ -67,7 +67,7 @@
   <div x-data="{ showFilters: {{ 'true' if city_filter or payment_type_filter or (sort != 'balance_desc') else 'false' }} }">
     <div class="flex gap-2 animate-fade-in-up stagger-2">
       <button @click="showFilters = !showFilters"
-              :class="showFilters ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-gray-800 text-gray-400 border-gray-700'"
+              :class="showFilters ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-panel text-muted border-app'"
               class="flex items-center gap-1.5 px-3 min-h-[44px] rounded-xl border text-sm font-medium transition-colors btn-press">
         <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>

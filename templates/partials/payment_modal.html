@@ -75,7 +75,7 @@
                 </select>
             </div>
 
-            <div x-show="amountSold || amountPaid" x-cloak class="mb-4 px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-sm">
+            <div x-show="amountSold || amountPaid" x-cloak class="mb-4 px-3 py-2 bg-panel border border-app rounded-lg text-sm">
                 <div class="flex items-center justify-between">
                     <span class="text-muted">New Balance</span>
                     <span class="font-bold" :class="newBalance > 0 ? 'text-amber-400' : 'text-green-400'"

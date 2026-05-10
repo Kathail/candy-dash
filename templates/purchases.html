@@ -15,7 +15,7 @@
 {% set avg_amount = (total / total_count) if total_count else 0 %}
 
 {% block content %}
-<div class="max-w-2xl mx-auto space-y-3"
+<div class="max-w-3xl space-y-5"
      x-data="purchasesPage({
        initialStart: {{ start_str|tojson }},
        initialEnd: {{ end_str|tojson }},
@@ -27,7 +27,7 @@
   {# -- Header -- #}
   <div class="flex items-center justify-between animate-fade-in-up">
     <div>
-      <h1 class="text-xl font-bold text-gray-100">Purchases</h1>
+      <h1 class="text-2xl font-semibold text-gray-100">Purchases</h1>
       <p class="text-xs text-gray-500 mt-0.5">
         {{ total_count }} purchase{{ 's' if total_count != 1 else '' }} total{% if has_filters %} (filtered){% endif %}
       </p>
@@ -44,7 +44,7 @@
   {# -- Toolbar: Filter / Sort / Export -- #}
   <div class="flex flex-wrap items-center gap-2 animate-fade-in-up stagger-1">
     <button type="button" @click="showFilters = !showFilters" aria-label="Toggle filters"
-            :class="showFilters ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-gray-800 text-gray-400 border-gray-700'"
+            :class="showFilters ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-panel text-muted border-app'"
             class="flex items-center gap-1.5 px-3 min-h-[44px] rounded-xl border text-sm font-medium transition-colors btn-press">
       <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
@@ -155,7 +155,7 @@
         <div class="flex flex-wrap gap-1.5" role="group" aria-label="Date range presets">
           {% for key, label in [('all','All'), ('month','This month'), ('lastMonth','Last month'), ('quarter','This quarter'), ('ytd','YTD')] %}
           <button type="button" @click="setPreset('{{ key }}')"
-                  :class="activePreset === '{{ key }}' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-gray-800 text-gray-400 border-gray-700 hover:bg-gray-700'"
+                  :class="activePreset === '{{ key }}' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-panel text-muted border-app hover:bg-panel-hover'"
                   class="px-3 py-2 text-xs font-semibold rounded-lg border transition-colors btn-press">{{ label }}</button>
           {% endfor %}
         </div>

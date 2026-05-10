@@ -150,14 +150,12 @@ def index():
     completed_stops = sum(efficiency_completed) if efficiency_completed else 0
     completion_rate = round(completed_stops / total_stops * 100) if total_stops else 0
 
-    total_outstanding = float(
-        db.session.query(func.coalesce(func.sum(Customer.balance), 0))
-        .filter(Customer.status.in_(("active", "inactive")), Customer.balance > 0)
-        .scalar()
-    )
-    customers_with_balance = (
-        Customer.query.filter(Customer.status.in_(("active", "inactive")), Customer.balance > 0).count()
-    )
+    # Matches the balances page policy: count any non-deleted customer with balance > 0.
+    total_outstanding, customers_with_balance = db.session.query(
+        func.coalesce(func.sum(Customer.balance), 0),
+        func.count(Customer.id),
+    ).filter(Customer.status != "deleted", Customer.balance > 0).one()
+    total_outstanding = float(total_outstanding)
 
     # --- Top stores by revenue ---
     top_stores_rows = (

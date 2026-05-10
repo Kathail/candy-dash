@@ -246,6 +246,9 @@ class RecurringSkip(db.Model):
 
 class Purchase(db.Model):
     __tablename__ = "purchases"
+    __table_args__ = (
+        db.Index("ix_purchases_supplier_date", "supplier", "purchase_date"),
+    )
 
     id = db.Column(db.Integer, primary_key=True)
     supplier = db.Column(db.String(200), nullable=False, index=True)

@@ -99,6 +99,10 @@ def create_app():
     from app.routes import register_blueprints
     register_blueprints(app)
 
+    # Register CLI commands
+    from app.cli import register_cli
+    register_cli(app)
+
     # Read-only guard: block writes for demo users
     @app.before_request
     def readonly_guard():
@@ -153,7 +157,7 @@ def create_app():
             result = db.session.execute(db.text(
                 "SELECT "
                 "(SELECT COUNT(*) FROM route_stops WHERE route_date = :today AND completed = false), "
-                "(SELECT COUNT(*) FROM customers WHERE balance > 0 AND status = 'active')"
+                "(SELECT COUNT(*) FROM customers WHERE balance > 0 AND status <> 'deleted')"
             ), {"today": today}).first()
             return {
                 "nav_remaining_stops": result[0] if result else 0,
