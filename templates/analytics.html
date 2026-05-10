@@ -33,11 +33,12 @@
      ═══════════════════════════════════════════════════ #}
   {% if insights %}
   {% set tone_map = {
-    'emerald': {'bg': 'bg-emerald-500/10', 'border': 'border-emerald-500/30', 'text': 'text-emerald-300', 'label': 'text-emerald-400/80'},
-    'indigo':  {'bg': 'bg-indigo-500/10',  'border': 'border-indigo-500/30',  'text': 'text-indigo-300',  'label': 'text-indigo-400/80'},
-    'blue':    {'bg': 'bg-blue-500/10',    'border': 'border-blue-500/30',    'text': 'text-blue-300',    'label': 'text-blue-400/80'},
-    'rose':    {'bg': 'bg-rose-500/10',    'border': 'border-rose-500/30',    'text': 'text-rose-300',    'label': 'text-rose-400/80'},
-    'amber':   {'bg': 'bg-amber-500/10',   'border': 'border-amber-500/30',   'text': 'text-amber-300',   'label': 'text-amber-400/80'},
+    'emerald': {'bg': 'bg-emerald-500/10', 'border': 'border-emerald-500/30', 'text': 'text-emerald-300', 'label': 'text-emerald-400/80', 'hover': 'hover:border-emerald-500/50'},
+    'indigo':  {'bg': 'bg-indigo-500/10',  'border': 'border-indigo-500/30',  'text': 'text-indigo-300',  'label': 'text-indigo-400/80',  'hover': 'hover:border-indigo-500/50'},
+    'blue':    {'bg': 'bg-blue-500/10',    'border': 'border-blue-500/30',    'text': 'text-blue-300',    'label': 'text-blue-400/80',    'hover': 'hover:border-blue-500/50'},
+    'rose':    {'bg': 'bg-rose-500/10',    'border': 'border-rose-500/30',    'text': 'text-rose-300',    'label': 'text-rose-400/80',    'hover': 'hover:border-rose-500/50'},
+    'amber':   {'bg': 'bg-amber-500/10',   'border': 'border-amber-500/30',   'text': 'text-amber-300',   'label': 'text-amber-400/80',   'hover': 'hover:border-amber-500/50'},
+    'cyan':    {'bg': 'bg-cyan-500/10',    'border': 'border-cyan-500/30',    'text': 'text-cyan-300',    'label': 'text-cyan-400/80',    'hover': 'hover:border-cyan-500/50'},
   } %}
   {% set icon_map = {
     'calendar': 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
@@ -62,13 +63,15 @@
   {% endif %}
 
   {# ═══════════════════════════════════════════════════
-     HERO KPI ROW — 6 cards (3-col mobile, 6-col desktop)
+     HERO KPI ROW — 8 cards (2-col mobile, 4-col desktop)
+     'invert_delta': True flips delta semantics so a Cost increase
+     reads rose-↑ (bad) instead of emerald-↑ (good).
      ═══════════════════════════════════════════════════ #}
   {% set kpi_data = [
     {'label': 'Revenue',     'value': '${:,.0f}'.format(total_revenue),     'delta': revenue_delta,     'tone': 'emerald', 'href': None,                                  'icon': 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z'},
-    {'label': 'Cost',        'value': '${:,.0f}'.format(total_purchases),   'delta': purchases_delta,   'tone': 'rose',    'href': url_for('purchases.index'),            'icon': 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2'},
+    {'label': 'Cost',        'value': '${:,.0f}'.format(total_purchases),   'delta': purchases_delta,   'tone': 'rose',    'href': url_for('purchases.index'),            'icon': 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2', 'invert_delta': True},
     {'label': 'Profit',      'value': '${:,.0f}'.format(profit),            'delta': profit_delta,      'tone': 'emerald' if profit >= 0 else 'rose', 'href': None,             'icon': 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6'},
-    {'label': 'Margin',      'value': '{:.1f}%'.format(profit_margin),      'delta': None,              'tone': 'emerald' if profit_margin > 30 else ('amber' if profit_margin > 15 else 'rose'), 'href': None, 'icon': 'M9 5l7 7m0 0l-7 7m7-7H3'},
+    {'label': 'Margin',      'value': '{:.1f}%'.format(profit_margin),      'delta': None,              'tone': 'emerald' if profit_margin >= 30 else ('amber' if profit_margin >= 15 else 'rose'), 'href': None, 'icon': 'M19 7l-8 10-4-5m0 7l-2-3'},
     {'label': 'Outstanding', 'value': '${:,.0f}'.format(total_outstanding), 'delta': None,              'tone': 'amber',   'href': url_for('balances.index'),             'icon': 'M9 12h6m-3-3v6m9-3a9 9 0 11-18 0 9 9 0 0118 0z'},
     {'label': 'Payments',    'value': '{:,}'.format(total_payments),        'delta': payments_delta,    'tone': 'blue',    'href': url_for('bookkeeper.index'),           'icon': 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4'},
     {'label': 'Active',      'value': '{:,}'.format(active_customers),      'delta': None,              'tone': 'cyan',    'href': url_for('customers.index'),            'icon': 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z'},
@@ -77,7 +80,7 @@
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 animate-fade-in-up">
     {% for k in kpi_data %}
     {% set tones = tone_map.get(k.tone, tone_map['indigo']) %}
-    {% set wrap_open = '<a href="' ~ k.href ~ '" class="dash-card block bg-panel rounded-xl border border-app p-3 hover:' ~ tones.border ~ ' transition-all">' if k.href else '<div class="bg-panel rounded-xl border border-app p-3">' %}
+    {% set wrap_open = '<a href="' ~ k.href ~ '" class="dash-card block bg-panel rounded-xl border border-app ' ~ tones.hover ~ ' p-3 transition-all">' if k.href else '<div class="bg-panel rounded-xl border border-app p-3">' %}
     {% set wrap_close = '</a>' if k.href else '</div>' %}
     {{ wrap_open|safe }}
       <div class="flex items-center justify-between">
@@ -90,13 +93,40 @@
       </div>
       <p class="dash-money text-xl lg:text-2xl font-bold {{ tones.text }} mt-1.5 leading-none truncate">{{ k.value }}</p>
       {% if k.delta is not none %}
-      <p class="mt-1 text-2xs font-semibold {{ 'text-emerald-400' if k.delta >= 0 else 'text-rose-400' }} flex items-center gap-0.5">
+      {# Cost / outflow KPIs use invert_delta so an increase reads rose-bad, not emerald-good. #}
+      {% set is_positive = (k.delta >= 0) != k.get('invert_delta', False) %}
+      <p class="mt-1 text-2xs font-semibold {{ 'text-emerald-400' if is_positive else 'text-rose-400' }} flex items-center gap-0.5">
         {{ '↑' if k.delta >= 0 else '↓' }} {{ k.delta|abs }}%
       </p>
       {% endif %}
     {{ wrap_close|safe }}
     {% endfor %}
   </div>
+
+  {# ═══════════════════════════════════════════════════
+     EMPTY STATE — when there's no revenue yet
+     ═══════════════════════════════════════════════════ #}
+  {% if not has_revenue and not attention_list %}
+  <section class="bg-panel rounded-xl border border-app p-8 text-center animate-fade-in-up">
+    <div class="w-12 h-12 rounded-xl bg-indigo-500/15 flex items-center justify-center mx-auto mb-3">
+      <svg aria-hidden="true" class="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+      </svg>
+    </div>
+    <p class="text-base font-semibold text-gray-100">No data yet</p>
+    <p class="text-sm text-muted mt-1">Add a customer and record a payment to start seeing analytics here.</p>
+    <div class="mt-4 flex items-center justify-center gap-2">
+      <a href="{{ url_for('customers.new') }}"
+         class="btn-press inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-500 transition-colors">
+        Add customer
+      </a>
+      <a href="{{ url_for('bookkeeper.index') }}"
+         class="btn-press inline-flex items-center gap-2 px-4 py-2 border border-app text-sm text-gray-200 rounded-lg hover:bg-gray-700 transition-colors">
+        Record payment
+      </a>
+    </div>
+  </section>
+  {% endif %}
 
   {# ═══════════════════════════════════════════════════
      NEEDS A VISIT — moved up: action items first
@@ -271,7 +301,8 @@
     <div class="bg-panel rounded-xl border border-app overflow-hidden divide-y divide-gray-700/50">
       {% for c in city_performance[:10] %}
       {% set bar_pct = (c.revenue / max_city * 100) if max_city else 0 %}
-      <div class="dash-card flex items-center gap-3 px-4 py-3 hover:bg-gray-700/30 transition-colors relative">
+      <a href="{{ url_for('customers.index', city=c.name) }}"
+         class="dash-card flex items-center gap-3 px-4 py-3 hover:bg-gray-700/30 transition-colors relative">
         <span class="w-6 h-6 rounded-full bg-slate-500/20 text-slate-300 flex items-center justify-center text-2xs font-bold flex-shrink-0 relative z-10">{{ loop.index }}</span>
         <div class="flex-1 min-w-0 relative z-10">
           <p class="text-sm font-semibold text-gray-100 truncate leading-tight">{{ c.name }}</p>
@@ -282,8 +313,8 @@
           </p>
         </div>
         <span class="dash-money text-sm font-bold text-emerald-300 tabular-nums relative z-10">${{ '{:,.0f}'.format(c.revenue) }}</span>
-        <span aria-hidden="true" class="absolute left-0 top-0 bottom-0 bg-slate-500/8" style="width: {{ bar_pct }}%;"></span>
-      </div>
+        <span aria-hidden="true" class="absolute left-0 top-0 bottom-0 bg-slate-500/10" style="width: {{ bar_pct }}%;"></span>
+      </a>
       {% endfor %}
     </div>
   </section>
@@ -335,22 +366,6 @@ document.addEventListener('DOMContentLoaded', function() {
         plugins: { legend: { display: false }, tooltip: { ...tt, callbacks: { label: function(ctx) { return ctx.dataset.label + ': $' + ctx.parsed.y.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0}); } } } },
         scales: { x: xAx, y: yAx },
       },
-    });
-  }
-
-  // Revenue trend
-  var revEl = document.getElementById('revenueChart');
-  if (revEl && charts.revenue.data.length > 0) {
-    new Chart(revEl, {
-      type: 'line',
-      data: {
-        labels: charts.revenue.labels,
-        datasets: [
-          { label: 'Current', data: charts.revenue.data, borderColor: indigo, backgroundColor: 'rgba(129,140,248,0.08)', fill: true, tension: 0.4, pointRadius: 3, pointHoverRadius: 5, pointBackgroundColor: indigo, pointBorderColor: '#1f2937', pointBorderWidth: 2 },
-          { label: 'Previous', data: charts.revenue.prev_data, borderColor: '#4b5563', borderDash: [4,4], backgroundColor: 'transparent', tension: 0.4, pointRadius: 0, borderWidth: 1.5 },
-        ],
-      },
-      options: { responsive: true, maintainAspectRatio: false, interaction: { intersect: false, mode: 'index' }, plugins: { legend: leg, tooltip: { ...tt, callbacks: { label: $label } } }, scales: { x: xAx, y: yAx } },
     });
   }
 

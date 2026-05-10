@@ -178,20 +178,6 @@ def index():
         for row in collections_by_city
     ]
 
-    # --- Customer status distribution (excludes 'deleted' so it doesn't skew the mix) ---
-    status_dist = (
-        db.session.query(
-            Customer.status,
-            func.count(Customer.id),
-        )
-        .filter(Customer.status != "deleted")
-        .group_by(Customer.status)
-        .all()
-    )
-    status_labels = [row[0] or "unknown" for row in status_dist]
-    status_data = [row[1] for row in status_dist]
-    total_customer_count = sum(status_data)
-
     # --- Route efficiency: completed / total stops by week ---
     efficiency_weeks = max(8, months * 4)
     efficiency_start = today - timedelta(weeks=efficiency_weeks)
@@ -210,13 +196,10 @@ def index():
         .all()
     )
 
-    efficiency_labels = [f"W{int(row.wk):02d}" for row in weekly_efficiency]
+    # Only the totals are needed (for completion_rate KPI). Per-week labels/pct
+    # were used by a chart that's been removed.
     efficiency_total = [row.total for row in weekly_efficiency]
     efficiency_completed = [int(row.completed) for row in weekly_efficiency]
-    efficiency_pct = [
-        round(c / t * 100) if t else 0
-        for c, t in zip(efficiency_completed, efficiency_total)
-    ]
 
     # --- KPI: Totals for current and previous periods ---
     total_revenue = sum(revenue_data) if revenue_data else 0
@@ -326,52 +309,12 @@ def index():
     day_of_week_labels = [dow_names.get(int(r.dow), "?") for r in dow_rows]
     day_of_week_data = [float(r.avg_amount or 0) for r in dow_rows]
 
-    # --- Balance stats ---
-    highest_balance_row = (
-        Customer.query
-        .filter(Customer.status == "active", Customer.balance > 0)
-        .order_by(Customer.balance.desc())
-        .first()
-    )
-    balance_stats = {
-        "total": total_outstanding,
-        "count": customers_with_balance,
-        "average": round(total_outstanding / customers_with_balance, 2) if customers_with_balance else 0,
-        "highest_amount": float(highest_balance_row.balance) if highest_balance_row else 0,
-        "highest_id": highest_balance_row.id if highest_balance_row else None,
-        "highest_name": highest_balance_row.name if highest_balance_row else None,
-    }
-
-    # Serialize chart data
+    # Only the cashflow series is consumed by the template's chart JS now.
     charts = {
-        "revenue": {
-            "labels": revenue_labels,
-            "data": revenue_data,
-            "prev_data": prev_revenue_data,
-        },
         "cashflow": {
             "labels": cashflow_labels,
             "revenue": revenue_aligned,
             "purchases": purchase_aligned,
-        },
-        "collections_by_city": {
-            "labels": city_labels,
-            "data": city_data,
-        },
-        "status_distribution": {
-            "labels": status_labels,
-            "data": status_data,
-            "total": total_customer_count,
-        },
-        "route_efficiency": {
-            "labels": efficiency_labels,
-            "total": efficiency_total,
-            "completed": efficiency_completed,
-            "pct": efficiency_pct,
-        },
-        "day_of_week": {
-            "labels": day_of_week_labels,
-            "data": day_of_week_data,
         },
     }
 
@@ -432,8 +375,8 @@ def index():
     # Margin insight (replaces "Top city" if margin is more useful — keep both, ordered)
     if total_revenue and total_purchases:
         margin_tone = (
-            "emerald" if profit_margin > 30
-            else ("amber" if profit_margin > 15 else "rose")
+            "emerald" if profit_margin >= 30
+            else ("amber" if profit_margin >= 15 else "rose")
         )
         # Insert margin near the front so it shows in the top 4
         insights.insert(0, {
@@ -448,28 +391,20 @@ def index():
         charts=charts,
         months=months,
         total_revenue=total_revenue,
-        prev_total_revenue=prev_total_revenue,
         revenue_delta=pct_change(total_revenue, prev_total_revenue),
         total_payments=total_payments,
-        prev_total_payments=prev_total_payments,
         payments_delta=pct_change(total_payments, prev_total_payments),
-        avg_order_value=avg_order_value,
-        avg_order_delta=pct_change(avg_order_value, prev_avg_order),
         active_customers=active_customers,
         completion_rate=completion_rate,
         total_outstanding=total_outstanding,
-        balance_stats=balance_stats,
         top_stores=top_stores,
         top_suppliers=top_suppliers,
         city_performance=city_performance,
         attention_list=attention_list,
         insights=insights,
         total_purchases=total_purchases,
-        prev_total_purchases=prev_total_purchases,
         purchases_delta=pct_change(total_purchases, prev_total_purchases),
         profit=profit,
-        prev_profit=prev_profit,
         profit_delta=pct_change(profit, prev_profit),
         profit_margin=profit_margin,
-        today=today,
     )
