@@ -229,20 +229,36 @@
      ═══════════════════════════════════════════════════ #}
   {% set has_week_data = week_data|selectattr('total', 'gt', 0)|list|length > 0 %}
   {% if has_week_data %}
-  <section class="hidden lg:block animate-fade-in-up">
+  {% set wow_delta = ((week_total - prev_week_total) / prev_week_total * 100) if prev_week_total else None %}
+  <section class="animate-fade-in-up">
     <header class="flex items-center justify-between mb-2">
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 flex-wrap">
         <div class="w-6 h-6 rounded-md bg-blue-500/15 flex items-center justify-center">
           <svg aria-hidden="true" class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
           </svg>
         </div>
         <h2 class="text-xs font-bold text-blue-400 uppercase tracking-wider">This Week's Sales</h2>
-        <span class="text-xs text-muted">— <span class="dash-money font-semibold text-gray-100">{{ week_total|currency }}</span></span>
+        <span class="dash-money text-sm font-semibold text-gray-100">{{ week_total|currency }}</span>
+        {% if wow_delta is not none %}
+          {% set is_up = wow_delta >= 0 %}
+          <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-2xs font-semibold tabular-nums
+                       {{ 'bg-emerald-500/15 text-emerald-300' if is_up else 'bg-rose-500/15 text-rose-300' }}"
+                title="vs previous week ({{ prev_week_total|currency }})">
+            <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              {% if is_up %}
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
+              {% else %}
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+              {% endif %}
+            </svg>
+            {{ '+' if is_up else '' }}{{ wow_delta|round|int }}%
+          </span>
+        {% endif %}
       </div>
       <a href="{{ url_for('analytics.index') }}" class="text-xs font-medium text-indigo-400 hover:text-indigo-300">Analytics →</a>
     </header>
-    <div class="bg-panel rounded-xl border border-app p-5">
+    <div class="bg-panel rounded-xl border border-app p-3 sm:p-5">
       <canvas id="weekChart" height="180"></canvas>
     </div>
   </section>

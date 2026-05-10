@@ -166,6 +166,15 @@ def index():
             "total": daily_totals_map.get(d.isoformat(), 0.0),
         })
 
+    # Previous-week total for WoW comparison (the 7 days before week_start)
+    prev_week_start_dt = week_start_dt - timedelta(days=7)
+    prev_week_total = float(
+        db.session.query(func.coalesce(func.sum(Payment.amount_sold), Decimal("0")))
+        .filter(Payment.payment_date >= prev_week_start_dt)
+        .filter(Payment.payment_date < week_start_dt)
+        .scalar() or 0
+    )
+
     # Greeting based on time of day
     hour = datetime.now(TZ_DISPLAY).hour
     if hour < 12:
@@ -199,4 +208,5 @@ def index():
         attention_list=attention_list,
         top_balances=top_balances,
         week_data=week_data,
+        prev_week_total=prev_week_total,
     )

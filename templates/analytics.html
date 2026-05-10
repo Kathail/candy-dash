@@ -7,264 +7,289 @@
 {% block content %}
 {% set has_revenue = total_revenue > 0 %}
 {% set has_payments = total_payments > 0 %}
-<div class="max-w-2xl lg:max-w-6xl mx-auto space-y-4 sm:space-y-6">
+<div class="max-w-6xl space-y-5">
 
-  {# -- Header + Range -- #}
-  <div class="flex items-center justify-between">
-    <h1 class="text-2xl font-semibold text-gray-100">Analytics</h1>
+  {# ═══════════════════════════════════════════════════
+     HEADER + RANGE SELECTOR
+     ═══════════════════════════════════════════════════ #}
+  <header class="flex items-end justify-between flex-wrap gap-3 animate-fade-in-up">
+    <div>
+      <p class="text-xs uppercase tracking-wider text-faint">{{ months }}-month overview</p>
+      <h1 class="text-2xl font-semibold text-gray-100 mt-0.5">Analytics</h1>
+    </div>
     <div class="flex items-center gap-1 bg-panel rounded-lg border border-app p-1" x-data="analyticsRange()">
       {% for val, label in [('3', '3M'), ('6', '6M'), ('12', '1Y')] %}
       <button type="button" @click="range = '{{ val }}'; navigate()"
-              class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors btn-press
-                     {{ 'bg-indigo-600 text-white' if months|string == val|string else 'text-muted hover:text-gray-200' }}">
+              class="px-3 py-1.5 text-xs font-semibold rounded-md transition-all btn-press
+                     {{ 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow shadow-violet-900/30' if months|string == val|string else 'text-muted hover:text-gray-100' }}">
         {{ label }}
       </button>
       {% endfor %}
     </div>
-  </div>
+  </header>
 
-  {# -- KPI Scoreboard -- #}
-  <div class="grid grid-cols-2 gap-3 animate-fade-in-up stagger-1">
-    {# Revenue #}
-    <div class="bg-panel rounded-xl border border-app p-4">
-      <div class="flex items-center gap-2.5">
-        <div class="w-9 h-9 rounded-lg bg-green-500/15 flex items-center justify-center flex-shrink-0">
-          <span aria-hidden="true" class="text-sm font-black text-green-400">$</span>
-        </div>
-        <div>
-          <p class="text-lg font-bold {{ 'text-green-400' if has_revenue else 'text-gray-100' }}">${{ '{:,.0f}'.format(total_revenue) }}</p>
-          <p class="text-2xs text-faint">revenue</p>
-        </div>
-      </div>
-      {% if revenue_delta is not none %}
-      <div class="mt-2 flex items-center gap-1">
-        <svg aria-hidden="true" class="w-3 h-3 {{ 'text-green-400' if revenue_delta >= 0 else 'text-red-400' }}" fill="currentColor" viewBox="0 0 20 20">
-          {% if revenue_delta >= 0 %}
-          <path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
-          {% else %}
-          <path fill-rule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-          {% endif %}
+  {# ═══════════════════════════════════════════════════
+     INSIGHT STRIP — auto-derived takeaways at a glance
+     ═══════════════════════════════════════════════════ #}
+  {% if insights %}
+  {% set tone_map = {
+    'emerald': {'bg': 'bg-emerald-500/10', 'border': 'border-emerald-500/30', 'text': 'text-emerald-300', 'label': 'text-emerald-400/80'},
+    'indigo':  {'bg': 'bg-indigo-500/10',  'border': 'border-indigo-500/30',  'text': 'text-indigo-300',  'label': 'text-indigo-400/80'},
+    'blue':    {'bg': 'bg-blue-500/10',    'border': 'border-blue-500/30',    'text': 'text-blue-300',    'label': 'text-blue-400/80'},
+    'rose':    {'bg': 'bg-rose-500/10',    'border': 'border-rose-500/30',    'text': 'text-rose-300',    'label': 'text-rose-400/80'},
+    'amber':   {'bg': 'bg-amber-500/10',   'border': 'border-amber-500/30',   'text': 'text-amber-300',   'label': 'text-amber-400/80'},
+  } %}
+  {% set icon_map = {
+    'calendar': 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
+    'trending': 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6',
+    'pin':      'M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0zM15 11a3 3 0 11-6 0 3 3 0 016 0z',
+    'alert':    'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z',
+  } %}
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 animate-fade-in-up">
+    {% for ins in insights[:4] %}
+    {% set tones = tone_map.get(ins.tone, tone_map['indigo']) %}
+    <div class="rounded-xl border {{ tones.border }} {{ tones.bg }} p-3 dash-card">
+      <div class="flex items-center gap-2 mb-1">
+        <svg aria-hidden="true" class="w-4 h-4 {{ tones.text }} shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ icon_map.get(ins.icon, icon_map['trending']) }}"/>
         </svg>
-        <span class="text-2xs font-semibold {{ 'text-green-400' if revenue_delta >= 0 else 'text-red-400' }}">{{ revenue_delta }}%</span>
+        <span class="text-2xs font-semibold uppercase tracking-wider {{ tones.label }}">{{ ins.label }}</span>
       </div>
-      {% endif %}
+      <p class="text-sm font-medium text-gray-100 leading-snug">{{ ins.text }}</p>
     </div>
-
-    {# Outstanding #}
-    <a href="{{ url_for('balances.index') }}" class="bg-panel rounded-xl border border-app p-4 hover:border-orange-500/40 transition-all btn-press">
-      <div class="flex items-center gap-2.5">
-        <div class="w-9 h-9 rounded-lg bg-orange-500/15 flex items-center justify-center flex-shrink-0">
-          <svg aria-hidden="true" class="w-4.5 h-4.5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-          </svg>
-        </div>
-        <div>
-          <p class="text-lg font-bold text-gray-100">${{ '{:,.0f}'.format(total_outstanding) }}</p>
-          <p class="text-2xs text-faint">owed by {{ balance_stats.count }}</p>
-        </div>
-      </div>
-    </a>
-
-    {# Payments + Avg Order (compact) #}
-    <div class="bg-panel rounded-xl border border-app p-4">
-      <div class="flex items-center gap-2.5">
-        <div class="w-9 h-9 rounded-lg bg-blue-500/15 flex items-center justify-center flex-shrink-0">
-          <svg aria-hidden="true" class="w-4.5 h-4.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-          </svg>
-        </div>
-        <div>
-          <p class="text-lg font-bold text-gray-100">{{ total_payments }}</p>
-          <p class="text-2xs text-faint">payments</p>
-        </div>
-      </div>
-    </div>
-
-    {# Completion rate #}
-    <div class="bg-panel rounded-xl border border-app p-4">
-      <div class="flex items-center gap-2.5">
-        <div class="w-9 h-9 rounded-lg bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
-          <svg aria-hidden="true" class="w-4.5 h-4.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-          </svg>
-        </div>
-        <div>
-          <p class="text-lg font-bold {{ 'text-green-400' if completion_rate >= 80 else 'text-amber-400' if completion_rate >= 50 else 'text-gray-100' }}">{{ completion_rate }}%</p>
-          <p class="text-2xs text-faint">route completion</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  {# -- Revenue Chart (only if there's data) -- #}
-  {% if has_revenue %}
-  <div class="bg-panel rounded-xl border border-app p-4 animate-fade-in-up stagger-2">
-    <div class="flex items-center justify-between mb-3">
-      <h2 class="text-sm font-semibold text-gray-100">Revenue</h2>
-      <span class="text-2xs text-gray-600">vs previous</span>
-    </div>
-    <div class="relative" style="height: 220px;">
-      <canvas id="revenueChart"></canvas>
-    </div>
+    {% endfor %}
   </div>
   {% endif %}
 
-  {# -- Needs Attention (promote this — it's always useful) -- #}
-  {% if attention_list %}
-  <div class="animate-fade-in-up stagger-3">
-    <div class="flex items-center gap-2 pt-2 mb-2">
-      <div class="w-5 h-5 rounded-md bg-red-500/15 flex items-center justify-center">
-        <svg class="w-3 h-3 text-red-400" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-        </svg>
+  {# ═══════════════════════════════════════════════════
+     HERO KPI ROW — 6 cards (3-col mobile, 6-col desktop)
+     ═══════════════════════════════════════════════════ #}
+  {% set kpi_data = [
+    {'label': 'Revenue',     'value': '${:,.0f}'.format(total_revenue),     'delta': revenue_delta,     'tone': 'emerald', 'href': None,                                  'icon': 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z'},
+    {'label': 'Cost',        'value': '${:,.0f}'.format(total_purchases),   'delta': purchases_delta,   'tone': 'rose',    'href': url_for('purchases.index'),            'icon': 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2'},
+    {'label': 'Profit',      'value': '${:,.0f}'.format(profit),            'delta': profit_delta,      'tone': 'emerald' if profit >= 0 else 'rose', 'href': None,             'icon': 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6'},
+    {'label': 'Margin',      'value': '{:.1f}%'.format(profit_margin),      'delta': None,              'tone': 'emerald' if profit_margin > 30 else ('amber' if profit_margin > 15 else 'rose'), 'href': None, 'icon': 'M9 5l7 7m0 0l-7 7m7-7H3'},
+    {'label': 'Outstanding', 'value': '${:,.0f}'.format(total_outstanding), 'delta': None,              'tone': 'amber',   'href': url_for('balances.index'),             'icon': 'M9 12h6m-3-3v6m9-3a9 9 0 11-18 0 9 9 0 0118 0z'},
+    {'label': 'Payments',    'value': '{:,}'.format(total_payments),        'delta': payments_delta,    'tone': 'blue',    'href': url_for('bookkeeper.index'),           'icon': 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4'},
+    {'label': 'Active',      'value': '{:,}'.format(active_customers),      'delta': None,              'tone': 'cyan',    'href': url_for('customers.index'),            'icon': 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z'},
+    {'label': 'Completion',  'value': '{:d}%'.format(completion_rate),      'delta': None,              'tone': 'emerald' if completion_rate >= 80 else ('amber' if completion_rate >= 50 else 'rose'), 'href': url_for('route.index'), 'icon': 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'},
+  ] %}
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 animate-fade-in-up">
+    {% for k in kpi_data %}
+    {% set tones = tone_map.get(k.tone, tone_map['indigo']) %}
+    {% set wrap_open = '<a href="' ~ k.href ~ '" class="dash-card block bg-panel rounded-xl border border-app p-3 hover:' ~ tones.border ~ ' transition-all">' if k.href else '<div class="bg-panel rounded-xl border border-app p-3">' %}
+    {% set wrap_close = '</a>' if k.href else '</div>' %}
+    {{ wrap_open|safe }}
+      <div class="flex items-center justify-between">
+        <p class="text-2xs uppercase tracking-wider text-faint font-semibold truncate">{{ k.label }}</p>
+        <span class="w-6 h-6 rounded-md {{ tones.bg }} flex items-center justify-center shrink-0">
+          <svg aria-hidden="true" class="w-3.5 h-3.5 {{ tones.text }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ k.icon }}"/>
+          </svg>
+        </span>
       </div>
-      <h2 class="text-xs font-bold text-red-400 uppercase tracking-wider">Needs a Visit</h2>
-      <div class="flex-1 h-px bg-gray-700"></div>
-      <span class="text-2xs text-gray-600">30+ days</span>
-    </div>
-    <div class="bg-panel rounded-xl border border-app overflow-hidden divide-y divide-gray-700/60">
-      {% for store in attention_list %}
+      <p class="dash-money text-xl lg:text-2xl font-bold {{ tones.text }} mt-1.5 leading-none truncate">{{ k.value }}</p>
+      {% if k.delta is not none %}
+      <p class="mt-1 text-2xs font-semibold {{ 'text-emerald-400' if k.delta >= 0 else 'text-rose-400' }} flex items-center gap-0.5">
+        {{ '↑' if k.delta >= 0 else '↓' }} {{ k.delta|abs }}%
+      </p>
+      {% endif %}
+    {{ wrap_close|safe }}
+    {% endfor %}
+  </div>
+
+  {# ═══════════════════════════════════════════════════
+     NEEDS A VISIT — moved up: action items first
+     ═══════════════════════════════════════════════════ #}
+  {% if attention_list %}
+  <section class="animate-fade-in-up">
+    <header class="flex items-baseline justify-between mb-2">
+      <div class="flex items-center gap-2">
+        <div class="w-6 h-6 rounded-md bg-rose-500/15 flex items-center justify-center">
+          <svg aria-hidden="true" class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+        </div>
+        <h2 class="text-xs font-bold text-rose-400 uppercase tracking-wider">Needs a Visit</h2>
+        <span class="text-2xs text-rose-300/80">— {{ attention_list|length }} customer{{ 's' if attention_list|length != 1 else '' }}</span>
+      </div>
+      <a href="{{ url_for('balances.index') }}" class="text-xs font-semibold text-indigo-400 hover:text-indigo-300">Plan visits →</a>
+    </header>
+    <div class="bg-panel rounded-xl border border-app overflow-hidden divide-y divide-gray-700/50">
+      {% for store in attention_list[:6] %}
+      {% set urgency = 'rose' if store.days_since is none or (store.days_since or 0) > 60 else ('amber' if (store.days_since or 0) > 45 else 'gray') %}
       <a href="{{ url_for('customers.profile', id=store.id) }}"
-         class="flex items-center gap-3 px-4 py-3 hover:bg-gray-700/50 transition-colors btn-press">
+         class="dash-card flex items-center gap-3 px-4 py-3 hover:bg-gray-700/40 transition-colors
+                {% if urgency == 'rose' %}border-l-[3px] border-rose-500/60{% elif urgency == 'amber' %}border-l-[3px] border-amber-500/40{% else %}border-l-[3px] border-transparent{% endif %}">
         <div class="flex-1 min-w-0">
-          <p class="text-sm font-medium text-gray-200 truncate">{{ store.name }}</p>
-          <p class="text-2xs text-faint">{{ store.city }}</p>
+          <p class="text-sm font-semibold text-gray-100 truncate leading-tight">{{ store.name }}</p>
+          <p class="text-2xs text-faint mt-0.5">{{ store.city }}</p>
         </div>
         {% if store.days_since is not none %}
-        <span class="px-2 py-0.5 text-2xs font-semibold rounded-full
-                     {{ 'bg-yellow-500/20 text-yellow-400' if store.days_since <= 45
-                        else 'bg-orange-500/20 text-orange-400' if store.days_since <= 60
-                        else 'bg-red-500/20 text-red-400' }}">{{ store.days_since }}d</span>
+        <span class="text-2xs font-semibold tabular-nums px-2 py-0.5 rounded ring-1
+                     {{ 'bg-rose-500/15 text-rose-200 ring-rose-500/40' if urgency == 'rose'
+                        else 'bg-amber-500/15 text-amber-200 ring-amber-500/40' if urgency == 'amber'
+                        else 'bg-gray-500/15 text-gray-300 ring-gray-500/30' }}">{{ store.days_since }}d</span>
         {% else %}
-        <span class="px-2 py-0.5 text-2xs font-semibold rounded-full bg-red-500/20 text-red-400">never</span>
+        <span class="text-2xs font-bold uppercase tracking-wider px-2 py-0.5 rounded ring-1 bg-rose-500/20 text-rose-200 ring-rose-500/50">Never</span>
         {% endif %}
         {% if store.balance > 0 %}
-        <span class="text-2xs font-semibold text-amber-400">${{ '{:,.0f}'.format(store.balance) }}</span>
+        <span class="dash-money text-sm font-semibold text-amber-300 tabular-nums">${{ '{:,.0f}'.format(store.balance) }}</span>
         {% endif %}
       </a>
       {% endfor %}
     </div>
+  </section>
+  {% endif %}
+
+  {# ═══════════════════════════════════════════════════
+     REVENUE VS COST — financial overview (full width)
+     ═══════════════════════════════════════════════════ #}
+  {% if has_revenue %}
+  <section class="animate-fade-in-up">
+    <header class="flex items-baseline justify-between mb-2 flex-wrap gap-2">
+      <div class="flex items-center gap-2 flex-wrap">
+        <div class="w-6 h-6 rounded-md bg-emerald-500/15 flex items-center justify-center">
+          <svg aria-hidden="true" class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+          </svg>
+        </div>
+        <h2 class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Revenue vs Cost</h2>
+        <span class="dash-money text-base font-bold text-emerald-300 glow-gold">${{ '{:,.0f}'.format(profit) }}</span>
+        <span class="text-2xs text-faint">profit · {{ '{:.1f}'.format(profit_margin) }}% margin{% if revenue_delta is not none %} · revenue {{ '+' if revenue_delta >= 0 else '' }}{{ revenue_delta }}% vs prior period{% endif %}</span>
+      </div>
+      <div class="flex items-center gap-3 text-2xs">
+        <span class="flex items-center gap-1.5 text-faint"><span class="w-2 h-2 rounded-sm bg-emerald-500"></span>Revenue</span>
+        <span class="flex items-center gap-1.5 text-faint"><span class="w-2 h-2 rounded-sm bg-rose-500"></span>Cost</span>
+      </div>
+    </header>
+    <div class="bg-panel rounded-xl border border-app p-4 lg:p-5">
+      <div class="relative" style="height: 288px;">
+        <canvas id="cashflowChart"></canvas>
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  {# ═══════════════════════════════════════════════════
+     TOP STORES + TOP SUPPLIERS — money in / money out
+     ═══════════════════════════════════════════════════ #}
+  {% if has_revenue %}
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-5 animate-fade-in-up">
+
+    {# Top stores leaderboard #}
+    {% if top_stores %}
+    <section>
+      <header class="flex items-baseline justify-between mb-2">
+        <div class="flex items-center gap-2">
+          <div class="w-6 h-6 rounded-md bg-emerald-500/15 flex items-center justify-center">
+            <svg aria-hidden="true" class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+            </svg>
+          </div>
+          <h2 class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Top Stores</h2>
+        </div>
+        <span class="text-2xs text-faint">money in</span>
+      </header>
+      {% set max_rev = top_stores[0].revenue if top_stores else 1 %}
+      <div class="bg-panel rounded-xl border border-app overflow-hidden divide-y divide-gray-700/50">
+        {% for store in top_stores[:8] %}
+        {% set bar_pct = (store.revenue / max_rev * 100) if max_rev else 0 %}
+        <a href="{{ url_for('customers.profile', id=store.id) }}"
+           class="dash-card block px-4 py-3 hover:bg-gray-700/40 transition-colors relative">
+          <div class="flex items-center gap-3 relative z-10">
+            <span class="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center text-2xs font-bold flex-shrink-0">{{ loop.index }}</span>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-semibold text-gray-100 truncate leading-tight">{{ store.name }}</p>
+              <p class="text-2xs text-faint mt-0.5">{{ store.city }} · {{ store.payment_count }} pmt{{ 's' if store.payment_count != 1 else '' }} · avg ${{ '{:,.0f}'.format(store.avg_payment) }}</p>
+            </div>
+            <span class="dash-money text-sm font-bold text-emerald-300 tabular-nums">${{ '{:,.0f}'.format(store.revenue) }}</span>
+          </div>
+          <span aria-hidden="true" class="absolute left-0 top-0 bottom-0 bg-emerald-500/12" style="width: {{ bar_pct }}%;"></span>
+        </a>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    {# Top Suppliers leaderboard #}
+    {% if top_suppliers %}
+    <section>
+      <header class="flex items-baseline justify-between mb-2">
+        <div class="flex items-center gap-2">
+          <div class="w-6 h-6 rounded-md bg-rose-500/15 flex items-center justify-center">
+            <svg aria-hidden="true" class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+            </svg>
+          </div>
+          <h2 class="text-xs font-bold text-rose-400 uppercase tracking-wider">Top Suppliers</h2>
+          <span class="dash-money text-sm font-bold text-rose-300">${{ '{:,.0f}'.format(total_purchases) }}</span>
+        </div>
+        <a href="{{ url_for('purchases.index') }}" class="text-xs font-semibold text-indigo-400 hover:text-indigo-300">View all →</a>
+      </header>
+      {% set max_supp = top_suppliers[0].total if top_suppliers else 1 %}
+      <div class="bg-panel rounded-xl border border-app overflow-hidden divide-y divide-gray-700/50">
+        {% for s in top_suppliers %}
+        {% set bar_pct = (s.total / max_supp * 100) if max_supp else 0 %}
+        <a href="{{ url_for('purchases.index') }}?supplier={{ s.name|urlencode }}"
+           class="dash-card block px-4 py-3 hover:bg-gray-700/40 transition-colors relative">
+          <div class="flex items-center gap-3 relative z-10">
+            <span class="w-6 h-6 rounded-full bg-rose-500/20 text-rose-300 flex items-center justify-center text-2xs font-bold flex-shrink-0">{{ loop.index }}</span>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-semibold text-gray-100 truncate leading-tight">{{ s.name }}</p>
+              <p class="text-2xs text-faint mt-0.5">{{ s.count }} purchase{{ 's' if s.count != 1 else '' }}{% if total_purchases %} · {{ ((s.total / total_purchases) * 100)|round|int }}% of cost{% endif %}</p>
+            </div>
+            <span class="dash-money text-sm font-bold text-rose-300 tabular-nums">${{ '{:,.0f}'.format(s.total) }}</span>
+          </div>
+          <span aria-hidden="true" class="absolute left-0 top-0 bottom-0 bg-rose-500/12" style="width: {{ bar_pct }}%;"></span>
+        </a>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
   </div>
   {% endif %}
 
-  {# -- Top Stores (only if revenue exists) -- #}
-  {% if top_stores and has_revenue %}
-  <div class="animate-fade-in-up stagger-4">
-    <div class="flex items-center gap-2 pt-2 mb-2">
-      <div class="w-5 h-5 rounded-md bg-emerald-500/15 flex items-center justify-center">
-        <svg class="w-3 h-3 text-emerald-400" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-        </svg>
-      </div>
-      <h2 class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Top Stores</h2>
-      <div class="flex-1 h-px bg-gray-700"></div>
-      <span class="text-2xs text-gray-600">by revenue</span>
-    </div>
-    <div class="bg-panel rounded-xl border border-app overflow-hidden divide-y divide-gray-700/60">
-      {% for store in top_stores[:5] %}
-      <a href="{{ url_for('customers.profile', id=store.id) }}"
-         class="flex items-center gap-3 px-4 py-3 hover:bg-gray-700/50 transition-colors btn-press">
-        <span class="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-2xs font-bold flex-shrink-0">
-          {{ loop.index }}
-        </span>
-        <div class="flex-1 min-w-0">
-          <p class="text-sm font-medium text-gray-200 truncate">{{ store.name }}</p>
-          <p class="text-2xs text-faint">{{ store.city }} · {{ store.payment_count }} payment{{ 's' if store.payment_count != 1 else '' }}</p>
+  {# ═══════════════════════════════════════════════════
+     CITY LEADERBOARD — revenue + customer count per city
+     ═══════════════════════════════════════════════════ #}
+  {% if has_revenue and city_performance %}
+  <section class="animate-fade-in-up">
+    <header class="flex items-baseline justify-between mb-2">
+      <div class="flex items-center gap-2">
+        <div class="w-6 h-6 rounded-md bg-slate-500/15 flex items-center justify-center">
+          <svg aria-hidden="true" class="w-3.5 h-3.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0zM15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
         </div>
-        <span class="text-sm font-bold text-green-400">${{ '{:,.0f}'.format(store.revenue) }}</span>
-      </a>
+        <h2 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Revenue by City</h2>
+        <span class="text-2xs text-faint">{{ city_performance|length }} cities</span>
+      </div>
+    </header>
+    {% set max_city = city_performance[0].revenue if city_performance else 1 %}
+    <div class="bg-panel rounded-xl border border-app overflow-hidden divide-y divide-gray-700/50">
+      {% for c in city_performance[:10] %}
+      {% set bar_pct = (c.revenue / max_city * 100) if max_city else 0 %}
+      <div class="dash-card flex items-center gap-3 px-4 py-3 hover:bg-gray-700/30 transition-colors relative">
+        <span class="w-6 h-6 rounded-full bg-slate-500/20 text-slate-300 flex items-center justify-center text-2xs font-bold flex-shrink-0 relative z-10">{{ loop.index }}</span>
+        <div class="flex-1 min-w-0 relative z-10">
+          <p class="text-sm font-semibold text-gray-100 truncate leading-tight">{{ c.name }}</p>
+          <p class="text-2xs text-faint mt-0.5">
+            {{ c.customers }} customer{{ 's' if c.customers != 1 else '' }}
+            {% if c.customers > 0 %} · ${{ '{:,.0f}'.format(c.avg_per_customer) }} avg per customer{% endif %}
+            · {{ c.pct }}% of revenue
+          </p>
+        </div>
+        <span class="dash-money text-sm font-bold text-emerald-300 tabular-nums relative z-10">${{ '{:,.0f}'.format(c.revenue) }}</span>
+        <span aria-hidden="true" class="absolute left-0 top-0 bottom-0 bg-slate-500/8" style="width: {{ bar_pct }}%;"></span>
+      </div>
       {% endfor %}
     </div>
-  </div>
+  </section>
   {% endif %}
 
-  {# -- Balance Overview (compact horizontal) -- #}
-  {% if balance_stats.count > 0 %}
-  <div class="animate-fade-in-up stagger-5">
-    <div class="flex items-center gap-2 pt-2 mb-2">
-      <div class="w-5 h-5 rounded-md bg-amber-500/15 flex items-center justify-center">
-        <span aria-hidden="true" class="text-xs font-black text-amber-400">$</span>
-      </div>
-      <h2 class="text-xs font-bold text-amber-400 uppercase tracking-wider">Balances</h2>
-      <div class="flex-1 h-px bg-gray-700"></div>
-      <a href="{{ url_for('balances.index') }}" class="text-2xs text-indigo-400 hover:text-indigo-300 font-medium btn-press">View all</a>
-    </div>
-    <div class="grid grid-cols-2 gap-3">
-      <div class="bg-panel rounded-xl border border-app p-4">
-        <p class="text-2xs text-faint">Total Owed</p>
-        <p class="text-lg font-bold text-gray-100 mt-0.5">${{ '{:,.2f}'.format(balance_stats.total) }}</p>
-      </div>
-      <div class="bg-panel rounded-xl border border-app p-4">
-        <p class="text-2xs text-faint">Average</p>
-        <p class="text-lg font-bold text-gray-100 mt-0.5">${{ '{:,.2f}'.format(balance_stats.average) }}</p>
-      </div>
-      {% if balance_stats.highest_id %}
-      <a href="{{ url_for('customers.profile', id=balance_stats.highest_id) }}" class="col-span-2 bg-panel rounded-xl border border-app p-4 hover:border-amber-500/40 transition-all btn-press">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-2xs text-faint">Highest Balance</p>
-            <p class="text-sm font-medium text-gray-200 mt-0.5">{{ balance_stats.highest_name }}</p>
-          </div>
-          <span class="text-lg font-bold text-amber-400">${{ '{:,.2f}'.format(balance_stats.highest_amount) }}</span>
-        </div>
-      </a>
-      {% endif %}
-    </div>
-  </div>
-  {% endif %}
-
-  {# -- Desktop: More Charts -- #}
-  {% if has_revenue %}
-  <div class="hidden lg:grid grid-cols-2 gap-6 animate-fade-in-up">
-    {# Collections by City #}
-    <div class="bg-panel rounded-xl border border-app p-5">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-sm font-semibold text-gray-100">By City</h2>
-      </div>
-      <div class="relative" style="height: 280px;">
-        <canvas id="cityChart"></canvas>
-      </div>
-    </div>
-
-    {# Best Days #}
-    <div class="bg-panel rounded-xl border border-app p-5">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-sm font-semibold text-gray-100">Best Days</h2>
-        <span class="text-2xs text-gray-600">avg per transaction</span>
-      </div>
-      <div class="relative" style="height: 280px;">
-        <canvas id="dowChart"></canvas>
-      </div>
-    </div>
-
-    {# Route Efficiency #}
-    <div class="bg-panel rounded-xl border border-app p-5">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-sm font-semibold text-gray-100">Route Efficiency</h2>
-      </div>
-      <div class="relative" style="height: 280px;">
-        <canvas id="efficiencyChart"></canvas>
-      </div>
-    </div>
-
-    {# Customer Breakdown #}
-    <div class="bg-panel rounded-xl border border-app p-5">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-sm font-semibold text-gray-100">Customers</h2>
-      </div>
-      <div class="relative mx-auto" style="height: 280px; max-width: 320px;">
-        <canvas id="statusChart"></canvas>
-        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div class="text-center">
-            <p class="text-2xl font-bold text-gray-100">{{ charts.status_distribution.total }}</p>
-            <p class="text-2xs text-faint">total</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  {% endif %}
-
+  <div class="h-4"></div>
 </div>
 {% endblock %}
 
@@ -292,7 +317,28 @@ document.addEventListener('DOMContentLoaded', function() {
   var indigo = '#818cf8', blue = '#60a5fa', purple = '#a78bfa', cyan = '#22d3ee', emerald = '#34d399', amber = '#fbbf24', rose = '#fb7185';
   var pal = [indigo, blue, purple, cyan, emerald, amber, rose];
 
-  // Revenue
+  // Cash Flow (revenue vs purchases bars)
+  var cfEl = document.getElementById('cashflowChart');
+  if (cfEl && charts.cashflow && charts.cashflow.labels.length > 0) {
+    new Chart(cfEl, {
+      type: 'bar',
+      data: {
+        labels: charts.cashflow.labels,
+        datasets: [
+          { label: 'Revenue',  data: charts.cashflow.revenue,   backgroundColor: 'rgba(52, 211, 153, 0.85)', borderRadius: 4, borderSkipped: false, barPercentage: 0.9, categoryPercentage: 0.7 },
+          { label: 'Cost',     data: charts.cashflow.purchases, backgroundColor: 'rgba(251, 113, 133, 0.85)', borderRadius: 4, borderSkipped: false, barPercentage: 0.9, categoryPercentage: 0.7 },
+        ],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { intersect: false, mode: 'index' },
+        plugins: { legend: { display: false }, tooltip: { ...tt, callbacks: { label: function(ctx) { return ctx.dataset.label + ': $' + ctx.parsed.y.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0}); } } } },
+        scales: { x: xAx, y: yAx },
+      },
+    });
+  }
+
+  // Revenue trend
   var revEl = document.getElementById('revenueChart');
   if (revEl && charts.revenue.data.length > 0) {
     new Chart(revEl, {
@@ -308,45 +354,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Desktop charts
-  var cityEl = document.getElementById('cityChart');
-  if (cityEl) {
-    new Chart(cityEl, {
-      type: 'bar',
-      data: { labels: charts.collections_by_city.labels, datasets: [{ data: charts.collections_by_city.data, backgroundColor: charts.collections_by_city.labels.map(function(_,i) { return pal[i%pal.length]; }), borderRadius: 6, borderSkipped: false, barPercentage: 0.7 }] },
-      options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false }, tooltip: { ...tt, callbacks: { label: function(ctx) { return '$' + ctx.parsed.x.toLocaleString(); } } } }, scales: { y: { grid: { display: false }, ticks: { color: tickColor, font: { size: 11 } }, border: { display: false } }, x: { grid: { color: gridColor }, ticks: { color: tickColor, font: { size: 11 }, callback: $tick }, border: { display: false } } } },
-    });
-  }
-
-  var dowEl = document.getElementById('dowChart');
-  if (dowEl) {
-    new Chart(dowEl, {
-      type: 'bar',
-      data: { labels: charts.day_of_week.labels, datasets: [{ data: charts.day_of_week.data, backgroundColor: charts.day_of_week.data.map(function(v,i,a) { return v === Math.max.apply(null, a) ? emerald : indigo; }), borderRadius: 6, borderSkipped: false, barPercentage: 0.6 }] },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { ...tt, callbacks: { label: $label } } }, scales: { x: xAx, y: yAx } },
-    });
-  }
-
-  var effEl = document.getElementById('efficiencyChart');
-  if (effEl) {
-    new Chart(effEl, {
-      type: 'line',
-      data: { labels: charts.route_efficiency.labels, datasets: [
-        { label: 'Total', data: charts.route_efficiency.total, borderColor: blue, backgroundColor: 'rgba(96,165,250,0.05)', fill: true, tension: 0.4, pointRadius: 3, borderWidth: 2 },
-        { label: 'Completed', data: charts.route_efficiency.completed, borderColor: emerald, backgroundColor: 'rgba(52,211,153,0.08)', fill: true, tension: 0.4, pointRadius: 3, borderWidth: 2 },
-      ] },
-      options: { responsive: true, maintainAspectRatio: false, interaction: { intersect: false, mode: 'index' }, plugins: { legend: leg, tooltip: tt }, scales: { x: xAx, y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: tickColor, font: { size: 11 } }, border: { display: false } } } },
-    });
-  }
-
-  var statusEl = document.getElementById('statusChart');
-  if (statusEl) {
-    new Chart(statusEl, {
-      type: 'doughnut',
-      data: { labels: charts.status_distribution.labels, datasets: [{ data: charts.status_distribution.data, backgroundColor: [indigo, blue, amber, rose, emerald, purple], borderWidth: 3, borderColor: '#1f2937', hoverOffset: 6 }] },
-      options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: leg, tooltip: tt } },
-    });
-  }
 });
 </script>
 {% endblock %}
